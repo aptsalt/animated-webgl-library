@@ -31,13 +31,25 @@
             0%, 100% { filter: brightness(0.8) contrast(1.2); }
             50% { filter: brightness(1.1) contrast(0.9); }
         }
+        .instruction {
+            position: absolute;
+            bottom: 40px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: rgba(26, 26, 26, 0.4);
+            font-size: 12px;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            pointer-events: none;
+        }
     </style>
 </head>
 <body>
     <div class="title">MOUNTAIN CLIMBER</div>
     <div class="climb-phase" id="climbPhase">BASE CAMP PREPARATION</div>
     <div class="altitude" id="altitude">Altitude: 2,000m</div>
-    
+    <div class="instruction">Click to interact with the scene</div>
+
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="../particle-being-library.js"></script>
     <script>

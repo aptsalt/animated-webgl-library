@@ -204,6 +204,19 @@
                 humanFigure.children[0].rotation.y = Math.sin(time * 0.3) * 0.05;
             }
 
+            if (jumping) {
+                // Jump animation handled above
+            } else {
+                // Idle breathing/swaying animation
+                const idleSway = Math.sin(time * 2) * 0.1;
+                const idleBob = Math.sin(time * 3) * 0.05;
+                humanFigure.position.y = -2 + idleBob;
+                humanFigure.rotation.z = idleSway * 0.3;
+                // Gentle arm sway
+                if (humanFigure.children[2]) humanFigure.children[2].rotation.x = Math.sin(time * 2) * 0.15;
+                if (humanFigure.children[3]) humanFigure.children[3].rotation.x = -Math.sin(time * 2) * 0.15;
+            }
+
             renderer.render(scene, camera);
         }
 

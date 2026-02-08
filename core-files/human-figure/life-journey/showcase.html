@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Life Journey Showcase - 20 Stages of Human Life</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@100;200;300;400;500;600;700&family=Playfair+Display:wght@400;500;600;700&family=JetBrains+Mono:wght@200;300;400&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Inter', -apple-system, system-ui, sans-serif;
+            background: #f8f8f8;
+            color: #1a1a1a;
+            padding: 40px 20px;
+            font-weight: 300;
+            line-height: 1.6;
+        }
+        .header { text-align: center; margin-bottom: 40px; }
+        h1 {
+            font-family: 'Playfair Display', serif;
+            font-size: clamp(28px, 4vw, 48px);
+            font-weight: 300;
+            letter-spacing: 0.2em;
+            margin-bottom: 15px;
+        }
+        .subtitle {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 12px;
+            font-weight: 300;
+            color: #666;
+            letter-spacing: 0.15em;
+            text-transform: uppercase;
+        }
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+            gap: 20px;
+            max-width: 1600px;
+            margin: 0 auto;
+        }
+        .cell {
+            background: white;
+            border: 1px solid rgba(0,0,0,0.05);
+            border-radius: 4px;
+            overflow: hidden;
+            transition: all 0.3s ease;
+        }
+        .cell:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.08);
+        }
+        .cell iframe {
+            width: 100%;
+            height: 300px;
+            border: none;
+            display: block;
+        }
+        .cell-label {
+            padding: 12px 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .cell-number {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 10px;
+            color: #999;
+            letter-spacing: 0.1em;
+        }
+        .cell-title {
+            font-family: 'Playfair Display', serif;
+            font-size: 14px;
+            font-weight: 300;
+            letter-spacing: 0.05em;
+        }
+        .text-card {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 300px;
+            padding: 30px;
+            text-align: center;
+        }
+        .text-card h2 {
+            font-family: 'Playfair Display', serif;
+            font-size: 28px;
+            font-weight: 300;
+            letter-spacing: 0.15em;
+            margin-bottom: 15px;
+        }
+        .text-card p {
+            font-size: 13px;
+            color: #666;
+            line-height: 1.6;
+            max-width: 280px;
+        }
+        .back-link {
+            display: inline-block;
+            margin-bottom: 30px;
+            padding: 10px 20px;
+            background: #1a1a1a;
+            color: white;
+            text-decoration: none;
+            border-radius: 4px;
+            font-size: 14px;
+            transition: all 0.3s ease;
+        }
+        .back-link:hover { background: #333; }
+    </style>
+</head>
+<body>
+
+    <a href="index.html" class="back-link">&larr; Back to Life Journey</a>
+
+    <div class="header">
+        <h1>Life Journey Showcase</h1>
+        <p class="subtitle">All 20 Stages &mdash; Particle Animation Gallery</p>
+    </div>
+
+    <div class="grid">
+
+        <!-- Cell 1: Text Intro Card -->
+        <div class="cell">
+            <div class="text-card">
+                <h2>LIFE JOURNEY</h2>
+                <p>20 Stages of Human Life Through Particle Animation</p>
+            </div>
+            <div class="cell-label">
+                <span class="cell-number">OVERVIEW</span>
+                <span class="cell-title">Introduction</span>
+            </div>
+        </div>
+
+        <!-- Cell 2: 01 - Newborn Emergence -->
+        <div class="cell">
+            <iframe src="01-newborn-emergence.html" loading="lazy" title="Newborn Emergence"></iframe>
+            <div class="cell-label">
+                <span class="cell-number">01</span>
+                <span class="cell-title">Newborn Emergence</span>
+            </div>
+        </div>
+
+        <!-- Cell 3: 02 - Toddler Exploration -->
+        <div class="cell">
+            <iframe src="02-toddler-exploration.html" loading="lazy" title="Toddler Exploration"></iframe>
+            <div class="cell-label">
+                <span class="cell-number">02</span>
+                <span class="cell-title">Toddler Exploration</span>
+            </div>
+        </div>
+
+        <!-- Cell 4: 03 - Child Playing -->
+        <div class="cell">
+            <iframe src="03-child-playing.html" loading="lazy" title="Child Playing"></iframe>
+            <div class="cell-label">
+                <span class="cell-number">03</span>
+                <span class="cell-title">Child Playing</span>
+            </div>
+        </div>
+
+        <!-- Cell 5: 04 - Teenager Transformation -->
+        <div class="cell">
+            <iframe src="04-teenager-transformation.html" loading="lazy" title="Teenager Transformation"></iframe>
+            <div class="cell-label">
+                <span class="cell-number">04</span>
+                <span class="cell-title">Teenager Transformation</span>
+            </div>
+        </div>
+
+        <!-- Cell 6: 05 - Student Learning -->
+        <div class="cell">
+            <iframe src="05-student-learning.html" loading="lazy" title="Student Learning"></iframe>
+            <div class="cell-label">
+                <span class="cell-number">05</span>
+                <span class="cell-title">Student Learning</span>
+            </div>
+        </div>
+
+        <!-- Cell 7: 06 - Young Adult Freedom -->
+        <div class="cell">
+            <iframe src="06-young-adult-freedom.html" loading="lazy" title="Young Adult Freedom"></iframe>
+            <div class="cell-label">
+                <span class="cell-number">06</span>
+                <span class="cell-title">Young Adult Freedom</span>
+            </div>
+        </div>
+
+        <!-- Cell 8: 07 - Lover Connection -->
+        <div class="cell">
+            <iframe src="07-lover-connection.html" loading="lazy" title="Lover Connection"></iframe>
+            <div class="cell-label">
+                <span class="cell-number">07</span>
+                <span class="cell-title">Lover Connection</span>
+            </div>
+        </div>
+
+        <!-- Cell 9: 08 - Parent Nurturing -->
+        <div class="cell">
+            <iframe src="08-parent-nurturing.html" loading="lazy" title="Parent Nurturing"></iframe>
+            <div class="cell-label">
+                <span class="cell-number">08</span>
+                <span class="cell-title">Parent Nurturing</span>
+            </div>
+        </div>
+
+        <!-- Cell 10: 09 - Worker Building -->
+        <div class="cell">
+            <iframe src="09-worker-building.html" loading="lazy" title="Worker Building"></iframe>
+            <div class="cell-label">
+                <span class="cell-number">09</span>
+                <span class="cell-title">Worker Building</span>
+            </div>
+        </div>
+
+        <!-- Cell 11: 10 - Artist Creating -->
+        <div class="cell">
+            <iframe src="10-artist-creating.html" loading="lazy" title="Artist Creating"></iframe>
+            <div class="cell-label">
+                <span class="cell-number">10</span>
+                <span class="cell-title">Artist Creating</span>
+            </div>
+        </div>
+
+        <!-- Cell 12: 11 - Athlete Competing -->
+        <div class="cell">
+            <iframe src="11-athlete-competing.html" loading="lazy" title="Athlete Competing"></iframe>
+            <div class="cell-label">
+                <span class="cell-number">11</span>
+                <span class="cell-title">Athlete Competing</span>
+            </div>
+        </div>
+
+        <!-- Cell 13: 12 - Healer Caring -->
+        <div class="cell">
+            <iframe src="12-healer-caring.html" loading="lazy" title="Healer Caring"></iframe>
+            <div class="cell-label">
+                <span class="cell-number">12</span>
+                <span class="cell-title">Healer Caring</span>
+            </div>
+        </div>
+
+        <!-- Cell 14: 13 - Teacher Guiding -->
+        <div class="cell">
+            <iframe src="13-teacher-guiding.html" loading="lazy" title="Teacher Guiding"></iframe>
+            <div class="cell-label">
+                <span class="cell-number">13</span>
+                <span class="cell-title">Teacher Guiding</span>
+            </div>
+        </div>
+
+        <!-- Cell 15: 14 - Leader Inspiring -->
+        <div class="cell">
+            <iframe src="14-leader-inspiring.html" loading="lazy" title="Leader Inspiring"></iframe>
+            <div class="cell-label">
+                <span class="cell-number">14</span>
+                <span class="cell-title">Leader Inspiring</span>
+            </div>
+        </div>
+
+        <!-- Cell 16: 15 - Creating Life -->
+        <div class="cell">
+            <iframe src="15-pregnant-creating.html" loading="lazy" title="Creating Life"></iframe>
+            <div class="cell-label">
+                <span class="cell-number">15</span>
+                <span class="cell-title">Creating Life</span>
+            </div>
+        </div>
+
+        <!-- Cell 17: 16 - Elderly Wisdom -->
+        <div class="cell">
+            <iframe src="16-elderly-wisdom.html" loading="lazy" title="Elderly Wisdom"></iframe>
+            <div class="cell-label">
+                <span class="cell-number">16</span>
+                <span class="cell-title">Elderly Wisdom</span>
+            </div>
+        </div>
+
+        <!-- Cell 18: 17 - Grieving & Healing -->
+        <div class="cell">
+            <iframe src="17-grieving-healing.html" loading="lazy" title="Grieving & Healing"></iframe>
+            <div class="cell-label">
+                <span class="cell-number">17</span>
+                <span class="cell-title">Grieving &amp; Healing</span>
+            </div>
+        </div>
+
+        <!-- Cell 19: 18 - Meditating Transcending -->
+        <div class="cell">
+            <iframe src="18-meditating-transcending.html" loading="lazy" title="Meditating Transcending"></iframe>
+            <div class="cell-label">
+                <span class="cell-number">18</span>
+                <span class="cell-title">Meditating Transcending</span>
+            </div>
+        </div>
+
+        <!-- Cell 20: 19 - Celebrating Joy -->
+        <div class="cell">
+            <iframe src="19-celebrating-joy.html" loading="lazy" title="Celebrating Joy"></iframe>
+            <div class="cell-label">
+                <span class="cell-number">19</span>
+                <span class="cell-title">Celebrating Joy</span>
+            </div>
+        </div>
+
+        <!-- Cell 21: 20 - Departing & Transcending -->
+        <div class="cell">
+            <iframe src="20-departing-transcending.html" loading="lazy" title="Departing & Transcending"></iframe>
+            <div class="cell-label">
+                <span class="cell-number">20</span>
+                <span class="cell-title">Departing &amp; Transcending</span>
+            </div>
+        </div>
+
+    </div>
+
+</body>
+</html>

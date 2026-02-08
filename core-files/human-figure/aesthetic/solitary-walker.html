@@ -33,12 +33,24 @@
             background: rgba(26, 26, 26, 0.05);
             border-color: rgba(26, 26, 26, 0.2);
         }
+        .instruction {
+            position: absolute;
+            bottom: 40px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: rgba(26, 26, 26, 0.4);
+            font-size: 12px;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            pointer-events: none;
+        }
     </style>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 </head>
 <body>
     <a href="../index.html" class="back-btn">← Back</a>
-    
+    <div class="instruction">Click to interact with the scene</div>
+
     <script>
         let scene, camera, renderer;
         let walker, shadow;

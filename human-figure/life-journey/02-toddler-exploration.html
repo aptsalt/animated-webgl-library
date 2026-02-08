@@ -22,12 +22,24 @@
             40% { transform: translateX(-50%) translateY(-10px); }
             60% { transform: translateX(-50%) translateY(-5px); }
         }
+        .instruction {
+            position: absolute;
+            bottom: 40px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: rgba(26, 26, 26, 0.4);
+            font-size: 12px;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            pointer-events: none;
+        }
     </style>
 </head>
 <body>
     <div class="title">TODDLER EXPLORATION</div>
     <div class="stage-info" id="stageInfo">FIRST STEPS</div>
-    
+    <div class="instruction">Click to interact with the scene</div>
+
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="../particle-being-library.js"></script>
     <script>

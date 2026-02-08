@@ -30,12 +30,24 @@
             0%, 100% { text-shadow: 2px 2px 8px rgba(0,255,255,0.8); }
             50% { text-shadow: 4px 4px 12px rgba(0,255,255,0.4); }
         }
+        .instruction {
+            position: absolute;
+            bottom: 40px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: rgba(26, 26, 26, 0.4);
+            font-size: 12px;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            pointer-events: none;
+        }
     </style>
 </head>
 <body>
     <div class="title">RIVER JOURNEY</div>
     <div class="river-stage" id="riverStage">MOUNTAIN SOURCE</div>
-    
+    <div class="instruction">Click to interact with the scene</div>
+
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="../particle-being-library.js"></script>
     <script>

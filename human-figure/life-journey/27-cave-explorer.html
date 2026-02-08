@@ -39,6 +39,17 @@
             25% { filter: brightness(0.6) contrast(1.4); }
             75% { filter: brightness(1.0) contrast(1.0); }
         }
+        .instruction {
+            position: absolute;
+            bottom: 40px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: rgba(26, 26, 26, 0.4);
+            font-size: 12px;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            pointer-events: none;
+        }
     </style>
 </head>
 <body>
@@ -51,7 +62,8 @@
         Discovery: BEGINNING
     </div>
     <div class="inner-quote" id="innerQuote">"The cave you fear to enter holds the treasure you seek."</div>
-    
+    <div class="instruction">Click to interact with the scene</div>
+
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="../particle-being-library.js"></script>
     <script>

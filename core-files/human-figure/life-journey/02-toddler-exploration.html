@@ -8,10 +8,22 @@
         body { margin: 0; overflow: hidden; background: linear-gradient(135deg, #fffacd, #ffd700); }
         canvas { display: block; }
         .title { position: absolute; top: 40px; left: 50%; transform: translateX(-50%); color: #ff8c00; font-family: sans-serif; font-size: 24px; letter-spacing: 2px; }
+        .instruction {
+            position: absolute;
+            bottom: 40px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: rgba(26, 26, 26, 0.4);
+            font-size: 12px;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            pointer-events: none;
+        }
     </style>
 </head>
 <body>
     <div class="title">TODDLER EXPLORATION</div>
+    <div class="instruction">Click to interact with the scene</div>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="../particle-being-library.js"></script>
     <script>
@@ -20,6 +32,7 @@
 
         function init() {
             scene = new THREE.Scene();
+            scene.background = new THREE.Color(0xfffacd);
             camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
             camera.position.set(0, 8, 25);
 

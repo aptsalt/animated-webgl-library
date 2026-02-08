@@ -8,7 +8,7 @@
         body { 
             margin: 0; 
             overflow: hidden; 
-            background: #1a1a2e;
+            background: #f8f8f8;
             font-family: 'Inter', system-ui, sans-serif;
         }
         canvas { display: block; }
@@ -19,8 +19,8 @@
             left: 40px;
             padding: 10px 20px;
             background: transparent;
-            border: 1px solid rgba(255, 20, 147, 0.4);
-            color: #ff1493;
+            border: 1px solid rgba(26, 26, 26, 0.2);
+            color: #1a1a1a;
             text-decoration: none;
             font-size: 14px;
             letter-spacing: 1px;
@@ -30,8 +30,8 @@
         }
         
         .back-btn:hover {
-            background: rgba(255, 20, 147, 0.1);
-            border-color: rgba(255, 20, 147, 0.8);
+            background: rgba(26, 26, 26, 0.05);
+            border-color: rgba(26, 26, 26, 0.4);
         }
         
         .instruction {
@@ -39,7 +39,7 @@
             bottom: 40px;
             left: 50%;
             transform: translateX(-50%);
-            color: rgba(255, 20, 147, 0.8);
+            color: rgba(26, 26, 26, 0.4);
             font-size: 12px;
             letter-spacing: 2px;
             text-transform: uppercase;
@@ -68,7 +68,7 @@
             themeSystem = new HumanFigureThemeSystem();
             
             scene = new THREE.Scene();
-            scene.background = new THREE.Color(0x1a1a2e);
+            scene.background = new THREE.Color(0xf8f8f8);
 
             camera = new THREE.PerspectiveCamera(
                 75, window.innerWidth / window.innerHeight, 0.1, 1000

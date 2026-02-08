@@ -17,12 +17,24 @@
             color: #ff8a8a; font-family: sans-serif; font-size: 14px; letter-spacing: 2px;
             opacity: 0.8;
         }
+        .instruction {
+            position: absolute;
+            bottom: 40px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: rgba(26, 26, 26, 0.4);
+            font-size: 12px;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            pointer-events: none;
+        }
     </style>
 </head>
 <body>
     <div class="title">NEWBORN EMERGENCE</div>
     <div class="phase-indicator" id="phaseText">CONCEPTION</div>
-    
+    <div class="instruction">Click to interact with the scene</div>
+
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="../particle-being-library.js"></script>
     <script>
