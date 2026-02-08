@@ -1,0 +1,685 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Life Journey - Cave Explorer</title>
+    <style>
+        body { 
+            margin: 0; overflow: hidden; 
+            background: radial-gradient(ellipse at center, #2f4f4f 0%, #1c1c1c 40%, #000000 80%, #191970 100%);
+            animation: caveAmbience 16s ease-in-out infinite;
+        }
+        canvas { display: block; }
+        .title { 
+            position: absolute; top: 25px; left: 50%; transform: translateX(-50%); 
+            color: #daa520; font-family: 'Times New Roman', serif; font-size: 34px; 
+            letter-spacing: 3px; text-shadow: 3px 3px 8px rgba(0,0,0,0.9);
+            font-weight: bold; text-transform: uppercase;
+        }
+        .discovery-level {
+            position: absolute; top: 70px; left: 50%; transform: translateX(-50%);
+            color: #ffd700; font-family: 'Georgia', serif; font-size: 16px; 
+            font-weight: bold; letter-spacing: 2px; text-shadow: 2px 2px 6px rgba(0,0,0,0.9);
+            font-style: italic;
+        }
+        .exploration-data {
+            position: absolute; bottom: 25px; left: 25px;
+            color: #87ceeb; font-family: 'Courier New', monospace; font-size: 13px;
+            background: rgba(0,0,0,0.8); padding: 12px; border-radius: 8px;
+            border: 2px solid #4169e1;
+        }
+        .inner-quote {
+            position: absolute; bottom: 40px; right: 30px;
+            color: rgba(255,215,0,0.7); font-family: 'Times New Roman', serif; font-size: 12px;
+            font-style: italic; text-align: right; max-width: 300px; line-height: 1.4;
+        }
+        @keyframes caveAmbience {
+            0%, 100% { filter: brightness(0.8) contrast(1.2); }
+            25% { filter: brightness(0.6) contrast(1.4); }
+            75% { filter: brightness(1.0) contrast(1.0); }
+        }
+    </style>
+</head>
+<body>
+    <div class="title">CAVE EXPLORER</div>
+    <div class="discovery-level" id="discoveryLevel">CAVE ENTRANCE</div>
+    <div class="exploration-data" id="explorationData">
+        Depth: 0m<br>
+        Light Level: 80%<br>
+        Courage: Building<br>
+        Discovery: BEGINNING
+    </div>
+    <div class="inner-quote" id="innerQuote">"The cave you fear to enter holds the treasure you seek."</div>
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="../particle-being-library.js"></script>
+    <script>
+        let scene, camera, renderer, particleSystem;
+        let time = 0;
+        let currentDiscovery = 0;
+        let discoveryTimer = 0;
+        let stalactites = [];
+        let waterDrops = [];
+        let crystals = [];
+        let echoes = [];
+        let lightBeam = null;
+        
+        const discoveryLevels = [
+            'CAVE ENTRANCE', 'SHALLOW PASSAGES', 'CHAMBER DISCOVERY', 'UNDERGROUND RIVER',
+            'CRYSTAL CAVERNS', 'DEEP ABYSS', 'INNER SANCTUM'
+        ];
+
+        const explorationData = [
+            { depth: '0m', light: '80%', courage: 'Building', discovery: 'BEGINNING' },
+            { depth: '15m', light: '40%', courage: 'Steady', discovery: 'NAVIGATING' },
+            { depth: '35m', light: '20%', courage: 'Growing', discovery: 'WONDER' },
+            { depth: '55m', light: '10%', courage: 'Flowing', discovery: 'ADAPTATION' },
+            { depth: '80m', light: '5%', courage: 'Transformed', discovery: 'BEAUTY' },
+            { depth: '120m', light: '1%', courage: 'Tested', discovery: 'COURAGE' },
+            { depth: '150m', light: '0%', courage: 'Enlightened', discovery: 'REVELATION' }
+        ];
+
+        const innerQuotes = [
+            "The cave you fear to enter holds the treasure you seek.",
+            "In darkness, we find our inner light.",
+            "Every echo reveals hidden chambers of the soul.",
+            "Flow with the underground rivers of wisdom.",
+            "Beauty shines brightest in the deepest places.",
+            "Face the abyss and find your true courage.",
+            "In the innermost sanctum, discover your true self."
+        ];
+
+        function init() {
+            scene = new THREE.Scene();
+            camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+            camera.position.set(0, 5, 15);
+
+            renderer = new THREE.WebGLRenderer({ antialias: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            document.body.appendChild(renderer.domElement);
+
+            // Create brave cave explorer particle system
+            particleSystem = new ParticleBeingSystem(scene, {
+                particleCount: 240,
+                particleSize: 0.08,
+                speedMultiplier: 1.8,
+                colorRange: { h: 0.05, s: 0.5, lMin: 0.3, lMax: 0.7 }
+            });
+
+            createCaveExplorer();
+            createCaveEnvironment();
+            animate();
+        }
+
+        function createCaveExplorer() {
+            const explorer = particleSystem.convertToParticleBeing(
+                null,
+                { x: 0, y: 0, z: 5 },
+                {
+                    particleCount: 260,
+                    states: ['hesitant', 'exploring', 'discovering', 'enlightened'],
+                    stateTimings: { hesitant: 4, exploring: 5, discovering: 6, enlightened: 5 },
+                    attractionForces: { hesitant: 0.035, exploring: 0.025, discovering: 0.02, enlightened: 0.015 }
+                }
+            );
+
+            // 7 distinct cave discoveries representing inner journey stages
+            const originalUpdate = particleSystem.updateBeing.bind(particleSystem);
+            particleSystem.updateBeing = function(being, deltaTime) {
+                originalUpdate(being, deltaTime);
+                
+                discoveryTimer += deltaTime;
+                if (discoveryTimer > 8) {
+                    currentDiscovery = (currentDiscovery + 1) % discoveryLevels.length;
+                    discoveryTimer = 0;
+                    document.getElementById('discoveryLevel').textContent = discoveryLevels[currentDiscovery];
+                    const data = explorationData[currentDiscovery];
+                    document.getElementById('explorationData').innerHTML = 
+                        `Depth: ${data.depth}<br>Light Level: ${data.light}<br>Courage: ${data.courage}<br>Discovery: ${data.discovery}`;
+                    document.getElementById('innerQuote').textContent = innerQuotes[currentDiscovery];
+                }
+                
+                switch(currentDiscovery) {
+                    case 0: // CAVE ENTRANCE - Hesitant, light-dependent, first steps
+                        being.particles.forEach((particle, i) => {
+                            particle.scale.setScalar(0.7); // Tentative, smaller
+                            
+                            // Hesitant movement at cave mouth
+                            particle.userData.velocity.multiplyScalar(0.5); // Very cautious
+                            
+                            // Looking back toward light
+                            if (i < 50) { // Head
+                                particle.userData.targetPosition.z += 0.3; // Looking back
+                                particle.userData.targetPosition.x += Math.sin(time * 3) * 0.2;
+                            }
+                            
+                            // Tentative reaching into darkness
+                            if (i > 100 && i < 140) { // Arms
+                                particle.userData.targetPosition.z -= Math.sin(time * 4) * 0.5;
+                                particle.userData.targetPosition.y += Math.cos(time * 5) * 0.3;
+                            }
+                            
+                            // Standing at threshold
+                            particle.userData.targetPosition.y *= 0.9;
+                            
+                            // Still in daylight - brighter color
+                            particle.material.color.setHSL(0.08, 0.6, 0.8);
+                            particle.material.opacity = 0.9;
+                        });
+                        
+                        being.userData.basePosition.set(0, 0, 5);
+                        
+                        // Entrance threshold camera
+                        camera.position.set(3, 3, 10);
+                        camera.lookAt(0, 0, 3);
+                        
+                        // Create entrance light beam
+                        if (!lightBeam) {
+                            createLightBeam();
+                        }
+                        break;
+                        
+                    case 1: // SHALLOW PASSAGES - Crawling, confined, basic navigation
+                        being.particles.forEach((particle, i) => {
+                            particle.scale.setScalar(0.6); // Compressed for crawling
+                            
+                            // Crawling motion - low to ground
+                            particle.userData.targetPosition.y *= 0.4; // Very low
+                            
+                            // Crawling arm motions
+                            if (i > 100 && i < 150) { // Arms
+                                const crawlCycle = time * 6;
+                                particle.userData.targetPosition.x += Math.sin(crawlCycle + i * 0.1) * 0.8;
+                                particle.userData.targetPosition.y += Math.abs(Math.sin(crawlCycle)) * 0.3;
+                                particle.userData.targetPosition.z -= 0.5; // Reaching forward
+                            }
+                            
+                            // Legs pushing/crawling
+                            if (i > 200) {
+                                particle.userData.targetPosition.x += Math.cos(time * 5 + i) * 0.4;
+                                particle.userData.targetPosition.y *= 0.3;
+                            }
+                            
+                            // Moving deeper into cave
+                            particle.userData.velocity.z -= 0.01;
+                            
+                            // Dimmer light - becoming darker
+                            particle.material.color.setHSL(0.1, 0.5, 0.6 + Math.sin(time * 8 + i) * 0.1);
+                            particle.material.opacity = 0.8;
+                        });
+                        
+                        being.userData.basePosition.z -= 0.05;
+                        being.userData.basePosition.y = -1; // Crawling height
+                        
+                        // Low crawling camera
+                        camera.position.set(2, 0.5, being.userData.basePosition.z + 8);
+                        camera.lookAt(being.userData.basePosition);
+                        
+                        // Touching cave walls
+                        if (Math.random() < 0.03) {
+                            createWallTouch(being.userData.basePosition);
+                        }
+                        break;
+                        
+                    case 2: // CHAMBER DISCOVERY - Awe, expansion, echo effects
+                        being.particles.forEach((particle, i) => {
+                            // Sudden expansion into open space
+                            const expansionFactor = 1 + Math.min(discoveryTimer * 0.3, 1.0);
+                            particle.scale.setScalar(0.8 * expansionFactor);
+                            
+                            // Standing up from crawling
+                            if (discoveryTimer < 2) {
+                                particle.userData.targetPosition.y += discoveryTimer * 2; // Rising up
+                            }
+                            
+                            // Arms spreading in awe
+                            if (i > 100 && i < 150) { // Arms
+                                particle.userData.targetPosition.x += Math.sign(particle.userData.targetPosition.x) * expansionFactor;
+                                particle.userData.targetPosition.y += Math.sin(time * 2) * 0.5;
+                            }
+                            
+                            // Head looking around in wonder
+                            if (i < 50) {
+                                particle.userData.targetPosition.x += Math.sin(time * 1.5) * 0.6;
+                                particle.userData.targetPosition.y += Math.cos(time * 1.2) * 0.4;
+                            }
+                            
+                            // Echo effect - particles rippling
+                            particle.position.add(
+                                new THREE.Vector3(
+                                    Math.sin(time * 5 + i * 0.05) * 0.002,
+                                    Math.cos(time * 4 + i * 0.05) * 0.002,
+                                    Math.sin(time * 3 + i * 0.05) * 0.002
+                                )
+                            );
+                            
+                            // Wonder-filled color
+                            particle.material.color.setHSL(0.6, 0.4, 0.7);
+                        });
+                        
+                        being.userData.basePosition.y = 0; // Standing height
+                        
+                        // Chamber discovery camera
+                        camera.position.set(-5, 8, being.userData.basePosition.z + 12);
+                        camera.lookAt(being.userData.basePosition);
+                        
+                        // Create echo effects
+                        if (Math.random() < 0.05) {
+                            createEcho(being.userData.basePosition);
+                        }
+                        break;
+                        
+                    case 3: // UNDERGROUND RIVER - Flowing, crossing, adaptation
+                        being.particles.forEach((particle, i) => {
+                            particle.scale.setScalar(0.9);
+                            
+                            // Water current effects
+                            const currentFlow = time * 3;
+                            particle.position.x += Math.sin(currentFlow + i * 0.02) * 0.003;
+                            particle.position.z += Math.cos(currentFlow * 1.3 + i * 0.02) * 0.002;
+                            
+                            // Wading/swimming motions
+                            if (i > 100 && i < 150) { // Arms
+                                particle.userData.targetPosition.x += Math.sin(currentFlow * 2 + i) * 1.2;
+                                particle.userData.targetPosition.y += Math.cos(currentFlow * 1.8 + i) * 0.6;
+                            }
+                            
+                            // Legs adapting to water
+                            if (i > 200) {
+                                particle.userData.targetPosition.y += Math.sin(currentFlow * 1.5) * 0.4;
+                                particle.userData.targetPosition.x += Math.cos(currentFlow + i) * 0.3;
+                            }
+                            
+                            // Following water current
+                            particle.userData.velocity.x += Math.sin(currentFlow) * 0.002;
+                            
+                            // Water-reflected blue tints
+                            particle.material.color.setHSL(0.55, 0.6, 0.5 + Math.sin(currentFlow * 4) * 0.2);
+                        });
+                        
+                        being.userData.basePosition.x += Math.sin(time * 2) * 0.8; // Following current
+                        being.userData.basePosition.y = -0.5; // Partially in water
+                        
+                        // Underground river camera
+                        camera.position.set(
+                            being.userData.basePosition.x + 6,
+                            3,
+                            being.userData.basePosition.z + 15
+                        );
+                        camera.lookAt(being.userData.basePosition);
+                        
+                        // Create water effects
+                        if (Math.random() < 0.08) {
+                            createWaterRipple(being.userData.basePosition);
+                        }
+                        break;
+                        
+                    case 4: // CRYSTAL CAVERNS - Beauty, magic, light reflection
+                        being.particles.forEach((particle, i) => {
+                            particle.scale.setScalar(1.0);
+                            
+                            // Magical crystal environment effects
+                            const crystalGlow = time * 4;
+                            particle.position.add(
+                                new THREE.Vector3(
+                                    Math.sin(crystalGlow + i * 0.1) * 0.001,
+                                    Math.cos(crystalGlow * 1.3 + i * 0.1) * 0.001,
+                                    Math.sin(crystalGlow * 0.7 + i * 0.1) * 0.001
+                                )
+                            );
+                            
+                            // Reaching toward crystals in wonder
+                            if (i > 120 && i < 160) { // Arms
+                                particle.userData.targetPosition.y += 1 + Math.sin(crystalGlow) * 0.5;
+                                particle.userData.targetPosition.x += Math.cos(crystalGlow * 1.5) * 0.8;
+                            }
+                            
+                            // Transformed by crystal light
+                            particle.material.color.setHSL(
+                                0.8 + Math.sin(crystalGlow * 2 + i * 0.01) * 0.1,
+                                0.7,
+                                0.6 + Math.sin(crystalGlow * 3 + i * 0.02) * 0.3
+                            );
+                            
+                            // Crystal sparkle effect
+                            particle.material.opacity = 0.8 + Math.sin(crystalGlow * 5 + i) * 0.2;
+                        });
+                        
+                        being.userData.basePosition.y = 0;
+                        
+                        // Crystal cavern beauty camera
+                        camera.position.set(
+                            Math.sin(time * 0.5) * 12,
+                            6,
+                            being.userData.basePosition.z + 18
+                        );
+                        camera.lookAt(being.userData.basePosition);
+                        
+                        // Create crystal sparkles
+                        if (Math.random() < 0.1) {
+                            createCrystalSparkle(being.userData.basePosition);
+                        }
+                        break;
+                        
+                    case 5: // DEEP ABYSS - Fear confrontation, tiny in vastness
+                        being.particles.forEach((particle, i) => {
+                            particle.scale.setScalar(0.4); // Very small in vast space
+                            
+                            // Confronting the abyss - minimal movement
+                            particle.userData.velocity.multiplyScalar(0.3); // Slow, careful
+                            
+                            // Looking into the depths
+                            if (i < 50) { // Head
+                                particle.userData.targetPosition.y -= 0.5; // Looking down
+                            }
+                            
+                            // Protective posture
+                            if (i > 100 && i < 150) { // Arms
+                                particle.userData.targetPosition.x *= 0.6; // Arms closer to body
+                                particle.userData.targetPosition.y += 0.2;
+                            }
+                            
+                            // Courage building - slight tremor
+                            particle.position.x += Math.sin(time * 25 + i) * 0.0005;
+                            
+                            // Deep darkness - very dim
+                            particle.material.color.setHSL(0.7, 0.3, 0.2 + Math.sin(time * 10 + i) * 0.1);
+                            particle.material.opacity = 0.6 + Math.sin(time * 15 + i) * 0.4;
+                        });
+                        
+                        being.userData.basePosition.y += Math.sin(time * 0.5) * 0.1; // Slight floating
+                        
+                        // Abyss confrontation camera
+                        camera.position.set(0, being.userData.basePosition.y + 25, being.userData.basePosition.z + 35);
+                        camera.lookAt(being.userData.basePosition);
+                        break;
+                        
+                    case 6: // INNER SANCTUM - Sacred discovery, enlightenment
+                        being.particles.forEach((particle, i) => {
+                            // Enlightenment expansion
+                            const enlightenment = 1 + Math.sin(time * 1.5) * 0.3;
+                            particle.scale.setScalar(0.8 + enlightenment * 0.4);
+                            
+                            // Sacred movement - flowing and graceful
+                            particle.position.add(
+                                new THREE.Vector3(
+                                    Math.sin(time * 2 + i * 0.01) * 0.003,
+                                    Math.cos(time * 1.5 + i * 0.01) * 0.002,
+                                    Math.sin(time * 1.2 + i * 0.01) * 0.002
+                                )
+                            );
+                            
+                            // Arms in reverent gesture
+                            if (i > 120 && i < 160) {
+                                particle.userData.targetPosition.y += 2 + Math.sin(time * 1.5) * 0.5;
+                                particle.userData.targetPosition.x *= 0.8;
+                            }
+                            
+                            // Head in peaceful contemplation
+                            if (i < 50) {
+                                particle.userData.targetPosition.y += Math.sin(time * 0.8) * 0.2;
+                            }
+                            
+                            // Enlightened golden light
+                            particle.material.color.setHSL(
+                                0.15 + Math.sin(time * 1) * 0.05,
+                                0.8,
+                                0.8 + Math.sin(time * 2 + i * 0.01) * 0.2
+                            );
+                            
+                            // Sacred glow
+                            particle.material.opacity = 0.9 + Math.sin(time * 3 + i) * 0.1;
+                            
+                            // Inner sanctum particles
+                            if (Math.random() < 0.05) {
+                                createSacredLight(particle.position);
+                            }
+                        });
+                        
+                        being.userData.basePosition.y = Math.sin(time * 0.8) * 0.5; // Gentle floating
+                        
+                        // Sacred sanctum camera
+                        camera.position.set(
+                            Math.sin(time * 0.3) * 20,
+                            being.userData.basePosition.y + 12,
+                            being.userData.basePosition.z + 25
+                        );
+                        camera.lookAt(being.userData.basePosition);
+                        break;
+                }
+                
+                updateCaveElements();
+            };
+
+            particleSystem.createAmbientParticles(60);
+        }
+
+        function createCaveEnvironment() {
+            // Create stalactites
+            for (let i = 0; i < 12; i++) {
+                const stalactite = new THREE.Mesh(
+                    new THREE.ConeGeometry(0.3, 3 + Math.random() * 2, 8),
+                    new THREE.MeshBasicMaterial({
+                        color: 0x696969,
+                        transparent: true,
+                        opacity: 0.4
+                    })
+                );
+                stalactite.position.set(
+                    (Math.random() - 0.5) * 30,
+                    8 + Math.random() * 3,
+                    (Math.random() - 0.5) * 50
+                );
+                scene.add(stalactite);
+                stalactites.push(stalactite);
+            }
+
+            // Create crystal formations
+            for (let i = 0; i < 8; i++) {
+                const crystal = new THREE.Mesh(
+                    new THREE.OctahedronGeometry(0.5 + Math.random() * 0.5),
+                    new THREE.MeshBasicMaterial({
+                        color: new THREE.Color().setHSL(0.8 + Math.random() * 0.2, 0.8, 0.7),
+                        transparent: true,
+                        opacity: 0.6
+                    })
+                );
+                crystal.position.set(
+                    (Math.random() - 0.5) * 25,
+                    Math.random() * 5 - 2,
+                    (Math.random() - 0.5) * 40
+                );
+                scene.add(crystal);
+                crystals.push(crystal);
+            }
+        }
+
+        function createLightBeam() {
+            lightBeam = new THREE.Mesh(
+                new THREE.CylinderGeometry(0.1, 3, 20, 8),
+                new THREE.MeshBasicMaterial({
+                    color: 0xffffff,
+                    transparent: true,
+                    opacity: 0.2
+                })
+            );
+            lightBeam.position.set(0, 8, 8);
+            lightBeam.rotation.x = Math.PI / 6;
+            scene.add(lightBeam);
+        }
+
+        function createWallTouch(position) {
+            const touch = new THREE.Mesh(
+                new THREE.SphereGeometry(0.05, 6, 6),
+                new THREE.MeshBasicMaterial({
+                    color: 0x8b7355,
+                    transparent: true,
+                    opacity: 0.6
+                })
+            );
+            touch.position.copy(position);
+            touch.userData = { life: 0 };
+            scene.add(touch);
+            echoes.push(touch);
+        }
+
+        function createEcho(position) {
+            const echo = new THREE.Mesh(
+                new THREE.RingGeometry(0.1, 2, 16),
+                new THREE.MeshBasicMaterial({
+                    color: 0x4169e1,
+                    transparent: true,
+                    opacity: 0.3,
+                    side: THREE.DoubleSide
+                })
+            );
+            echo.position.copy(position);
+            echo.rotation.x = Math.PI / 2;
+            echo.userData = { life: 0, expand: 0.05 };
+            scene.add(echo);
+            echoes.push(echo);
+        }
+
+        function createWaterRipple(position) {
+            const ripple = new THREE.Mesh(
+                new THREE.RingGeometry(0.1, 1, 16),
+                new THREE.MeshBasicMaterial({
+                    color: 0x4682b4,
+                    transparent: true,
+                    opacity: 0.4,
+                    side: THREE.DoubleSide
+                })
+            );
+            ripple.position.copy(position);
+            ripple.position.y = -0.5;
+            ripple.rotation.x = Math.PI / 2;
+            ripple.userData = { life: 0, expand: 0.03 };
+            scene.add(ripple);
+            waterDrops.push(ripple);
+        }
+
+        function createCrystalSparkle(position) {
+            const sparkle = new THREE.Mesh(
+                new THREE.SphereGeometry(0.1, 4, 4),
+                new THREE.MeshBasicMaterial({
+                    color: new THREE.Color().setHSL(0.8 + Math.random() * 0.2, 0.9, 0.9),
+                    transparent: true,
+                    opacity: 1
+                })
+            );
+            sparkle.position.copy(position);
+            sparkle.position.add(new THREE.Vector3(
+                (Math.random() - 0.5) * 5,
+                Math.random() * 3,
+                (Math.random() - 0.5) * 5
+            ));
+            sparkle.userData = { life: 0, twinkle: 0.03 };
+            scene.add(sparkle);
+            crystals.push(sparkle);
+        }
+
+        function createSacredLight(position) {
+            const light = new THREE.Mesh(
+                new THREE.SphereGeometry(0.05, 4, 4),
+                new THREE.MeshBasicMaterial({
+                    color: 0xffd700,
+                    transparent: true,
+                    opacity: 1
+                })
+            );
+            light.position.copy(position);
+            light.userData = { 
+                life: 0,
+                rise: 0.02,
+                pulse: 0.02
+            };
+            scene.add(light);
+            echoes.push(light);
+        }
+
+        function updateCaveElements() {
+            // Update water effects
+            waterDrops = waterDrops.filter(drop => {
+                drop.userData.life += 0.016;
+                
+                if (drop.userData.expand) {
+                    drop.scale.setScalar(1 + drop.userData.life * drop.userData.expand);
+                }
+                
+                drop.material.opacity = Math.max(0, 0.4 - drop.userData.life * 0.2);
+                
+                if (drop.material.opacity <= 0) {
+                    scene.remove(drop);
+                    return false;
+                }
+                return true;
+            });
+
+            // Update echoes and effects
+            echoes = echoes.filter(effect => {
+                effect.userData.life += 0.016;
+                
+                if (effect.userData.expand) {
+                    effect.scale.setScalar(1 + effect.userData.life * effect.userData.expand);
+                }
+                
+                if (effect.userData.rise) {
+                    effect.position.y += effect.userData.rise;
+                }
+                
+                if (effect.userData.pulse) {
+                    effect.scale.setScalar(1 + Math.sin(effect.userData.life * 20) * effect.userData.pulse);
+                }
+                
+                effect.material.opacity = Math.max(0, effect.material.opacity - 0.01);
+                
+                if (effect.material.opacity <= 0) {
+                    scene.remove(effect);
+                    return false;
+                }
+                return true;
+            });
+
+            // Update crystals
+            crystals.forEach(crystal => {
+                if (crystal.userData && crystal.userData.twinkle) {
+                    crystal.userData.life += 0.016;
+                    crystal.scale.setScalar(1 + Math.sin(crystal.userData.life * 25) * crystal.userData.twinkle);
+                    crystal.material.opacity = Math.max(0, 1 - crystal.userData.life * 0.3);
+                    
+                    if (crystal.material.opacity <= 0) {
+                        scene.remove(crystal);
+                        crystals.splice(crystals.indexOf(crystal), 1);
+                    }
+                } else {
+                    crystal.rotation.y += 0.01;
+                    crystal.material.opacity = 0.6 + Math.sin(time * 3) * 0.2;
+                }
+            });
+
+            // Update light beam
+            if (lightBeam) {
+                lightBeam.material.opacity = Math.max(0, 0.2 - currentDiscovery * 0.03);
+            }
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+            time += 0.016;
+
+            particleSystem.update(0.016);
+            
+            renderer.render(scene, camera);
+        }
+
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+
+        init();
+    </script>
+</body>
+</html>

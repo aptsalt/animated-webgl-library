@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Human Figure Jumping - Mindful Journey</title>
+    <style>
+        body { 
+            margin: 0; 
+            overflow: hidden; 
+            background: #f8f8f8;
+            font-family: 'Inter', system-ui, sans-serif;
+        }
+        canvas { display: block; }
+        
+        .back-btn {
+            position: absolute;
+            top: 40px;
+            left: 40px;
+            padding: 10px 20px;
+            background: transparent;
+            border: 1px solid rgba(26, 26, 26, 0.2);
+            color: #1a1a1a;
+            text-decoration: none;
+            font-size: 14px;
+            letter-spacing: 1px;
+            border-radius: 20px;
+            transition: all 0.3s ease;
+            z-index: 10;
+        }
+        
+        .back-btn:hover {
+            background: rgba(26, 26, 26, 0.05);
+            border-color: rgba(26, 26, 26, 0.4);
+        }
+        
+        .instruction {
+            position: absolute;
+            bottom: 40px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: rgba(26, 26, 26, 0.4);
+            font-size: 12px;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            pointer-events: none;
+        }
+    </style>
+</head>
+<body>
+    <a href="../index.html" class="back-btn">← Back</a>
+    <div class="instruction">Click to leap with joy</div>
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script>
+        let scene, camera, renderer;
+        let humanFigure;
+        let time = 0;
+        let jumping = false;
+        let jumpProgress = 0;
+
+        function init() {
+            scene = new THREE.Scene();
+            scene.background = new THREE.Color(0xf8f8f8);
+
+            camera = new THREE.PerspectiveCamera(
+                75, window.innerWidth / window.innerHeight, 0.1, 1000
+            );
+            camera.position.z = 10;
+
+            renderer = new THREE.WebGLRenderer({ antialias: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            document.body.appendChild(renderer.domElement);
+
+            createHumanFigure();
+            animate();
+        }
+
+        function createHumanFigure() {
+            const group = new THREE.Group();
+            
+            const material = new THREE.MeshBasicMaterial({
+                color: 0x1a1a1a,
+                transparent: true,
+                opacity: 0.8,
+                side: THREE.DoubleSide
+            });
+            
+            // Head
+            const headGeometry = new THREE.SphereGeometry(0.4, 8, 6);
+            const head = new THREE.Mesh(headGeometry, material.clone());
+            head.position.y = 2.2;
+            
+            // Torso
+            const torsoGeometry = new THREE.CylinderGeometry(0.4, 0.6, 1.8, 8);
+            const torso = new THREE.Mesh(torsoGeometry, material.clone());
+            torso.position.y = 1;
+            
+            // Arms
+            const armGeometry = new THREE.CylinderGeometry(0.15, 0.18, 1.0, 6);
+            const leftArm = new THREE.Mesh(armGeometry, material.clone());
+            leftArm.position.set(-0.6, 1.5, 0);
+            leftArm.rotation.z = 0.3;
+            
+            const rightArm = new THREE.Mesh(armGeometry, material.clone());
+            rightArm.position.set(0.6, 1.5, 0);
+            rightArm.rotation.z = -0.3;
+            
+            // Legs
+            const legGeometry = new THREE.CylinderGeometry(0.22, 0.3, 1.8, 6);
+            const leftLeg = new THREE.Mesh(legGeometry, material.clone());
+            leftLeg.position.set(-0.4, -0.5, 0);
+            
+            const rightLeg = new THREE.Mesh(legGeometry, material.clone());
+            rightLeg.position.set(0.4, -0.5, 0);
+            
+            group.add(head, torso, leftArm, rightArm, leftLeg, rightLeg);
+            group.position.y = -2;
+            
+            scene.add(group);
+            humanFigure = group;
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+            time += 0.01;
+
+            if (jumping) {
+                jumpProgress += 0.02;
+                if (jumpProgress >= 1) {
+                    jumpProgress = 0;
+                    jumping = false;
+                }
+            }
+
+            // Jump trajectory - parabolic motion
+            let jumpHeight = 0;
+            let legBend = 0;
+            let armRaise = 0;
+            
+            if (jumpProgress > 0) {
+                // Parabolic jump curve
+                jumpHeight = 6 * jumpProgress * (1 - jumpProgress);
+                
+                // Leg positions during jump
+                if (jumpProgress < 0.3) {
+                    // Crouch phase
+                    legBend = (jumpProgress / 0.3) * 0.8;
+                } else if (jumpProgress < 0.7) {
+                    // Extended phase
+                    legBend = 0.8 - ((jumpProgress - 0.3) / 0.4) * 1.2;
+                } else {
+                    // Landing preparation
+                    legBend = -0.4 + ((jumpProgress - 0.7) / 0.3) * 0.8;
+                }
+                
+                // Arm movement
+                if (jumpProgress < 0.5) {
+                    armRaise = (jumpProgress / 0.5) * 1.2;
+                } else {
+                    armRaise = 1.2 - ((jumpProgress - 0.5) / 0.5) * 0.8;
+                }
+            }
+            
+            // Apply jump motion
+            humanFigure.position.y = -2 + jumpHeight;
+            
+            // Leg bending for crouch/jump
+            humanFigure.children[4].rotation.x = legBend; // left leg
+            humanFigure.children[5].rotation.x = legBend; // right leg
+            humanFigure.children[4].position.y = -0.5 - legBend * 0.3;
+            humanFigure.children[5].position.y = -0.5 - legBend * 0.3;
+            
+            // Arm movement during jump
+            humanFigure.children[2].rotation.z = 0.3 + armRaise; // left arm
+            humanFigure.children[3].rotation.z = -0.3 - armRaise; // right arm
+            humanFigure.children[2].position.y = 1.5 + armRaise * 0.2;
+            humanFigure.children[3].position.y = 1.5 + armRaise * 0.2;
+            
+            // Body lean during jump
+            if (jumpProgress > 0.2 && jumpProgress < 0.8) {
+                humanFigure.rotation.x = -0.1;
+            } else {
+                humanFigure.rotation.x = 0;
+            }
+            
+            // Head movement
+            humanFigure.children[0].rotation.x = -jumpProgress * 0.2;
+            
+            // Torso stretch during peak
+            if (jumpProgress > 0.3 && jumpProgress < 0.7) {
+                humanFigure.children[1].scale.y = 1 + (jumpProgress - 0.3) * 0.5;
+            } else {
+                humanFigure.children[1].scale.y = 1;
+            }
+
+            // Camera follows jump slightly
+            camera.position.y = jumpHeight * 0.3;
+            camera.lookAt(0, humanFigure.position.y, 0);
+
+            // Gentle idle breathing when not jumping
+            if (!jumping) {
+                humanFigure.scale.y = 1 + Math.sin(time * 0.5) * 0.02;
+                humanFigure.children[0].rotation.y = Math.sin(time * 0.3) * 0.05;
+            }
+
+            renderer.render(scene, camera);
+        }
+
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+
+        window.addEventListener('click', () => {
+            if (!jumping) {
+                jumping = true;
+                jumpProgress = 0;
+            }
+        });
+
+        init();
+    </script>
+</body>
+</html>

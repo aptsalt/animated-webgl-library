@@ -1,0 +1,668 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Life Journey - Trail Runner</title>
+    <style>
+        body { 
+            margin: 0; overflow: hidden; 
+            background: linear-gradient(45deg, #228b22 0%, #8fbc8f 25%, #daa520 50%, #cd853f 75%, #a0522d 100%);
+            animation: terrainShift 20s infinite;
+        }
+        canvas { display: block; }
+        .title { 
+            position: absolute; top: 20px; left: 50%; transform: translateX(-50%); 
+            color: #ffffff; font-family: 'Verdana', sans-serif; font-size: 36px; 
+            letter-spacing: 3px; text-shadow: 3px 3px 8px rgba(0,0,0,0.8);
+            text-transform: uppercase; font-weight: bold;
+        }
+        .terrain-type {
+            position: absolute; top: 65px; left: 50%; transform: translateX(-50%);
+            color: #ffff00; font-family: 'Arial Black', sans-serif; font-size: 18px; 
+            font-weight: bold; letter-spacing: 2px; text-shadow: 2px 2px 6px rgba(0,0,0,0.9);
+        }
+        .stats-display {
+            position: absolute; bottom: 20px; left: 20px;
+            color: #00ff00; font-family: 'Courier New', monospace; font-size: 14px;
+            background: rgba(0,0,0,0.7); padding: 12px; border-radius: 8px;
+            border: 2px solid #32cd32;
+        }
+        @keyframes terrainShift {
+            0%, 100% { filter: hue-rotate(0deg) brightness(1); }
+            25% { filter: hue-rotate(30deg) brightness(1.1); }
+            50% { filter: hue-rotate(60deg) brightness(0.9); }
+            75% { filter: hue-rotate(90deg) brightness(1.2); }
+        }
+    </style>
+</head>
+<body>
+    <div class="title">TRAIL RUNNER</div>
+    <div class="terrain-type" id="terrainType">FOREST TRAIL START</div>
+    <div class="stats-display" id="statsDisplay">
+        Distance: 0.0 km<br>
+        Pace: 5:30/km<br>
+        Heart Rate: 140 bpm<br>
+        Terrain: EASY
+    </div>
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="../particle-being-library.js"></script>
+    <script>
+        let scene, camera, renderer, particleSystem;
+        let time = 0;
+        let currentTerrain = 0;
+        let terrainTimer = 0;
+        let footprints = [];
+        let environment = [];
+        let sweat = [];
+        let dust = [];
+        
+        const terrainTypes = [
+            'FOREST TRAIL START', 'ROCKY TERRAIN', 'STEEP HILL CLIMB', 'MUDDY SWAMP',
+            'DESERT HEAT', 'MOUNTAIN PEAK SPRINT', 'FINISH LINE TRIUMPH'
+        ];
+
+        const terrainStats = [
+            { distance: '0.0 km', pace: '5:30/km', hr: '140 bpm', difficulty: 'EASY' },
+            { distance: '2.5 km', pace: '6:15/km', hr: '155 bpm', difficulty: 'MODERATE' },
+            { distance: '5.8 km', pace: '7:45/km', hr: '175 bpm', difficulty: 'HARD' },
+            { distance: '8.2 km', pace: '8:30/km', hr: '160 bpm', difficulty: 'VERY HARD' },
+            { distance: '12.1 km', pace: '9:15/km', hr: '185 bpm', difficulty: 'EXTREME' },
+            { distance: '16.5 km', pace: '6:00/km', hr: '195 bpm', difficulty: 'MAXIMUM' },
+            { distance: '20.0 km', pace: '4:45/km', hr: '200 bpm', difficulty: 'FINISH!' }
+        ];
+
+        function init() {
+            scene = new THREE.Scene();
+            camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+            camera.position.set(0, 8, 25);
+
+            renderer = new THREE.WebGLRenderer({ antialias: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            document.body.appendChild(renderer.domElement);
+
+            // Create endurance trail runner particle system
+            particleSystem = new ParticleBeingSystem(scene, {
+                particleCount: 270,
+                particleSize: 0.08,
+                speedMultiplier: 2.8,
+                colorRange: { h: 0.08, s: 0.6, lMin: 0.4, lMax: 0.7 }
+            });
+
+            createTrailRunner();
+            createTrailEnvironment();
+            animate();
+        }
+
+        function createTrailRunner() {
+            const runner = particleSystem.convertToParticleBeing(
+                null,
+                { x: -20, y: -1, z: 0 },
+                {
+                    particleCount: 300,
+                    states: ['warming-up', 'running', 'struggling', 'sprinting'],
+                    stateTimings: { 'warming-up': 3, running: 5, struggling: 4, sprinting: 3 },
+                    attractionForces: { 'warming-up': 0.03, running: 0.02, struggling: 0.025, sprinting: 0.015 }
+                }
+            );
+
+            // 7 distinct terrain challenges with extreme endurance variations
+            const originalUpdate = particleSystem.updateBeing.bind(particleSystem);
+            particleSystem.updateBeing = function(being, deltaTime) {
+                originalUpdate(being, deltaTime);
+                
+                terrainTimer += deltaTime;
+                if (terrainTimer > 6) {
+                    currentTerrain = (currentTerrain + 1) % terrainTypes.length;
+                    terrainTimer = 0;
+                    document.getElementById('terrainType').textContent = terrainTypes[currentTerrain];
+                    const stats = terrainStats[currentTerrain];
+                    document.getElementById('statsDisplay').innerHTML = 
+                        `Distance: ${stats.distance}<br>Pace: ${stats.pace}<br>Heart Rate: ${stats.hr}<br>Terrain: ${stats.difficulty}`;
+                }
+                
+                switch(currentTerrain) {
+                    case 0: // FOREST TRAIL START - Fresh energy, optimistic, steady
+                        being.particles.forEach((particle, i) => {
+                            particle.scale.setScalar(0.8); // Fresh, not yet tired
+                            
+                            // Steady running rhythm
+                            const runningCycle = time * 8;
+                            
+                            // Leg alternating motion
+                            if (i > 200) { // Legs
+                                if (i % 2 === 0) {
+                                    particle.userData.targetPosition.y += Math.abs(Math.sin(runningCycle)) * 0.8;
+                                    particle.userData.targetPosition.x += Math.sin(runningCycle) * 0.4;
+                                } else {
+                                    particle.userData.targetPosition.y += Math.abs(Math.sin(runningCycle + Math.PI)) * 0.8;
+                                    particle.userData.targetPosition.x += Math.sin(runningCycle + Math.PI) * 0.4;
+                                }
+                            }
+                            
+                            // Arm pumping
+                            if (i > 100 && i < 150) { // Arms
+                                particle.userData.targetPosition.x += Math.sin(runningCycle + Math.PI) * 0.6;
+                                particle.userData.targetPosition.y += Math.cos(runningCycle) * 0.3;
+                            }
+                            
+                            // Forward momentum
+                            particle.userData.velocity.x += 0.02;
+                            
+                            // Fresh, energetic color
+                            particle.material.color.setHSL(0.1, 0.7, 0.8);
+                            particle.material.opacity = 0.9;
+                        });
+                        
+                        // Steady progress
+                        being.userData.basePosition.x += 0.15;
+                        
+                        // Following forest camera
+                        camera.position.set(being.userData.basePosition.x - 10, 6, 20);
+                        camera.lookAt(being.userData.basePosition);
+                        
+                        // Light footprint effects
+                        if (Math.random() < 0.1) {
+                            createFootprint(being.userData.basePosition, 'forest');
+                        }
+                        break;
+                        
+                    case 1: // ROCKY TERRAIN - Careful navigation, varied footing
+                        being.particles.forEach((particle, i) => {
+                            particle.scale.setScalar(0.9);
+                            
+                            // Careful, varied stepping
+                            const stepVariation = Math.sin(time * 6 + i * 0.3);
+                            
+                            // Legs adapting to uneven terrain
+                            if (i > 200) {
+                                particle.userData.targetPosition.y += Math.abs(stepVariation) * 1.2;
+                                particle.userData.targetPosition.x += stepVariation * 0.3;
+                                particle.userData.targetPosition.z += Math.cos(time * 7 + i) * 0.2; // Side-to-side adjustment
+                            }
+                            
+                            // Arms for balance
+                            if (i > 100 && i < 150) {
+                                particle.userData.targetPosition.x += Math.sin(time * 5 + i) * 0.8;
+                                particle.userData.targetPosition.y += Math.cos(time * 6 + i) * 0.5;
+                                particle.userData.targetPosition.z += Math.sin(time * 4 + i) * 0.3;
+                            }
+                            
+                            // Slower, more deliberate forward motion
+                            particle.userData.velocity.x += 0.012;
+                            
+                            // Focused concentration color
+                            particle.material.color.setHSL(0.08, 0.8, 0.7);
+                        });
+                        
+                        being.userData.basePosition.x += 0.08;
+                        being.userData.basePosition.y += Math.sin(time * 4) * 0.3; // Uneven terrain
+                        
+                        // Rocky terrain camera
+                        camera.position.set(being.userData.basePosition.x - 8, 8, 18);
+                        camera.lookAt(being.userData.basePosition);
+                        
+                        // Rock debris
+                        if (Math.random() < 0.05) {
+                            createRockDebris(being.userData.basePosition);
+                        }
+                        break;
+                        
+                    case 2: // STEEP HILL CLIMB - Powerful upward, strain, determination
+                        being.particles.forEach((particle, i) => {
+                            particle.scale.setScalar(1.1); // Muscular effort
+                            
+                            // Powerful upward climbing motion
+                            particle.userData.velocity.y += 0.02;
+                            particle.userData.velocity.x += 0.005; // Slower forward
+                            
+                            // Extreme leg drive
+                            if (i > 200) {
+                                particle.userData.targetPosition.y += Math.abs(Math.sin(time * 10)) * 1.5;
+                                particle.userData.targetPosition.x += Math.sin(time * 12) * 0.6;
+                                particle.scale.setScalar(1.4); // Powerful leg muscles
+                            }
+                            
+                            // Power arm swing
+                            if (i > 100 && i < 150) {
+                                particle.userData.targetPosition.x += Math.sin(time * 15) * 1.0;
+                                particle.userData.targetPosition.y += Math.cos(time * 18) * 0.8;
+                                particle.scale.setScalar(1.3);
+                            }
+                            
+                            // Leaning forward for hill
+                            if (i > 50 && i < 150) { // Torso
+                                particle.userData.targetPosition.z += 0.5;
+                            }
+                            
+                            // Strain color - reddish from effort
+                            particle.material.color.setHSL(0.03, 0.9, 0.6);
+                        });
+                        
+                        being.userData.basePosition.x += 0.05;
+                        being.userData.basePosition.y += 0.1; // Climbing up
+                        
+                        // Hill climb dramatic angle
+                        camera.position.set(being.userData.basePosition.x - 12, being.userData.basePosition.y + 5, 15);
+                        camera.lookAt(being.userData.basePosition);
+                        
+                        // Heavy breathing/sweat
+                        if (Math.random() < 0.08) {
+                            createSweatDrop(being.userData.basePosition);
+                        }
+                        break;
+                        
+                    case 3: // MUDDY SWAMP - Slow, heavy, struggling through resistance
+                        being.particles.forEach((particle, i) => {
+                            particle.scale.setScalar(1.0);
+                            
+                            // Heavy, labored movement
+                            particle.userData.velocity.multiplyScalar(0.6); // Mud resistance
+                            
+                            // Legs struggling through mud
+                            if (i > 200) {
+                                particle.userData.targetPosition.y += Math.sin(time * 4 + i) * 0.4; // Less lift
+                                particle.userData.targetPosition.x += Math.cos(time * 3 + i) * 0.2;
+                                // Mud sticking effect
+                                if (Math.random() < 0.3) {
+                                    particle.userData.velocity.multiplyScalar(0.8);
+                                }
+                            }
+                            
+                            // Arms working harder for balance
+                            if (i > 100 && i < 150) {
+                                particle.userData.targetPosition.x += Math.sin(time * 6) * 1.2;
+                                particle.userData.targetPosition.y += Math.cos(time * 8) * 0.6;
+                            }
+                            
+                            // Very slow forward progress
+                            particle.userData.velocity.x += 0.003;
+                            
+                            // Muddy brown color
+                            particle.material.color.setHSL(0.1, 0.6, 0.4 + Math.sin(time * 10 + i) * 0.1);
+                            
+                            // Splashing mud effects
+                            if (Math.random() < 0.1) {
+                                createMudSplash(particle.position);
+                            }
+                        });
+                        
+                        being.userData.basePosition.x += 0.02; // Very slow progress
+                        being.userData.basePosition.y = -2; // Sinking into mud
+                        
+                        // Struggling swamp camera
+                        camera.position.set(being.userData.basePosition.x - 6, 3, 12);
+                        camera.lookAt(being.userData.basePosition);
+                        break;
+                        
+                    case 4: // DESERT HEAT - Endurance test, dehydration, perseverance
+                        being.particles.forEach((particle, i) => {
+                            particle.scale.setScalar(0.85); // Dehydration shrinking
+                            
+                            // Heat exhaustion effects
+                            particle.userData.velocity.multiplyScalar(0.8);
+                            
+                            // Sluggish running motion
+                            const heatCycle = time * 5;
+                            if (i > 200) { // Legs
+                                particle.userData.targetPosition.y += Math.abs(Math.sin(heatCycle)) * 0.5; // Less energy
+                                particle.userData.targetPosition.x += Math.sin(heatCycle) * 0.2;
+                            }
+                            
+                            // Drooping arms
+                            if (i > 100 && i < 150) {
+                                particle.userData.targetPosition.y -= 0.3; // Hanging lower
+                                particle.userData.targetPosition.x += Math.sin(heatCycle) * 0.4;
+                            }
+                            
+                            // Heat shimmer effect
+                            particle.position.y += Math.sin(time * 20 + i) * 0.01;
+                            particle.material.opacity = 0.7 + Math.sin(time * 15 + i) * 0.3;
+                            
+                            // Sunburned, dehydrated color
+                            particle.material.color.setHSL(0.05, 0.7, 0.5 + Math.sin(time * 8) * 0.2);
+                            
+                            // Heat exhaustion particles
+                            if (Math.random() < 0.03) {
+                                createHeatShimmer(particle.position);
+                            }
+                        });
+                        
+                        being.userData.basePosition.x += 0.06; // Slow but persistent
+                        
+                        // Desert heat camera with shimmer
+                        camera.position.set(
+                            being.userData.basePosition.x - 15 + Math.sin(time * 10) * 0.5,
+                            10 + Math.cos(time * 12) * 0.3,
+                            25
+                        );
+                        camera.lookAt(being.userData.basePosition);
+                        break;
+                        
+                    case 5: // MOUNTAIN PEAK SPRINT - Final burst, thin air, pushing limits
+                        being.particles.forEach((particle, i) => {
+                            particle.scale.setScalar(1.2); // Maximum effort expansion
+                            
+                            // All-out sprint effort
+                            const sprintCycle = time * 20;
+                            
+                            // Explosive leg motion
+                            if (i > 200) {
+                                particle.userData.targetPosition.y += Math.abs(Math.sin(sprintCycle)) * 2.0;
+                                particle.userData.targetPosition.x += Math.sin(sprintCycle) * 1.0;
+                                particle.scale.setScalar(1.8); // Maximum power
+                            }
+                            
+                            // Pumping arms aggressively
+                            if (i > 100 && i < 150) {
+                                particle.userData.targetPosition.x += Math.sin(sprintCycle + Math.PI) * 1.5;
+                                particle.userData.targetPosition.y += Math.cos(sprintCycle) * 1.0;
+                                particle.scale.setScalar(1.6);
+                            }
+                            
+                            // Maximum forward velocity
+                            particle.userData.velocity.x += 0.03;
+                            
+                            // Thin air breathing effects
+                            if (i < 80) { // Chest
+                                particle.position.multiplyScalar(1 + Math.sin(time * 25) * 0.05);
+                            }
+                            
+                            // Maximum effort red
+                            particle.material.color.setHSL(0, 0.9, 0.7 + Math.sin(sprintCycle) * 0.3);
+                            particle.material.opacity = 0.8 + Math.sin(time * 30 + i) * 0.2;
+                        });
+                        
+                        being.userData.basePosition.x += 0.25; // Sprint speed
+                        being.userData.basePosition.y += 0.05; // Final climb
+                        
+                        // Sprint chase camera
+                        camera.position.set(being.userData.basePosition.x - 12, being.userData.basePosition.y + 8, 20);
+                        camera.lookAt(being.userData.basePosition);
+                        
+                        // Maximum effort effects
+                        if (Math.random() < 0.15) {
+                            createEffortParticle(being.userData.basePosition);
+                        }
+                        break;
+                        
+                    case 6: // FINISH LINE TRIUMPH - Victory, exhaustion, achievement
+                        being.particles.forEach((particle, i) => {
+                            // Victory expansion and collapse
+                            const triumphCycle = Math.sin(time * 3);
+                            particle.scale.setScalar(0.7 + Math.abs(triumphCycle) * 0.5);
+                            
+                            // Arms raised in victory
+                            if (i > 100 && i < 150 && terrainTimer > 2) {
+                                particle.userData.targetPosition.y += 3;
+                                particle.userData.targetPosition.x += Math.sin(i * 0.1) * 2;
+                                particle.scale.setScalar(1.4);
+                            }
+                            
+                            // Victory leap
+                            if (terrainTimer > 3 && Math.sin(time * 8) > 0.8) {
+                                particle.userData.velocity.y += 0.02;
+                            }
+                            
+                            // Exhausted but elated
+                            particle.userData.velocity.multiplyScalar(0.9);
+                            
+                            // Victory golden color
+                            particle.material.color.setHSL(
+                                0.15 + Math.sin(time * 4) * 0.05,
+                                0.8,
+                                0.8 + Math.sin(time * 6 + i * 0.01) * 0.2
+                            );
+                            
+                            // Victory sparkles
+                            if (Math.random() < 0.1) {
+                                createVictorySparkle(particle.position);
+                            }
+                        });
+                        
+                        being.userData.basePosition.x += 0.1; // Slowing down
+                        
+                        // Victory celebration camera
+                        camera.position.set(
+                            being.userData.basePosition.x + Math.sin(time * 2) * 8,
+                            being.userData.basePosition.y + 12,
+                            25 + Math.cos(time * 1.5) * 5
+                        );
+                        camera.lookAt(being.userData.basePosition);
+                        break;
+                }
+                
+                updateTrailElements();
+            };
+
+            particleSystem.createAmbientParticles(90);
+        }
+
+        function createTrailEnvironment() {
+            // Create trail markers
+            for (let i = 0; i < 8; i++) {
+                const marker = new THREE.Mesh(
+                    new THREE.CylinderGeometry(0.2, 0.2, 2, 8),
+                    new THREE.MeshBasicMaterial({
+                        color: 0xff6600,
+                        transparent: true,
+                        opacity: 0.7
+                    })
+                );
+                marker.position.set(i * 25, 0, (Math.random() - 0.5) * 10);
+                scene.add(marker);
+                environment.push(marker);
+            }
+        }
+
+        function createFootprint(position, type) {
+            const print = new THREE.Mesh(
+                new THREE.RingGeometry(0.1, 0.3, 8),
+                new THREE.MeshBasicMaterial({
+                    color: type === 'forest' ? 0x8b4513 : 0x696969,
+                    transparent: true,
+                    opacity: 0.4
+                })
+            );
+            print.position.copy(position);
+            print.position.y = -2.5;
+            print.rotation.x = Math.PI / 2;
+            print.userData = { life: 0 };
+            scene.add(print);
+            footprints.push(print);
+        }
+
+        function createRockDebris(position) {
+            const debris = new THREE.Mesh(
+                new THREE.SphereGeometry(0.1, 4, 4),
+                new THREE.MeshBasicMaterial({
+                    color: 0x808080,
+                    transparent: true,
+                    opacity: 0.6
+                })
+            );
+            debris.position.copy(position);
+            debris.userData = { 
+                life: 0,
+                velocity: new THREE.Vector3(
+                    (Math.random() - 0.5) * 0.1,
+                    Math.random() * 0.1,
+                    (Math.random() - 0.5) * 0.1
+                )
+            };
+            scene.add(debris);
+            dust.push(debris);
+        }
+
+        function createSweatDrop(position) {
+            const sweatDrop = new THREE.Mesh(
+                new THREE.SphereGeometry(0.05, 4, 4),
+                new THREE.MeshBasicMaterial({
+                    color: 0x87ceeb,
+                    transparent: true,
+                    opacity: 0.8
+                })
+            );
+            sweatDrop.position.copy(position);
+            sweatDrop.userData = { 
+                life: 0,
+                fall: 0.02
+            };
+            scene.add(sweatDrop);
+            sweat.push(sweatDrop);
+        }
+
+        function createMudSplash(position) {
+            const splash = new THREE.Mesh(
+                new THREE.SphereGeometry(0.1, 4, 4),
+                new THREE.MeshBasicMaterial({
+                    color: 0x8b4513,
+                    transparent: true,
+                    opacity: 0.7
+                })
+            );
+            splash.position.copy(position);
+            splash.userData = { 
+                life: 0,
+                velocity: new THREE.Vector3(
+                    (Math.random() - 0.5) * 0.1,
+                    Math.random() * 0.05,
+                    (Math.random() - 0.5) * 0.1
+                )
+            };
+            scene.add(splash);
+            dust.push(splash);
+        }
+
+        function createHeatShimmer(position) {
+            const shimmer = new THREE.Mesh(
+                new THREE.SphereGeometry(0.1, 4, 4),
+                new THREE.MeshBasicMaterial({
+                    color: 0xffffff,
+                    transparent: true,
+                    opacity: 0.3
+                })
+            );
+            shimmer.position.copy(position);
+            shimmer.userData = { 
+                life: 0,
+                rise: 0.02
+            };
+            scene.add(shimmer);
+            dust.push(shimmer);
+        }
+
+        function createEffortParticle(position) {
+            const effort = new THREE.Mesh(
+                new THREE.SphereGeometry(0.05, 4, 4),
+                new THREE.MeshBasicMaterial({
+                    color: 0xff0000,
+                    transparent: true,
+                    opacity: 1
+                })
+            );
+            effort.position.copy(position);
+            effort.userData = { 
+                life: 0,
+                burst: 0.03
+            };
+            scene.add(effort);
+            dust.push(effort);
+        }
+
+        function createVictorySparkle(position) {
+            const sparkle = new THREE.Mesh(
+                new THREE.SphereGeometry(0.1, 4, 4),
+                new THREE.MeshBasicMaterial({
+                    color: 0xffd700,
+                    transparent: true,
+                    opacity: 1
+                })
+            );
+            sparkle.position.copy(position);
+            sparkle.userData = { 
+                life: 0,
+                dance: 0.02
+            };
+            scene.add(sparkle);
+            dust.push(sparkle);
+        }
+
+        function updateTrailElements() {
+            // Update footprints
+            footprints = footprints.filter(print => {
+                print.userData.life += 0.016;
+                print.material.opacity = Math.max(0, 0.4 - print.userData.life * 0.05);
+                
+                if (print.material.opacity <= 0) {
+                    scene.remove(print);
+                    return false;
+                }
+                return true;
+            });
+
+            // Update sweat
+            sweat = sweat.filter(drop => {
+                drop.userData.life += 0.016;
+                drop.position.y -= drop.userData.fall;
+                drop.material.opacity = Math.max(0, 0.8 - drop.userData.life * 0.3);
+                
+                if (drop.material.opacity <= 0) {
+                    scene.remove(drop);
+                    return false;
+                }
+                return true;
+            });
+
+            // Update dust and effects
+            dust = dust.filter(particle => {
+                particle.userData.life += 0.016;
+                
+                if (particle.userData.velocity) {
+                    particle.position.add(particle.userData.velocity);
+                    particle.userData.velocity.multiplyScalar(0.95);
+                }
+                
+                if (particle.userData.rise) {
+                    particle.position.y += particle.userData.rise;
+                }
+                
+                if (particle.userData.burst) {
+                    particle.scale.setScalar(1 + particle.userData.life * particle.userData.burst);
+                }
+                
+                if (particle.userData.dance) {
+                    particle.position.y += particle.userData.dance;
+                    particle.position.x += Math.sin(particle.userData.life * 20) * 0.01;
+                }
+                
+                particle.material.opacity = Math.max(0, particle.material.opacity - 0.02);
+                
+                if (particle.material.opacity <= 0) {
+                    scene.remove(particle);
+                    return false;
+                }
+                return true;
+            });
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+            time += 0.016;
+
+            particleSystem.update(0.016);
+            
+            renderer.render(scene, camera);
+        }
+
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+
+        init();
+    </script>
+</body>
+</html>

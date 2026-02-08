@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smoke Figures - Ethereal Forms</title>
+    <style>
+        body {
+            margin: 0;
+            background: #f8f8f8;
+            overflow: hidden;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        }
+        canvas { display: block; }
+        .back-btn {
+            position: absolute;
+            top: 30px;
+            left: 30px;
+            background: rgba(26, 26, 26, 0.1);
+            border: 1px solid rgba(26, 26, 26, 0.2);
+            color: #1a1a1a;
+            padding: 12px 24px;
+            text-decoration: none;
+            border-radius: 4px;
+            font-size: 14px;
+            font-weight: 300;
+            letter-spacing: 1px;
+            z-index: 1000;
+            transition: all 0.3s ease;
+            opacity: 0;
+            animation: fadeIn 3s ease-in-out 1s forwards;
+        }
+        .back-btn:hover {
+            background: rgba(26, 26, 26, 0.2);
+            transform: translateY(-1px);
+        }
+        .title {
+            position: absolute;
+            top: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: #333;
+            font-size: 24px;
+            font-weight: 300;
+            z-index: 100;
+            opacity: 0;
+            animation: fadeIn 3s ease-in-out 1s forwards;
+        }
+        .subtitle {
+            position: absolute;
+            bottom: 30px;
+            right: 30px;
+            color: #666;
+            font-size: 14px;
+            z-index: 100;
+            opacity: 0;
+            animation: fadeIn 3s ease-in-out 2s forwards;
+        }
+        @keyframes fadeIn {
+            to { opacity: 1; }
+        }
+    </style>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+</head>
+<body>
+    <a href="gallery.html" class="back-btn">← GALLERY</a>
+    <div class="title">Smoke Figures</div>
+    <div class="subtitle">Beings of mist and memory</div>
+    
+    <script>
+        let scene, camera, renderer;
+        let smokeFigures = [];
+        let time = 0;
+        
+        function init() {
+            scene = new THREE.Scene();
+            scene.fog = new THREE.Fog(0xf8f8f8, 5, 20);
+            
+            camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+            camera.position.set(0, 4, 10);
+            
+            renderer = new THREE.WebGLRenderer({ antialias: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.setClearColor(0xf8f8f8);
+            renderer.shadowMap.enabled = true;
+            renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+            document.body.appendChild(renderer.domElement);
+            
+            // Soft ambient light
+            const ambientLight = new THREE.AmbientLight(0x404040, 0.6);
+            scene.add(ambientLight);
+            
+            // Main directional light (dim and atmospheric)
+            const mainLight = new THREE.DirectionalLight(0xffffff, 0.4);
+            mainLight.position.set(-5, 8, 3);
+            mainLight.castShadow = true;
+            mainLight.shadow.mapSize.width = 1024;
+            mainLight.shadow.mapSize.height = 1024;
+            scene.add(mainLight);
+            
+            // Rim light for smoke definition
+            const rimLight = new THREE.DirectionalLight(0xffffff, 0.3);
+            rimLight.position.set(8, 3, -5);
+            scene.add(rimLight);
+            
+            // Removed ground plane for cleaner aesthetic
+            
+            createSmokeFigures();
+            
+            animate();
+        }
+        
+        function createSmokeFigures() {
+            for (let i = 0; i < 4; i++) {
+                const smokeFigure = createSmokeFigure();
+                smokeFigure.position.set(
+                    (Math.random() - 0.5) * 12,
+                    0,
+                    (Math.random() - 0.5) * 12
+                );
+                scene.add(smokeFigure);
+                
+                smokeFigures.push({
+                    container: smokeFigure,
+                    phase: Math.random() * Math.PI * 2,
+                    basePosition: smokeFigure.position.clone(),
+                    smokeClouds: smokeFigure.smokeClouds,
+                    intensity: Math.random() * 0.5 + 0.5
+                });
+            }
+        }
+        
+        function createSmokeFigure() {
+            const container = new THREE.Group();
+            const smokeClouds = [];
+            
+            // Define human form structure with smoke clouds
+            const bodyParts = [
+                { name: 'head', position: [0, 1.7, 0], size: 0.15, density: 20 },
+                { name: 'neck', position: [0, 1.5, 0], size: 0.08, density: 10 },
+                { name: 'upperTorso', position: [0, 1.3, 0], size: 0.2, density: 25 },
+                { name: 'lowerTorso', position: [0, 1.0, 0], size: 0.18, density: 25 },
+                { name: 'leftShoulder', position: [-0.2, 1.4, 0], size: 0.1, density: 15 },
+                { name: 'rightShoulder', position: [0.2, 1.4, 0], size: 0.1, density: 15 },
+                { name: 'leftUpperArm', position: [-0.35, 1.2, 0], size: 0.08, density: 12 },
+                { name: 'rightUpperArm', position: [0.35, 1.2, 0], size: 0.08, density: 12 },
+                { name: 'leftForearm', position: [-0.45, 0.9, 0], size: 0.06, density: 10 },
+                { name: 'rightForearm', position: [0.45, 0.9, 0], size: 0.06, density: 10 },
+                { name: 'leftHand', position: [-0.5, 0.6, 0], size: 0.05, density: 8 },
+                { name: 'rightHand', position: [0.5, 0.6, 0], size: 0.05, density: 8 },
+                { name: 'leftHip', position: [-0.1, 0.8, 0], size: 0.12, density: 15 },
+                { name: 'rightHip', position: [0.1, 0.8, 0], size: 0.12, density: 15 },
+                { name: 'leftThigh', position: [-0.1, 0.5, 0], size: 0.1, density: 15 },
+                { name: 'rightThigh', position: [0.1, 0.5, 0], size: 0.1, density: 15 },
+                { name: 'leftCalf', position: [-0.1, 0.2, 0], size: 0.08, density: 12 },
+                { name: 'rightCalf', position: [0.1, 0.2, 0], size: 0.08, density: 12 }
+            ];
+            
+            bodyParts.forEach((part, partIndex) => {
+                const particleCount = part.density;
+                const geometry = new THREE.BufferGeometry();
+                const positions = new Float32Array(particleCount * 3);
+                const opacities = new Float32Array(particleCount);
+                const sizes = new Float32Array(particleCount);
+                const velocities = new Float32Array(particleCount * 3);
+                const originalPositions = new Float32Array(particleCount * 3);
+                
+                for (let i = 0; i < particleCount; i++) {
+                    // Create particles in a cloud around the body part center
+                    const theta = Math.random() * Math.PI * 2;
+                    const phi = Math.random() * Math.PI;
+                    const radius = Math.random() * part.size;
+                    
+                    const x = part.position[0] + radius * Math.sin(phi) * Math.cos(theta);
+                    const y = part.position[1] + radius * Math.sin(phi) * Math.sin(theta);
+                    const z = part.position[2] + radius * Math.cos(phi);
+                    
+                    positions[i * 3] = x;
+                    positions[i * 3 + 1] = y;
+                    positions[i * 3 + 2] = z;
+                    
+                    originalPositions[i * 3] = x;
+                    originalPositions[i * 3 + 1] = y;
+                    originalPositions[i * 3 + 2] = z;
+                    
+                    opacities[i] = Math.random() * 0.8 + 0.2;
+                    sizes[i] = Math.random() * 0.04 + 0.02;
+                    
+                    velocities[i * 3] = (Math.random() - 0.5) * 0.001;
+                    velocities[i * 3 + 1] = Math.random() * 0.002;
+                    velocities[i * 3 + 2] = (Math.random() - 0.5) * 0.001;
+                }
+                
+                geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+                geometry.setAttribute('opacity', new THREE.BufferAttribute(opacities, 1));
+                geometry.setAttribute('size', new THREE.BufferAttribute(sizes, 1));
+                geometry.setAttribute('velocity', new THREE.BufferAttribute(velocities, 3));
+                geometry.setAttribute('originalPosition', new THREE.BufferAttribute(originalPositions, 3));
+                
+                // Custom shader material for smoke effect
+                const smokeMaterial = new THREE.PointsMaterial({
+                    color: new THREE.Color(0x1a1a1a),
+                    size: 0.03,
+                    transparent: true,
+                    opacity: 0.6,
+                    blending: THREE.NormalBlending,
+                    vertexColors: false
+                });
+                
+                const smokeCloud = new THREE.Points(geometry, smokeMaterial);
+                container.add(smokeCloud);
+                
+                smokeClouds.push({
+                    mesh: smokeCloud,
+                    partName: part.name,
+                    baseOpacity: 0.6,
+                    phase: Math.random() * Math.PI * 2
+                });
+            });
+            
+            container.smokeClouds = smokeClouds;
+            return container;
+        }
+        
+        function animate() {
+            requestAnimationFrame(animate);
+            
+            time += 0.003; // Much slower motion
+            
+            smokeFigures.forEach((figure, figureIndex) => {
+                // Overall figure movement
+                figure.container.position.x = figure.basePosition.x + Math.sin(time * 0.3 + figure.phase) * 2;
+                figure.container.position.z = figure.basePosition.z + Math.cos(time * 0.2 + figure.phase) * 2;
+                figure.container.position.y = Math.sin(time * 0.8 + figure.phase) * 0.3;
+                
+                // Slow rotation
+                figure.container.rotation.y = time * 0.1 + figure.phase;
+                
+                // Animate each smoke cloud
+                figure.smokeClouds.forEach((cloud, cloudIndex) => {
+                    const positions = cloud.mesh.geometry.attributes.position.array;
+                    const originalPositions = cloud.mesh.geometry.attributes.originalPosition.array;
+                    const velocities = cloud.mesh.geometry.attributes.velocity.array;
+                    const opacities = cloud.mesh.geometry.attributes.opacity.array;
+                    const sizes = cloud.mesh.geometry.attributes.size.array;
+                    
+                    for (let i = 0; i < positions.length; i += 3) {
+                        const particleIndex = i / 3;
+                        
+                        // Smoke drift and swirl
+                        const swirl = time * 2 + cloud.phase + particleIndex * 0.1;
+                        const drift = time * 0.5 + particleIndex * 0.05;
+                        
+                        // Update velocities with turbulence
+                        velocities[i] += Math.sin(swirl) * 0.0001; // X turbulence
+                        velocities[i + 1] += 0.0005 + Math.sin(drift) * 0.0002; // Y rise
+                        velocities[i + 2] += Math.cos(swirl) * 0.0001; // Z turbulence
+                        
+                        // Apply velocities
+                        positions[i] += velocities[i];
+                        positions[i + 1] += velocities[i + 1];
+                        positions[i + 2] += velocities[i + 2];
+                        
+                        // Fade and grow as smoke rises
+                        const height = positions[i + 1] - originalPositions[i + 1];
+                        const fadeDistance = 1.5;
+                        const fadeFactor = Math.max(0, 1 - height / fadeDistance);
+                        
+                        opacities[particleIndex] = fadeFactor * (0.3 + Math.sin(time * 3 + particleIndex) * 0.2);
+                        sizes[particleIndex] = (0.02 + height * 0.02) * (1 + Math.sin(time * 4 + particleIndex) * 0.3);
+                        
+                        // Reset particles that have drifted too far
+                        if (height > fadeDistance || Math.abs(positions[i] - originalPositions[i]) > 2) {
+                            positions[i] = originalPositions[i] + (Math.random() - 0.5) * 0.1;
+                            positions[i + 1] = originalPositions[i + 1] + (Math.random() - 0.5) * 0.1;
+                            positions[i + 2] = originalPositions[i + 2] + (Math.random() - 0.5) * 0.1;
+                            
+                            velocities[i] = (Math.random() - 0.5) * 0.001;
+                            velocities[i + 1] = Math.random() * 0.002;
+                            velocities[i + 2] = (Math.random() - 0.5) * 0.001;
+                        }
+                        
+                        // Body part specific movements
+                        if (cloud.partName.includes('arm') || cloud.partName.includes('hand')) {
+                            // Arms sway more
+                            const armSway = Math.sin(time * 1.5 + cloud.phase) * 0.02;
+                            positions[i] += armSway;
+                        }
+                        
+                        if (cloud.partName === 'head') {
+                            // Head bobs and turns
+                            const headBob = Math.sin(time * 2 + cloud.phase) * 0.01;
+                            positions[i + 1] += headBob;
+                            
+                            const headTurn = Math.sin(time * 0.8 + cloud.phase) * 0.015;
+                            positions[i] += headTurn;
+                        }
+                        
+                        if (cloud.partName.includes('torso')) {
+                            // Breathing motion
+                            const breathing = Math.sin(time * 3 + cloud.phase) * 0.008;
+                            positions[i] += breathing;
+                            positions[i + 1] += breathing * 0.5;
+                        }
+                    }
+                    
+                    cloud.mesh.geometry.attributes.position.needsUpdate = true;
+                    cloud.mesh.geometry.attributes.opacity.needsUpdate = true;
+                    cloud.mesh.geometry.attributes.size.needsUpdate = true;
+                    
+                    // Overall cloud opacity variation
+                    const intensityVariation = Math.sin(time * 2 + cloud.phase) * 0.2 + 0.8;
+                    cloud.mesh.material.opacity = cloud.baseOpacity * intensityVariation * figure.intensity;
+                });
+            });
+            
+            // Camera movement
+            camera.position.x = Math.sin(time * 0.15) * 6;
+            camera.position.y = 4 + Math.sin(time * 0.2) * 1.5;
+            camera.position.z = 10 + Math.cos(time * 0.18) * 3;
+            camera.lookAt(0, 1, 0);
+            
+            renderer.render(scene, camera);
+        }
+        
+        function onWindowResize() {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        }
+        
+        window.addEventListener('resize', onWindowResize, false);
+        
+        init();
+    </script>
+</body>
+</html>

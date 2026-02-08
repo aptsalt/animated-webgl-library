@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Human Figure Roots - Mindful Journey</title>
+    <style>
+        body { 
+            margin: 0; 
+            overflow: hidden; 
+            background: #f8f8f8;
+            font-family: 'Inter', system-ui, sans-serif;
+        }
+        canvas { display: block; }
+        
+        .back-btn {
+            position: absolute;
+            top: 40px;
+            left: 40px;
+            padding: 10px 20px;
+            background: transparent;
+            border: 1px solid rgba(26, 26, 26, 0.2);
+            color: #1a1a1a;
+            text-decoration: none;
+            font-size: 14px;
+            letter-spacing: 1px;
+            border-radius: 20px;
+            transition: all 0.3s ease;
+            z-index: 10;
+        }
+        
+        .back-btn:hover {
+            background: rgba(26, 26, 26, 0.05);
+            border-color: rgba(26, 26, 26, 0.4);
+        }
+        
+        .instruction {
+            position: absolute;
+            bottom: 40px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: rgba(26, 26, 26, 0.4);
+            font-size: 12px;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            pointer-events: none;
+        }
+    </style>
+</head>
+<body>
+    <a href="../index.html" class="back-btn">← Back</a>
+    <div class="instruction">Click to grow roots reflection</div>
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script>
+        let scene, camera, renderer;
+        let humanFigure, roots;
+        let time = 0;
+        let growing = false;
+        let growthProgress = 0;
+
+        function init() {
+            scene = new THREE.Scene();
+            scene.background = new THREE.Color(0xf8f8f8);
+
+            camera = new THREE.PerspectiveCamera(
+                75, window.innerWidth / window.innerHeight, 0.1, 1000
+            );
+            camera.position.z = 10;
+
+            renderer = new THREE.WebGLRenderer({ antialias: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            document.body.appendChild(renderer.domElement);
+
+            createHumanFigure();
+            createRoots();
+            animate();
+        }
+
+        function createHumanFigure() {
+            const group = new THREE.Group();
+            
+            const material = new THREE.MeshBasicMaterial({
+                color: 0x1a1a1a,
+                transparent: true,
+                opacity: 0.8,
+                side: THREE.DoubleSide
+            });
+            
+            // Head
+            const headGeometry = new THREE.SphereGeometry(0.4, 8, 6);
+            const head = new THREE.Mesh(headGeometry, material.clone());
+            head.position.y = 2.2;
+            
+            // Torso
+            const torsoGeometry = new THREE.CylinderGeometry(0.4, 0.6, 1.8, 8);
+            const torso = new THREE.Mesh(torsoGeometry, material.clone());
+            torso.position.y = 1;
+            
+            // Arms like tree branches
+            const armGeometry = new THREE.CylinderGeometry(0.12, 0.20, 1.2, 6);
+            const leftArm = new THREE.Mesh(armGeometry, material.clone());
+            leftArm.position.set(-0.8, 1.8, 0);
+            leftArm.rotation.z = 0.8;
+            
+            const rightArm = new THREE.Mesh(armGeometry, material.clone());
+            rightArm.position.set(0.8, 1.8, 0);
+            rightArm.rotation.z = -0.8;
+            
+            // Legs
+            const legGeometry = new THREE.CylinderGeometry(0.22, 0.3, 1.8, 6);
+            const leftLeg = new THREE.Mesh(legGeometry, material.clone());
+            leftLeg.position.set(-0.4, -0.5, 0);
+            
+            const rightLeg = new THREE.Mesh(legGeometry, material.clone());
+            rightLeg.position.set(0.4, -0.5, 0);
+            
+            group.add(head, torso, leftArm, rightArm, leftLeg, rightLeg);
+            group.position.y = 1;
+            
+            scene.add(group);
+            humanFigure = group;
+        }
+
+        function createRoots() {
+            const group = new THREE.Group();
+            
+            const material = new THREE.MeshBasicMaterial({
+                color: 0x8b4513,
+                transparent: true,
+                opacity: 0,
+                side: THREE.DoubleSide
+            });
+            
+            // Create branching roots
+            for (let i = 0; i < 8; i++) {
+                const angle = (i / 8) * Math.PI * 2;
+                const length = 1.5 + Math.random() * 1;
+                const thickness = 0.1 + Math.random() * 0.1;
+                
+                const rootGeometry = new THREE.CylinderGeometry(thickness * 0.3, thickness, length, 4);
+                const root = new THREE.Mesh(rootGeometry, material.clone());
+                
+                root.position.set(
+                    Math.cos(angle) * 0.8,
+                    -length / 2 - 1.5,
+                    Math.sin(angle) * 0.8
+                );
+                root.rotation.z = angle;
+                root.rotation.x = Math.PI / 6 + Math.random() * 0.3;
+                
+                group.add(root);
+                
+                // Add sub-roots
+                for (let j = 0; j < 3; j++) {
+                    const subAngle = angle + (Math.random() - 0.5) * 0.8;
+                    const subLength = length * 0.6;
+                    const subThickness = thickness * 0.6;
+                    
+                    const subRootGeometry = new THREE.CylinderGeometry(subThickness * 0.2, subThickness, subLength, 4);
+                    const subRoot = new THREE.Mesh(subRootGeometry, material.clone());
+                    
+                    subRoot.position.set(
+                        Math.cos(subAngle) * 1.5,
+                        -subLength / 2 - 2.5,
+                        Math.sin(subAngle) * 1.5
+                    );
+                    subRoot.rotation.z = subAngle;
+                    subRoot.rotation.x = Math.PI / 4 + Math.random() * 0.4;
+                    
+                    group.add(subRoot);
+                }
+            }
+            
+            group.position.y = 1;
+            scene.add(group);
+            roots = group;
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+            time += 0.01;
+
+            if (growing) {
+                growthProgress += 0.012;
+                if (growthProgress >= 1) {
+                    growthProgress = 1;
+                }
+            }
+
+            // Grow roots with organic motion
+            roots.children.forEach((root, index) => {
+                const delay = index * 0.1;
+                const progress = Math.max(0, Math.min(1, (growthProgress - delay) / 0.8));
+                
+                root.material.opacity = progress * 0.7;
+                root.scale.y = progress;
+                root.position.y = root.position.y + Math.sin(time + index) * 0.01;
+            });
+
+            // Figure becomes more tree-like
+            humanFigure.children[2].rotation.z = 0.8 + growthProgress * 0.4; // left arm
+            humanFigure.children[3].rotation.z = -0.8 - growthProgress * 0.4; // right arm
+            
+            // Slight swaying like a tree
+            humanFigure.rotation.z = Math.sin(time * 0.3) * 0.05 * (1 + growthProgress);
+            
+            // Color transition to more organic
+            const greenTint = growthProgress * 0.3;
+            humanFigure.children.forEach(child => {
+                child.material.color.setRGB(
+                    0.1 + greenTint * 0.2,
+                    0.1 + greenTint * 0.6,
+                    0.1 + greenTint * 0.2
+                );
+            });
+
+            renderer.render(scene, camera);
+        }
+
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+
+        window.addEventListener('click', () => {
+            if (!growing) {
+                growing = true;
+            } else {
+                // Reset
+                growthProgress = 0;
+                growing = false;
+                
+                // Reset colors
+                humanFigure.children.forEach(child => {
+                    child.material.color.setRGB(0.1, 0.1, 0.1);
+                });
+            }
+        });
+
+        init();
+    </script>
+</body>
+</html>

@@ -1,0 +1,1278 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Emotion Ocean - Revolutionary Digital Healing</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: radial-gradient(ellipse at center, #001122 0%, #000000 100%);
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            overflow: hidden;
+            cursor: none;
+        }
+
+        #canvas {
+            display: block;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+        }
+
+        .ocean-guide {
+            position: fixed;
+            top: 60px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: rgba(255, 255, 255, 0.9);
+            font-size: 18px;
+            font-weight: 300;
+            text-align: center;
+            pointer-events: none;
+            z-index: 100;
+            text-shadow: 0 0 20px rgba(100, 200, 255, 0.5);
+            max-width: 600px;
+            line-height: 1.6;
+        }
+
+        .emotion-panel {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            background: rgba(0, 20, 40, 0.8);
+            backdrop-filter: blur(15px);
+            border-radius: 20px;
+            padding: 25px;
+            color: rgba(255, 255, 255, 0.95);
+            font-size: 14px;
+            z-index: 10;
+            border: 1px solid rgba(100, 200, 255, 0.2);
+            min-width: 280px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+        }
+
+        .emotion-title {
+            color: #64c8ff;
+            font-size: 16px;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .emotion-indicator {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin: 12px 0;
+            padding: 10px 0;
+            border-bottom: 1px solid rgba(100, 200, 255, 0.1);
+        }
+
+        .emotion-indicator:last-child {
+            border-bottom: none;
+        }
+
+        .emotion-value {
+            color: #64ffda;
+            font-weight: 600;
+        }
+
+        .emotion-bar {
+            width: 100px;
+            height: 6px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 3px;
+            overflow: hidden;
+            margin-left: 10px;
+        }
+
+        .emotion-bar-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #64c8ff, #64ffda);
+            transition: width 0.5s ease;
+            border-radius: 3px;
+        }
+
+        .wave-controls {
+            position: fixed;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 15px;
+            z-index: 10;
+        }
+
+        .wave-btn {
+            background: rgba(100, 200, 255, 0.15);
+            border: 1px solid rgba(100, 200, 255, 0.4);
+            color: white;
+            padding: 14px 28px;
+            border-radius: 30px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.4s ease;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        .wave-btn:hover {
+            background: rgba(100, 200, 255, 0.25);
+            transform: translateY(-3px);
+            box-shadow: 0 10px 25px rgba(100, 200, 255, 0.3);
+        }
+
+        .wave-btn.active {
+            background: rgba(100, 255, 218, 0.3);
+            border-color: #64ffda;
+            color: #64ffda;
+            box-shadow: 0 0 30px rgba(100, 255, 218, 0.4);
+        }
+
+        .interaction-guide {
+            position: fixed;
+            bottom: 120px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: rgba(255, 255, 255, 0.7);
+            text-align: center;
+            font-size: 16px;
+            z-index: 10;
+            max-width: 500px;
+        }
+
+        .ripple-zone {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 5;
+            cursor: crosshair;
+        }
+
+        .emotion-burst {
+            position: fixed;
+            pointer-events: none;
+            z-index: 15;
+            font-size: 24px;
+            font-weight: 600;
+            text-shadow: 0 0 20px currentColor;
+            animation: emotionRise 3s ease-out forwards;
+        }
+
+        @keyframes emotionRise {
+            0% {
+                transform: scale(0) translateY(0);
+                opacity: 1;
+            }
+            50% {
+                transform: scale(1.2) translateY(-50px);
+                opacity: 0.8;
+            }
+            100% {
+                transform: scale(0.8) translateY(-150px);
+                opacity: 0;
+            }
+        }
+
+        .depth-indicator {
+            position: fixed;
+            right: 30px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 8px;
+            height: 200px;
+            background: linear-gradient(to bottom, 
+                rgba(100, 200, 255, 0.8) 0%,
+                rgba(50, 150, 200, 0.6) 50%,
+                rgba(20, 50, 100, 0.4) 100%);
+            border-radius: 4px;
+            z-index: 10;
+        }
+
+        .depth-marker {
+            position: absolute;
+            right: -5px;
+            width: 18px;
+            height: 4px;
+            background: #64ffda;
+            border-radius: 2px;
+            transition: top 0.3s ease;
+            box-shadow: 0 0 10px rgba(100, 255, 218, 0.6);
+        }
+
+        .wave-info {
+            position: fixed;
+            bottom: 200px;
+            right: 30px;
+            background: rgba(0, 20, 40, 0.7);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            padding: 20px;
+            color: white;
+            font-size: 12px;
+            z-index: 10;
+            border: 1px solid rgba(100, 200, 255, 0.2);
+        }
+
+        .wave-stat {
+            display: flex;
+            justify-content: space-between;
+            margin: 8px 0;
+        }
+
+        .loading-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, #001122, #000000);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            transition: opacity 0.5s ease;
+        }
+
+        .loading-content {
+            text-align: center;
+            color: white;
+        }
+
+        .loading-title {
+            font-size: 32px;
+            margin-bottom: 20px;
+            color: #64c8ff;
+            font-weight: 300;
+        }
+
+        .loading-text {
+            font-size: 16px;
+            opacity: 0.8;
+            margin-bottom: 30px;
+        }
+
+        .loading-waves {
+            display: flex;
+            justify-content: center;
+            gap: 5px;
+        }
+
+        .loading-wave {
+            width: 6px;
+            height: 30px;
+            background: linear-gradient(to top, #64c8ff, #64ffda);
+            border-radius: 3px;
+            animation: waveMotion 1.5s ease-in-out infinite;
+        }
+
+        .loading-wave:nth-child(2) { animation-delay: 0.2s; }
+        .loading-wave:nth-child(3) { animation-delay: 0.4s; }
+        .loading-wave:nth-child(4) { animation-delay: 0.6s; }
+        .loading-wave:nth-child(5) { animation-delay: 0.8s; }
+
+        @keyframes waveMotion {
+            0%, 100% { transform: scaleY(0.3); }
+            50% { transform: scaleY(1); }
+        }
+
+        .hidden {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <!-- Loading Screen -->
+    <div id="loadingScreen" class="loading-screen">
+        <div class="loading-content">
+            <h2 class="loading-title">🌊 Emotion Ocean</h2>
+            <p class="loading-text">Initializing fluid dynamics and emotional synthesis...</p>
+            <div class="loading-waves">
+                <div class="loading-wave"></div>
+                <div class="loading-wave"></div>
+                <div class="loading-wave"></div>
+                <div class="loading-wave"></div>
+                <div class="loading-wave"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Canvas -->
+    <canvas id="canvas"></canvas>
+
+    <!-- Ripple Interaction Zone -->
+    <div id="rippleZone" class="ripple-zone"></div>
+
+    <!-- Ocean Guide -->
+    <div id="oceanGuide" class="ocean-guide">
+        Feel the currents of your emotions flow through this infinite ocean. 
+        Touch the surface to create ripples of transformation.
+    </div>
+
+    <!-- Emotion Panel -->
+    <div id="emotionPanel" class="emotion-panel">
+        <div class="emotion-title">
+            🌊 Emotional Currents
+        </div>
+        <div class="emotion-indicator">
+            <span>Primary Emotion</span>
+            <span id="primaryEmotion" class="emotion-value">Calm</span>
+        </div>
+        <div class="emotion-indicator">
+            <span>Intensity</span>
+            <div class="emotion-bar">
+                <div id="intensityBar" class="emotion-bar-fill" style="width: 50%"></div>
+            </div>
+        </div>
+        <div class="emotion-indicator">
+            <span>Valence</span>
+            <div class="emotion-bar">
+                <div id="valenceBar" class="emotion-bar-fill" style="width: 60%"></div>
+            </div>
+        </div>
+        <div class="emotion-indicator">
+            <span>Arousal</span>
+            <div class="emotion-bar">
+                <div id="arousalBar" class="emotion-bar-fill" style="width: 40%"></div>
+            </div>
+        </div>
+        <div class="emotion-indicator">
+            <span>Wave Energy</span>
+            <span id="waveEnergy" class="emotion-value">Medium</span>
+        </div>
+    </div>
+
+    <!-- Depth Indicator -->
+    <div class="depth-indicator">
+        <div id="depthMarker" class="depth-marker"></div>
+    </div>
+
+    <!-- Wave Information -->
+    <div class="wave-info">
+        <h4 style="margin-bottom: 15px; color: #64c8ff;">🌊 Ocean State</h4>
+        <div class="wave-stat">
+            <span>Wave Height</span>
+            <span id="waveHeight">2.3m</span>
+        </div>
+        <div class="wave-stat">
+            <span>Current Speed</span>
+            <span id="currentSpeed">1.2 m/s</span>
+        </div>
+        <div class="wave-stat">
+            <span>Temperature</span>
+            <span id="waterTemp">22°C</span>
+        </div>
+        <div class="wave-stat">
+            <span>Turbulence</span>
+            <span id="turbulence">Low</span>
+        </div>
+    </div>
+
+    <!-- Controls -->
+    <div class="wave-controls">
+        <button id="calmBtn" class="wave-btn active">🕊️ Calm Seas</button>
+        <button id="stormBtn" class="wave-btn">⚡ Storm</button>
+        <button id="audioBtn" class="wave-btn">🔊 Ocean Sounds</button>
+        <button id="resetBtn" class="wave-btn">🔄 Reset</button>
+    </div>
+
+    <!-- Interaction Guide -->
+    <div class="interaction-guide">
+        Click or touch anywhere to create emotional ripples • Move to feel the currents
+    </div>
+
+    <!-- Three.js and Libraries -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script type="module">
+        import { TherapeuticShaders, ComputeShaders, ShaderManager } from './lib/shaders.js';
+        import { audioEngine } from './lib/audio-engine.js';
+        import { biometricMonitor } from './lib/biometric.js';
+
+        class EmotionOcean {
+            constructor() {
+                this.scene = null;
+                this.camera = null;
+                this.renderer = null;
+                this.canvas = null;
+                
+                // Ocean elements
+                this.oceanSurface = null;
+                this.waterParticles = null;
+                this.underwaterScene = null;
+                this.caustics = null;
+                
+                // Fluid simulation
+                this.fluidSimulation = null;
+                this.velocityTexture = null;
+                this.emotionTexture = null;
+                this.computeRenderer = null;
+                
+                // Emotional state
+                this.emotionalData = {
+                    primary: 'calm',
+                    intensity: 0.5,
+                    valence: 0.6,
+                    arousal: 0.4,
+                    changeRate: 0.02
+                };
+                
+                // Ocean state
+                this.oceanState = {
+                    waveHeight: 2.0,
+                    waveSpeed: 1.0,
+                    currentDirection: new THREE.Vector2(1, 0),
+                    temperature: 22,
+                    turbulence: 0.3,
+                    depth: 0.5 // 0 = surface, 1 = deep
+                };
+                
+                // Interaction
+                this.mouse = new THREE.Vector2();
+                this.ripples = [];
+                this.lastInteraction = 0;
+                
+                // Animation
+                this.time = 0;
+                this.isInitialized = false;
+                this.isAudioEnabled = false;
+                this.currentMode = 'calm';
+                
+                // WebGL 2.0 support for compute shaders
+                this.supportsWebGL2 = false;
+                this.supportsCompute = false;
+                
+                // Emotional color mappings
+                this.emotionColors = {
+                    calm: { r: 0.2, g: 0.6, b: 0.9, depth: 0.1 },
+                    anxious: { r: 0.8, g: 0.4, b: 0.2, depth: 0.8 },
+                    sad: { r: 0.3, g: 0.3, b: 0.7, depth: 0.9 },
+                    happy: { r: 0.9, g: 0.8, b: 0.3, depth: 0.2 },
+                    angry: { r: 0.9, g: 0.2, b: 0.2, depth: 0.7 },
+                    peaceful: { r: 0.3, g: 0.8, b: 0.5, depth: 0.1 },
+                    excited: { r: 0.9, g: 0.5, b: 0.9, depth: 0.3 }
+                };
+            }
+
+            async initialize() {
+                this.canvas = document.getElementById('canvas');
+                
+                await this.setupRenderer();
+                this.setupScene();
+                this.setupCamera();
+                this.setupLights();
+                
+                // Initialize fluid simulation
+                await this.initializeFluidSimulation();
+                
+                // Create ocean elements
+                await this.createOceanSurface();
+                await this.createWaterParticles();
+                await this.createUnderwaterEnvironment();
+                await this.createCaustics();
+                
+                // Setup biometric integration
+                this.setupBiometricIntegration();
+                
+                // Setup audio engine
+                await audioEngine.initialize();
+                
+                // Setup interactions
+                this.setupInteractions();
+                this.setupControls();
+                
+                // Start animation loop
+                this.animate();
+                
+                // Hide loading screen
+                document.getElementById('loadingScreen').classList.add('hidden');
+                
+                this.isInitialized = true;
+                console.log('🌊 Emotion Ocean initialized');
+            }
+
+            async setupRenderer() {
+                // Try WebGL 2.0 for compute shader support
+                let context;
+                try {
+                    context = this.canvas.getContext('webgl2');
+                    if (context) {
+                        this.supportsWebGL2 = true;
+                        // Check for compute shader support
+                        if (context.createShader && context.COMPUTE_SHADER) {
+                            this.supportsCompute = true;
+                            console.log('✨ Compute shader support detected');
+                        }
+                    }
+                } catch (e) {
+                    console.log('Falling back to WebGL 1.0');
+                }
+                
+                this.renderer = new THREE.WebGLRenderer({
+                    canvas: this.canvas,
+                    context: context,
+                    antialias: true,
+                    alpha: false,
+                    powerPreference: "high-performance"
+                });
+                
+                this.renderer.setSize(window.innerWidth, window.innerHeight);
+                this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+                this.renderer.setClearColor(0x001122, 1.0);
+                
+                // Enable advanced features
+                this.renderer.shadowMap.enabled = true;
+                this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+                this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
+                this.renderer.toneMappingExposure = 1.0;
+                
+                // Setup compute renderer for fluid simulation
+                if (this.supportsCompute) {
+                    this.computeRenderer = this.renderer;
+                }
+            }
+
+            setupScene() {
+                this.scene = new THREE.Scene();
+                this.scene.fog = new THREE.FogExp2(0x001122, 0.001);
+                
+                // Create underwater scene for depth effect
+                this.underwaterScene = new THREE.Scene();
+                this.underwaterScene.fog = new THREE.FogExp2(0x002244, 0.01);
+            }
+
+            setupCamera() {
+                this.camera = new THREE.PerspectiveCamera(
+                    70,
+                    window.innerWidth / window.innerHeight,
+                    0.1,
+                    1000
+                );
+                this.camera.position.set(0, 15, 25);
+                this.camera.lookAt(0, 0, 0);
+            }
+
+            setupLights() {
+                // Sunlight from above
+                const sunlight = new THREE.DirectionalLight(0x87CEEB, 1.2);
+                sunlight.position.set(20, 50, 30);
+                sunlight.castShadow = true;
+                sunlight.shadow.mapSize.width = 2048;
+                sunlight.shadow.mapSize.height = 2048;
+                this.scene.add(sunlight);
+                
+                // Ambient underwater lighting
+                const ambientLight = new THREE.AmbientLight(0x004466, 0.3);
+                this.scene.add(ambientLight);
+                
+                // Emotional lighting that changes with mood
+                this.emotionalLight = new THREE.PointLight(0x64c8ff, 2, 50);
+                this.emotionalLight.position.set(0, 10, 0);
+                this.scene.add(this.emotionalLight);
+                
+                // Caustic lighting effects
+                this.causticLights = [];
+                for (let i = 0; i < 5; i++) {
+                    const light = new THREE.PointLight(0xffffff, 0.5, 20);
+                    light.position.set(
+                        (Math.random() - 0.5) * 40,
+                        -5 - Math.random() * 10,
+                        (Math.random() - 0.5) * 40
+                    );
+                    this.causticLights.push(light);
+                    this.scene.add(light);
+                }
+            }
+
+            async initializeFluidSimulation() {
+                if (!this.supportsCompute) {
+                    console.log('Using simplified fluid simulation (WebGL 1.0)');
+                    return;
+                }
+                
+                const resolution = 512;
+                
+                // Create velocity field texture
+                this.velocityTexture = new THREE.DataTexture(
+                    new Float32Array(resolution * resolution * 4),
+                    resolution,
+                    resolution,
+                    THREE.RGBAFormat,
+                    THREE.FloatType
+                );
+                this.velocityTexture.needsUpdate = true;
+                
+                // Create emotion field texture
+                this.emotionTexture = new THREE.DataTexture(
+                    new Float32Array(resolution * resolution * 4),
+                    resolution,
+                    resolution,
+                    THREE.RGBAFormat,
+                    THREE.FloatType
+                );
+                this.emotionTexture.needsUpdate = true;
+                
+                // Create compute shader program
+                const gl = this.renderer.getContext();
+                this.fluidCompute = ShaderManager.createComputeProgram(
+                    gl, 
+                    ComputeShaders.fluidCompute
+                );
+            }
+
+            async createOceanSurface() {
+                const resolution = 200;
+                const size = 100;
+                
+                const geometry = new THREE.PlaneGeometry(size, size, resolution, resolution);
+                
+                // Use custom fluid shader
+                const material = new THREE.ShaderMaterial({
+                    vertexShader: TherapeuticShaders.fluidVertex,
+                    fragmentShader: TherapeuticShaders.fluidFragment,
+                    uniforms: {
+                        time: { value: 0 },
+                        velocityTexture: { value: this.velocityTexture },
+                        emotionTexture: { value: this.emotionTexture },
+                        waveHeight: { value: 2.0 },
+                        deepWaterColor: { value: new THREE.Vector3(0.05, 0.1, 0.4) },
+                        shallowWaterColor: { value: new THREE.Vector3(0.2, 0.6, 0.9) },
+                        emotionalColors: { 
+                            value: [
+                                new THREE.Vector3(0.2, 0.6, 0.9), // calm
+                                new THREE.Vector3(0.8, 0.4, 0.2), // anxious
+                                new THREE.Vector3(0.3, 0.3, 0.7), // sad
+                                new THREE.Vector3(0.9, 0.8, 0.3), // happy
+                                new THREE.Vector3(0.9, 0.2, 0.2), // angry
+                                new THREE.Vector3(0.3, 0.8, 0.5)  // peaceful
+                            ]
+                        },
+                        transparency: { value: 0.8 }
+                    },
+                    transparent: true,
+                    side: THREE.DoubleSide
+                });
+                
+                this.oceanSurface = new THREE.Mesh(geometry, material);
+                this.oceanSurface.rotation.x = -Math.PI / 2;
+                this.oceanSurface.receiveShadow = true;
+                this.scene.add(this.oceanSurface);
+            }
+
+            async createWaterParticles() {
+                const particleCount = 8000;
+                const geometry = new THREE.BufferGeometry();
+                
+                const positions = new Float32Array(particleCount * 3);
+                const colors = new Float32Array(particleCount * 3);
+                const sizes = new Float32Array(particleCount);
+                const velocities = new Float32Array(particleCount * 3);
+                
+                for (let i = 0; i < particleCount; i++) {
+                    // Distribute particles in ocean volume
+                    positions[i * 3] = (Math.random() - 0.5) * 100;
+                    positions[i * 3 + 1] = Math.random() * -20; // Underwater
+                    positions[i * 3 + 2] = (Math.random() - 0.5) * 100;
+                    
+                    // Water particle colors (bubbles, plankton, etc.)
+                    const depth = Math.abs(positions[i * 3 + 1]) / 20;
+                    const color = new THREE.Color();
+                    color.setHSL(0.55 + depth * 0.1, 0.6, 0.4 + (1 - depth) * 0.4);
+                    
+                    colors[i * 3] = color.r;
+                    colors[i * 3 + 1] = color.g;
+                    colors[i * 3 + 2] = color.b;
+                    
+                    sizes[i] = Math.random() * 0.5 + 0.2;
+                    
+                    // Initial velocities for natural movement
+                    velocities[i * 3] = (Math.random() - 0.5) * 0.1;
+                    velocities[i * 3 + 1] = Math.random() * 0.05;
+                    velocities[i * 3 + 2] = (Math.random() - 0.5) * 0.1;
+                }
+                
+                geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+                geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+                geometry.setAttribute('size', new THREE.BufferAttribute(sizes, 1));
+                
+                // Store velocities for animation
+                geometry.userData.velocities = velocities;
+                geometry.userData.originalPositions = [...positions];
+                
+                const material = new THREE.PointsMaterial({
+                    size: 0.5,
+                    vertexColors: true,
+                    transparent: true,
+                    opacity: 0.6,
+                    blending: THREE.AdditiveBlending,
+                    sizeAttenuation: true
+                });
+                
+                this.waterParticles = new THREE.Points(geometry, material);
+                this.scene.add(this.waterParticles);
+            }
+
+            async createUnderwaterEnvironment() {
+                // Create underwater terrain
+                const terrainGeometry = new THREE.PlaneGeometry(200, 200, 50, 50);
+                const vertices = terrainGeometry.attributes.position.array;
+                
+                // Add height variation for seafloor
+                for (let i = 0; i < vertices.length; i += 3) {
+                    const x = vertices[i];
+                    const z = vertices[i + 2];
+                    vertices[i + 1] = -25 + Math.sin(x * 0.05) * Math.cos(z * 0.05) * 3;
+                }
+                
+                const terrainMaterial = new THREE.MeshLambertMaterial({
+                    color: 0x2a3f5f,
+                    transparent: true,
+                    opacity: 0.8
+                });
+                
+                const terrain = new THREE.Mesh(terrainGeometry, terrainMaterial);
+                terrain.rotation.x = -Math.PI / 2;
+                terrain.receiveShadow = true;
+                this.scene.add(terrain);
+                
+                // Add underwater plants/kelp
+                for (let i = 0; i < 20; i++) {
+                    const kelpGeometry = new THREE.CylinderGeometry(0.1, 0.2, 5 + Math.random() * 10, 8);
+                    const kelpMaterial = new THREE.MeshLambertMaterial({
+                        color: 0x2d4a22,
+                        transparent: true,
+                        opacity: 0.7
+                    });
+                    
+                    const kelp = new THREE.Mesh(kelpGeometry, kelpMaterial);
+                    kelp.position.set(
+                        (Math.random() - 0.5) * 80,
+                        -15 - Math.random() * 10,
+                        (Math.random() - 0.5) * 80
+                    );
+                    kelp.userData.swayPhase = Math.random() * Math.PI * 2;
+                    this.scene.add(kelp);
+                }
+            }
+
+            async createCaustics() {
+                // Create animated caustic patterns on the seafloor
+                const causticGeometry = new THREE.PlaneGeometry(100, 100);
+                
+                // Simple caustic shader (would be more complex in production)
+                const causticMaterial = new THREE.ShaderMaterial({
+                    vertexShader: `
+                        varying vec2 vUv;
+                        void main() {
+                            vUv = uv;
+                            gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+                        }
+                    `,
+                    fragmentShader: `
+                        uniform float time;
+                        uniform vec3 emotionalColor;
+                        varying vec2 vUv;
+                        
+                        float causticPattern(vec2 uv, float time) {
+                            vec2 p = uv * 10.0;
+                            float c1 = sin(p.x + time) * cos(p.y + time * 0.7);
+                            float c2 = sin(p.x * 1.3 + time * 0.8) * cos(p.y * 1.7 + time);
+                            return (c1 + c2) * 0.5 + 0.5;
+                        }
+                        
+                        void main() {
+                            float caustic = causticPattern(vUv, time);
+                            vec3 color = emotionalColor * caustic * 0.3;
+                            gl_FragColor = vec4(color, caustic * 0.5);
+                        }
+                    `,
+                    uniforms: {
+                        time: { value: 0 },
+                        emotionalColor: { value: new THREE.Vector3(0.64, 0.8, 1.0) }
+                    },
+                    transparent: true,
+                    blending: THREE.AdditiveBlending
+                });
+                
+                this.caustics = new THREE.Mesh(causticGeometry, causticMaterial);
+                this.caustics.rotation.x = -Math.PI / 2;
+                this.caustics.position.y = -24;
+                this.scene.add(this.caustics);
+            }
+
+            setupBiometricIntegration() {
+                // Initialize biometric monitoring
+                biometricMonitor.initialize().catch(() => {
+                    console.log('Using simulated biometric data');
+                });
+                
+                // Listen for emotion updates
+                biometricMonitor.onEmotionUpdate((emotion) => {
+                    this.emotionalData = {
+                        primary: emotion.primary,
+                        intensity: emotion.intensity,
+                        valence: emotion.valence,
+                        arousal: emotion.arousal,
+                        changeRate: 0.02
+                    };
+                    
+                    this.updateEmotionPanel();
+                    this.adaptOceanToEmotion();
+                });
+                
+                // Listen for stress updates
+                biometricMonitor.onStressUpdate((stress) => {
+                    this.oceanState.turbulence = stress.level;
+                    this.updateWaveInfo();
+                });
+            }
+
+            updateEmotionPanel() {
+                document.getElementById('primaryEmotion').textContent = 
+                    this.emotionalData.primary.charAt(0).toUpperCase() + 
+                    this.emotionalData.primary.slice(1);
+                
+                document.getElementById('intensityBar').style.width = 
+                    `${this.emotionalData.intensity * 100}%`;
+                
+                document.getElementById('valenceBar').style.width = 
+                    `${this.emotionalData.valence * 100}%`;
+                
+                document.getElementById('arousalBar').style.width = 
+                    `${this.emotionalData.arousal * 100}%`;
+                
+                // Update wave energy description
+                let energyLevel = 'Low';
+                if (this.emotionalData.intensity > 0.7) energyLevel = 'High';
+                else if (this.emotionalData.intensity > 0.4) energyLevel = 'Medium';
+                document.getElementById('waveEnergy').textContent = energyLevel;
+            }
+
+            adaptOceanToEmotion() {
+                const emotion = this.emotionalData.primary;
+                const intensity = this.emotionalData.intensity;
+                
+                // Adapt ocean properties to emotional state
+                if (emotion === 'calm' || emotion === 'peaceful') {
+                    this.oceanState.waveHeight = 0.5 + intensity * 0.5;
+                    this.oceanState.waveSpeed = 0.3 + intensity * 0.2;
+                    this.oceanState.temperature = 24 + intensity * 2;
+                } else if (emotion === 'anxious' || emotion === 'angry') {
+                    this.oceanState.waveHeight = 2.0 + intensity * 3.0;
+                    this.oceanState.waveSpeed = 1.5 + intensity * 1.0;
+                    this.oceanState.temperature = 18 + intensity * 4;
+                } else if (emotion === 'sad') {
+                    this.oceanState.waveHeight = 1.0 + intensity * 0.5;
+                    this.oceanState.waveSpeed = 0.5 + intensity * 0.3;
+                    this.oceanState.temperature = 16 + intensity * 3;
+                } else if (emotion === 'happy' || emotion === 'excited') {
+                    this.oceanState.waveHeight = 1.5 + intensity * 2.0;
+                    this.oceanState.waveSpeed = 1.0 + intensity * 0.8;
+                    this.oceanState.temperature = 26 + intensity * 2;
+                }
+                
+                // Update emotional lighting
+                const emotionColor = this.emotionColors[emotion] || this.emotionColors.calm;
+                this.emotionalLight.color.setRGB(emotionColor.r, emotionColor.g, emotionColor.b);
+                this.emotionalLight.intensity = 1 + intensity * 2;
+                
+                // Update depth preference
+                this.oceanState.depth = emotionColor.depth;
+                
+                this.updateWaveInfo();
+            }
+
+            updateWaveInfo() {
+                document.getElementById('waveHeight').textContent = 
+                    `${this.oceanState.waveHeight.toFixed(1)}m`;
+                
+                document.getElementById('currentSpeed').textContent = 
+                    `${this.oceanState.waveSpeed.toFixed(1)} m/s`;
+                
+                document.getElementById('waterTemp').textContent = 
+                    `${Math.round(this.oceanState.temperature)}°C`;
+                
+                let turbulenceText = 'Low';
+                if (this.oceanState.turbulence > 0.7) turbulenceText = 'High';
+                else if (this.oceanState.turbulence > 0.4) turbulenceText = 'Moderate';
+                document.getElementById('turbulence').textContent = turbulenceText;
+                
+                // Update depth indicator
+                const depthMarker = document.getElementById('depthMarker');
+                depthMarker.style.top = `${this.oceanState.depth * 180 + 10}px`;
+            }
+
+            setupInteractions() {
+                const rippleZone = document.getElementById('rippleZone');
+                
+                // Mouse/touch interaction for creating ripples
+                const handleInteraction = (event) => {
+                    const rect = this.canvas.getBoundingClientRect();
+                    const x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+                    const y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
+                    
+                    this.createRipple(x, y);
+                    this.createEmotionBurst(event.clientX, event.clientY);
+                };
+                
+                rippleZone.addEventListener('click', handleInteraction);
+                rippleZone.addEventListener('touchstart', (e) => {
+                    e.preventDefault();
+                    handleInteraction(e.touches[0]);
+                });
+                
+                // Mouse movement for subtle current effects
+                rippleZone.addEventListener('mousemove', (event) => {
+                    const rect = this.canvas.getBoundingClientRect();
+                    this.mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+                    this.mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
+                });
+            }
+
+            createRipple(x, y) {
+                const ripple = {
+                    position: new THREE.Vector2(x, y),
+                    startTime: this.time,
+                    intensity: this.emotionalData.intensity,
+                    emotion: this.emotionalData.primary,
+                    lifetime: 3.0 + this.emotionalData.intensity * 2.0
+                };
+                
+                this.ripples.push(ripple);
+                this.lastInteraction = this.time;
+                
+                // Generate interaction sound
+                if (this.isAudioEnabled) {
+                    audioEngine.generateNatureSounds('rain', { x: x * 10, y: 0, z: y * 10 }, 0.3);
+                }
+            }
+
+            createEmotionBurst(screenX, screenY) {
+                const burst = document.createElement('div');
+                burst.className = 'emotion-burst';
+                burst.textContent = this.getEmotionSymbol(this.emotionalData.primary);
+                burst.style.left = `${screenX}px`;
+                burst.style.top = `${screenY}px`;
+                burst.style.color = this.getEmotionColor(this.emotionalData.primary);
+                
+                document.body.appendChild(burst);
+                
+                setTimeout(() => {
+                    document.body.removeChild(burst);
+                }, 3000);
+            }
+
+            getEmotionSymbol(emotion) {
+                const symbols = {
+                    calm: '🕊️',
+                    peaceful: '☮️',
+                    anxious: '😰',
+                    sad: '😢',
+                    happy: '😊',
+                    excited: '🎉',
+                    angry: '⚡',
+                    focused: '🎯'
+                };
+                return symbols[emotion] || '💙';
+            }
+
+            getEmotionColor(emotion) {
+                const colors = {
+                    calm: '#64c8ff',
+                    peaceful: '#64ffda',
+                    anxious: '#ffab40',
+                    sad: '#7986cb',
+                    happy: '#ffeb3b',
+                    excited: '#e91e63',
+                    angry: '#f44336',
+                    focused: '#9c27b0'
+                };
+                return colors[emotion] || '#64c8ff';
+            }
+
+            setupControls() {
+                // Mode control buttons
+                document.getElementById('calmBtn').addEventListener('click', () => {
+                    this.setMode('calm');
+                });
+                
+                document.getElementById('stormBtn').addEventListener('click', () => {
+                    this.setMode('storm');
+                });
+                
+                document.getElementById('audioBtn').addEventListener('click', () => {
+                    this.toggleAudio();
+                });
+                
+                document.getElementById('resetBtn').addEventListener('click', () => {
+                    this.resetOcean();
+                });
+                
+                // Window resize
+                window.addEventListener('resize', () => {
+                    this.camera.aspect = window.innerWidth / window.innerHeight;
+                    this.camera.updateProjectionMatrix();
+                    this.renderer.setSize(window.innerWidth, window.innerHeight);
+                });
+            }
+
+            setMode(mode) {
+                this.currentMode = mode;
+                
+                // Update button states
+                document.querySelectorAll('.wave-btn').forEach(btn => btn.classList.remove('active'));
+                
+                if (mode === 'calm') {
+                    document.getElementById('calmBtn').classList.add('active');
+                    this.emotionalData = {
+                        primary: 'calm',
+                        intensity: 0.3,
+                        valence: 0.8,
+                        arousal: 0.2,
+                        changeRate: 0.01
+                    };
+                } else if (mode === 'storm') {
+                    document.getElementById('stormBtn').classList.add('active');
+                    this.emotionalData = {
+                        primary: 'anxious',
+                        intensity: 0.9,
+                        valence: 0.3,
+                        arousal: 0.9,
+                        changeRate: 0.05
+                    };
+                }
+                
+                this.adaptOceanToEmotion();
+                this.updateEmotionPanel();
+            }
+
+            async toggleAudio() {
+                const btn = document.getElementById('audioBtn');
+                
+                if (!this.isAudioEnabled) {
+                    // Start ocean ambient sounds
+                    audioEngine.generateNatureSounds('ocean', { x: 0, y: 0, z: 0 }, 0.5);
+                    
+                    // Add binaural beats based on emotional state
+                    if (this.emotionalData.primary === 'calm' || this.emotionalData.primary === 'peaceful') {
+                        audioEngine.generateBinauralBeats(256, 8, 300000); // Alpha waves
+                    } else if (this.emotionalData.primary === 'anxious') {
+                        audioEngine.generateBinauralBeats(256, 4, 300000); // Theta waves for calming
+                    }
+                    
+                    btn.textContent = '🔇 Mute Ocean';
+                    btn.classList.add('active');
+                    this.isAudioEnabled = true;
+                } else {
+                    audioEngine.stopAllAudio();
+                    btn.textContent = '🔊 Ocean Sounds';
+                    btn.classList.remove('active');
+                    this.isAudioEnabled = false;
+                }
+            }
+
+            resetOcean() {
+                // Reset emotional state
+                this.emotionalData = {
+                    primary: 'calm',
+                    intensity: 0.5,
+                    valence: 0.6,
+                    arousal: 0.4,
+                    changeRate: 0.02
+                };
+                
+                // Reset ocean state
+                this.oceanState = {
+                    waveHeight: 2.0,
+                    waveSpeed: 1.0,
+                    currentDirection: new THREE.Vector2(1, 0),
+                    temperature: 22,
+                    turbulence: 0.3,
+                    depth: 0.5
+                };
+                
+                // Clear ripples
+                this.ripples = [];
+                
+                // Reset camera
+                this.camera.position.set(0, 15, 25);
+                this.camera.lookAt(0, 0, 0);
+                
+                // Update displays
+                this.adaptOceanToEmotion();
+                this.updateEmotionPanel();
+                
+                console.log('🌊 Ocean reset');
+            }
+
+            animate() {
+                if (!this.isInitialized) return;
+                
+                requestAnimationFrame(() => this.animate());
+                
+                this.time += 0.016; // ~60 FPS
+                
+                this.updateFluidSimulation();
+                this.updateOceanSurface();
+                this.updateParticles();
+                this.updateCamera();
+                this.updateLighting();
+                this.updateRipples();
+                
+                this.renderer.render(this.scene, this.camera);
+            }
+
+            updateFluidSimulation() {
+                // Update compute shader simulation if available
+                if (this.fluidCompute && this.supportsCompute) {
+                    const gl = this.renderer.getContext();
+                    
+                    gl.useProgram(this.fluidCompute);
+                    
+                    // Set uniforms
+                    const deltaTimeLocation = gl.getUniformLocation(this.fluidCompute, 'deltaTime');
+                    const userInputLocation = gl.getUniformLocation(this.fluidCompute, 'userInput');
+                    const currentEmotionLocation = gl.getUniformLocation(this.fluidCompute, 'currentEmotion');
+                    const emotionalIntensityLocation = gl.getUniformLocation(this.fluidCompute, 'emotionalIntensity');
+                    
+                    gl.uniform1f(deltaTimeLocation, 0.016);
+                    gl.uniform2f(userInputLocation, this.mouse.x * 0.5 + 0.5, this.mouse.y * 0.5 + 0.5);
+                    
+                    const emotionColor = this.emotionColors[this.emotionalData.primary] || this.emotionColors.calm;
+                    gl.uniform3f(currentEmotionLocation, emotionColor.r, emotionColor.g, emotionColor.b);
+                    gl.uniform1f(emotionalIntensityLocation, this.emotionalData.intensity);
+                    
+                    // Dispatch compute shader
+                    gl.dispatchCompute(32, 32, 1);
+                    gl.memoryBarrier(gl.SHADER_IMAGE_ACCESS_BARRIER_BIT);
+                }
+            }
+
+            updateOceanSurface() {
+                if (!this.oceanSurface) return;
+                
+                const material = this.oceanSurface.material;
+                material.uniforms.time.value = this.time;
+                material.uniforms.waveHeight.value = this.oceanState.waveHeight;
+                
+                // Update emotional colors in ocean
+                const emotionColor = this.emotionColors[this.emotionalData.primary] || this.emotionColors.calm;
+                const colors = material.uniforms.emotionalColors.value;
+                colors[0].setRGB(emotionColor.r, emotionColor.g, emotionColor.b);
+                
+                // Dynamic wave movement
+                this.oceanSurface.position.y = Math.sin(this.time * this.oceanState.waveSpeed) * 0.5;
+            }
+
+            updateParticles() {
+                if (!this.waterParticles) return;
+                
+                const positions = this.waterParticles.geometry.attributes.position;
+                const velocities = this.waterParticles.geometry.userData.velocities;
+                const colors = this.waterParticles.geometry.attributes.color;
+                
+                const emotionColor = this.emotionColors[this.emotionalData.primary] || this.emotionColors.calm;
+                
+                for (let i = 0; i < positions.count; i++) {
+                    const i3 = i * 3;
+                    
+                    // Update positions with current flow
+                    positions.array[i3] += velocities[i3] * this.oceanState.waveSpeed;
+                    positions.array[i3 + 1] += velocities[i3 + 1] * this.oceanState.waveSpeed * 0.5;
+                    positions.array[i3 + 2] += velocities[i3 + 2] * this.oceanState.waveSpeed;
+                    
+                    // Add emotional turbulence
+                    const turbulence = this.oceanState.turbulence * this.emotionalData.intensity;
+                    positions.array[i3] += Math.sin(this.time + i) * turbulence * 0.1;
+                    positions.array[i3 + 1] += Math.cos(this.time * 0.7 + i) * turbulence * 0.05;
+                    positions.array[i3 + 2] += Math.sin(this.time * 1.3 + i) * turbulence * 0.1;
+                    
+                    // Wrap particles that go too far
+                    if (Math.abs(positions.array[i3]) > 50) {
+                        positions.array[i3] = (Math.random() - 0.5) * 100;
+                    }
+                    if (Math.abs(positions.array[i3 + 2]) > 50) {
+                        positions.array[i3 + 2] = (Math.random() - 0.5) * 100;
+                    }
+                    
+                    // Update colors based on emotion
+                    const blend = 0.02; // Gradual color change
+                    colors.array[i3] = colors.array[i3] * (1 - blend) + emotionColor.r * blend;
+                    colors.array[i3 + 1] = colors.array[i3 + 1] * (1 - blend) + emotionColor.g * blend;
+                    colors.array[i3 + 2] = colors.array[i3 + 2] * (1 - blend) + emotionColor.b * blend;
+                }
+                
+                positions.needsUpdate = true;
+                colors.needsUpdate = true;
+                
+                // Rotate particle system with ocean current
+                this.waterParticles.rotation.y += this.oceanState.waveSpeed * 0.001;
+            }
+
+            updateCamera() {
+                // Gentle camera movement based on ocean state and emotion
+                const cameraDistance = 25 + this.oceanState.depth * 15;
+                const height = 15 + Math.sin(this.time * 0.3) * 2 + this.emotionalData.arousal * 5;
+                
+                this.camera.position.x = Math.sin(this.time * 0.1) * 5;
+                this.camera.position.y = height;
+                this.camera.position.z = cameraDistance + Math.cos(this.time * 0.15) * 3;
+                
+                // Look at point moves with emotional intensity
+                const lookX = this.mouse.x * 5 + Math.sin(this.time * 0.2) * 2;
+                const lookZ = this.mouse.y * 5 + Math.cos(this.time * 0.25) * 2;
+                this.camera.lookAt(lookX, 0, lookZ);
+            }
+
+            updateLighting() {
+                // Update caustic lighting
+                if (this.caustics) {
+                    this.caustics.material.uniforms.time.value = this.time;
+                    const emotionColor = this.emotionColors[this.emotionalData.primary] || this.emotionColors.calm;
+                    this.caustics.material.uniforms.emotionalColor.value.setRGB(
+                        emotionColor.r, emotionColor.g, emotionColor.b
+                    );
+                }
+                
+                // Animate caustic lights
+                this.causticLights.forEach((light, index) => {
+                    light.intensity = 0.3 + Math.sin(this.time + index) * 0.2 + this.emotionalData.intensity * 0.5;
+                    light.position.x += Math.sin(this.time * 0.5 + index) * 0.05;
+                    light.position.z += Math.cos(this.time * 0.3 + index) * 0.05;
+                });
+            }
+
+            updateRipples() {
+                // Clean up old ripples
+                this.ripples = this.ripples.filter(ripple => {
+                    const age = this.time - ripple.startTime;
+                    return age < ripple.lifetime;
+                });
+                
+                // Update active ripples (would affect fluid simulation in full implementation)
+                this.ripples.forEach(ripple => {
+                    const age = this.time - ripple.startTime;
+                    ripple.radius = age * 5; // Expand over time
+                    ripple.strength = (1 - age / ripple.lifetime) * ripple.intensity;
+                });
+            }
+        }
+
+        // Initialize the Emotion Ocean
+        window.addEventListener('load', async () => {
+            const ocean = new EmotionOcean();
+            await ocean.initialize();
+        });
+    </script>
+</body>
+</html>

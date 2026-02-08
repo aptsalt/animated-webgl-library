@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Human Figure Collection - Mindful Journey</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@100;200;300;400;500;600;700&family=Playfair+Display:wght@400;500;600;700&family=JetBrains+Mono:wght@200;300;400&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, system-ui, sans-serif;
+            background: #f8f8f8;
+            color: #1a1a1a;
+            padding: 40px 20px;
+            font-weight: 300;
+            line-height: 1.6;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 60px;
+        }
+
+        h1 {
+            font-family: 'Playfair Display', serif;
+            font-size: clamp(32px, 5vw, 56px);
+            font-weight: 300;
+            letter-spacing: 0.2em;
+            margin-bottom: 20px;
+            color: #1a1a1a;
+        }
+
+        .subtitle {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 13px;
+            font-weight: 300;
+            color: #666;
+            letter-spacing: 0.15em;
+            text-transform: uppercase;
+            margin-bottom: 20px;
+        }
+
+        .gallery-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 20px;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .effect-card {
+            background: white;
+            border: 1px solid rgba(0, 0, 0, 0.05);
+            border-radius: 4px;
+            padding: 20px;
+            text-align: center;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            text-decoration: none;
+            color: inherit;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .effect-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.08);
+        }
+
+        .effect-number {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 10px;
+            font-weight: 400;
+            color: #999;
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            letter-spacing: 0.1em;
+        }
+
+        .effect-title {
+            font-family: 'Playfair Display', serif;
+            font-size: 16px;
+            font-weight: 300;
+            letter-spacing: 0.05em;
+            margin-bottom: 8px;
+        }
+
+        .effect-description {
+            font-family: 'Inter', sans-serif;
+            font-size: 11px;
+            font-weight: 300;
+            color: #666;
+            line-height: 1.4;
+        }
+
+        .category-label {
+            grid-column: 1 / -1;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 12px;
+            font-weight: 500;
+            letter-spacing: 0.15em;
+            text-transform: uppercase;
+            color: #999;
+            margin: 20px 0 10px;
+            padding-top: 20px;
+            border-top: 1px solid rgba(0, 0, 0, 0.05);
+        }
+
+        .back-link {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 11px;
+            color: #666;
+            text-decoration: none;
+            letter-spacing: 0.1em;
+            transition: color 0.3s ease;
+        }
+
+        .back-link:hover {
+            color: #1a1a1a;
+        }
+    </style>
+</head>
+<body>
+    <a href="../index.html" class="back-link">← BACK</a>
+    
+    <div class="header">
+        <h1>HUMAN FIGURES</h1>
+        <p class="subtitle">Interactive Movement & Expression Studies</p>
+    </div>
+
+    <div class="gallery-grid">
+        <!-- Aesthetic Series (New) -->
+        <div class="category-label">Aesthetic Minimalist Series</div>
+        
+        <a href="aesthetic/solitary-walker.html" class="effect-card">
+            <span class="effect-number">A1</span>
+            <div class="effect-title">Solitary Walker</div>
+            <div class="effect-description">Lone figure walking</div>
+        </a>
+        
+        <a href="aesthetic/crowd-formation.html" class="effect-card">
+            <span class="effect-number">A2</span>
+            <div class="effect-title">Crowd Formation</div>
+            <div class="effect-description">Scattered gathering</div>
+        </a>
+        
+        <a href="aesthetic/walking-sequence.html" class="effect-card">
+            <span class="effect-number">A3</span>
+            <div class="effect-title">Walking Sequence</div>
+            <div class="effect-description">Motion frames</div>
+        </a>
+        
+        <a href="aesthetic/shadow-figures.html" class="effect-card">
+            <span class="effect-number">A4</span>
+            <div class="effect-title">Shadow Figures</div>
+            <div class="effect-description">Long shadows</div>
+        </a>
+        
+        <a href="aesthetic/silhouette-grid.html" class="effect-card">
+            <span class="effect-number">A5</span>
+            <div class="effect-title">Silhouette Grid</div>
+            <div class="effect-description">Pose collection</div>
+        </a>
+        
+        <a href="aesthetic/minimalist-duo.html" class="effect-card">
+            <span class="effect-number">A6</span>
+            <div class="effect-title">Minimalist Duo</div>
+            <div class="effect-description">Two souls</div>
+        </a>
+        
+        <!-- Movement Series -->
+        <div class="category-label">Movement Series</div>
+        
+        <a href="human-figure-1-rising.html" class="effect-card">
+            <span class="effect-number">01</span>
+            <div class="effect-title">Rising Figure</div>
+            <div class="effect-description">Upward ascension</div>
+        </a>
+
+        <a href="human-figure-10-jumping.html" class="effect-card">
+            <span class="effect-number">10</span>
+            <div class="effect-title">Leaping Motion</div>
+            <div class="effect-description">Dynamic jump</div>
+        </a>
+
+        <a href="human-figure-11-dancing.html" class="effect-card">
+            <span class="effect-number">11</span>
+            <div class="effect-title">Dancing Flow</div>
+            <div class="effect-description">Rhythmic movement</div>
+        </a>
+
+        <a href="human-figure-15-rotating.html" class="effect-card">
+            <span class="effect-number">15</span>
+            <div class="effect-title">Spatial Rotation</div>
+            <div class="effect-description">Dimensional turn</div>
+        </a>
+
+        <a href="human-figure-16-blur.html" class="effect-card">
+            <span class="effect-number">16</span>
+            <div class="effect-title">Motion Blur</div>
+            <div class="effect-description">Speed trails</div>
+        </a>
+
+        <a href="human-figure-17-morphing.html" class="effect-card">
+            <span class="effect-number">17</span>
+            <div class="effect-title">Pose Morphing</div>
+            <div class="effect-description">Fluid transitions</div>
+        </a>
+
+        <a href="human-figure-20-spiral.html" class="effect-card">
+            <span class="effect-number">20</span>
+            <div class="effect-title">Spiral Ascension</div>
+            <div class="effect-description">Helical rise</div>
+        </a>
+
+        <a href="human-figure-7-mountain.html" class="effect-card">
+            <span class="effect-number">07</span>
+            <div class="effect-title">Mountain Path</div>
+            <div class="effect-description">Journey walk</div>
+        </a>
+
+        <!-- Transformation Series -->
+        <div class="category-label">Transformation Series</div>
+        
+        <a href="human-figure-3-dissolving.html" class="effect-card">
+            <span class="effect-number">03</span>
+            <div class="effect-title">Dissolving Particles</div>
+            <div class="effect-description">Form to dust</div>
+        </a>
+
+        <a href="human-figure-8-landscape.html" class="effect-card">
+            <span class="effect-number">08</span>
+            <div class="effect-title">Landscape Merge</div>
+            <div class="effect-description">Nature fusion</div>
+        </a>
+
+        <a href="human-figure-13-multiplying.html" class="effect-card">
+            <span class="effect-number">13</span>
+            <div class="effect-title">Multiplying Effect</div>
+            <div class="effect-description">Clone cascade</div>
+        </a>
+
+        <a href="human-figure-14-scaling.html" class="effect-card">
+            <span class="effect-number">14</span>
+            <div class="effect-title">Dramatic Scaling</div>
+            <div class="effect-description">Size expansion</div>
+        </a>
+
+        <a href="human-figure-19-emerging.html" class="effect-card">
+            <span class="effect-number">19</span>
+            <div class="effect-title">Ground Emergence</div>
+            <div class="effect-description">Earth birth</div>
+        </a>
+
+        <a href="human-figure-21-starfield.html" class="effect-card">
+            <span class="effect-number">21</span>
+            <div class="effect-title">Starfield Transform</div>
+            <div class="effect-description">Cosmic dust</div>
+        </a>
+
+        <a href="human-figure-24-particle-explosion.html" class="effect-card">
+            <span class="effect-number">24</span>
+            <div class="effect-title">Particle Explosion</div>
+            <div class="effect-description">Burst reform</div>
+        </a>
+
+        <a href="human-figure-27-pixel-art.html" class="effect-card">
+            <span class="effect-number">27</span>
+            <div class="effect-title">Pixel Art</div>
+            <div class="effect-description">Cubic form</div>
+        </a>
+
+        <a href="human-figure-29-double-exposure.html" class="effect-card">
+            <span class="effect-number">29</span>
+            <div class="effect-title">Double Exposure</div>
+            <div class="effect-description">Nature within</div>
+        </a>
+
+        <a href="human-figure-30-liquid-metal.html" class="effect-card">
+            <span class="effect-number">30</span>
+            <div class="effect-title">Liquid Metal</div>
+            <div class="effect-description">Metallic flow</div>
+        </a>
+
+        <!-- Energy Series -->
+        <div class="category-label">Energy Series</div>
+        
+        <a href="human-figure-9-energy.html" class="effect-card">
+            <span class="effect-number">09</span>
+            <div class="effect-title">Energy Rings</div>
+            <div class="effect-description">Aura waves</div>
+        </a>
+
+        <a href="human-figure-12-light.html" class="effect-card">
+            <span class="effect-number">12</span>
+            <div class="effect-title">Light Rays</div>
+            <div class="effect-description">Divine beams</div>
+        </a>
+
+        <a href="human-figure-18-swirl.html" class="effect-card">
+            <span class="effect-number">18</span>
+            <div class="effect-title">Particle Swirl</div>
+            <div class="effect-description">Mystical orbit</div>
+        </a>
+
+        <a href="human-figure-22-heart-flow.html" class="effect-card">
+            <span class="effect-number">22</span>
+            <div class="effect-title">Heart Flow</div>
+            <div class="effect-description">Love emanation</div>
+        </a>
+
+        <a href="human-figure-25-flowing-ribbons.html" class="effect-card">
+            <span class="effect-number">25</span>
+            <div class="effect-title">Flowing Ribbons</div>
+            <div class="effect-description">Graceful streams</div>
+        </a>
+
+        <a href="human-figure-26-constellation.html" class="effect-card">
+            <span class="effect-number">26</span>
+            <div class="effect-title">Constellation</div>
+            <div class="effect-description">Star mapping</div>
+        </a>
+
+        <a href="human-figure-28-gradient-mesh.html" class="effect-card">
+            <span class="effect-number">28</span>
+            <div class="effect-title">Gradient Mesh</div>
+            <div class="effect-description">Color fields</div>
+        </a>
+
+        <!-- Connection Series -->
+        <div class="category-label">Connection Series</div>
+        
+        <a href="human-figure-2-reflection.html" class="effect-card">
+            <span class="effect-number">02</span>
+            <div class="effect-title">Water Reflection</div>
+            <div class="effect-description">Mirror below</div>
+        </a>
+
+        <a href="human-figure-4-freedom.html" class="effect-card">
+            <span class="effect-number">04</span>
+            <div class="effect-title">Freedom Pose</div>
+            <div class="effect-description">Arms wide</div>
+        </a>
+
+        <a href="human-figure-5-roots.html" class="effect-card">
+            <span class="effect-number">05</span>
+            <div class="effect-title">Tree Roots</div>
+            <div class="effect-description">Earth connection</div>
+        </a>
+
+        <a href="human-figure-6-birds.html" class="effect-card">
+            <span class="effect-number">06</span>
+            <div class="effect-title">Birds in Flight</div>
+            <div class="effect-description">Lifted spirit</div>
+        </a>
+
+        <a href="human-figure-23-isometric.html" class="effect-card">
+            <span class="effect-number">23</span>
+            <div class="effect-title">Isometric View</div>
+            <div class="effect-description">3D perspective</div>
+        </a>
+    </div>
+</body>
+</html>

@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Empathy Network - Therapeutic Journey</title>
+    <style>
+        body {
+            margin: 0;
+            background: #1a1a2e;
+            overflow: hidden;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        }
+        canvas { display: block; }
+        .back-btn {
+            position: absolute;
+            top: 30px;
+            left: 30px;
+            background: rgba(231, 76, 60, 0.2);
+            border: 1px solid rgba(231, 76, 60, 0.3);
+            color: #e74c3c;
+            padding: 12px 24px;
+            text-decoration: none;
+            border-radius: 4px;
+            font-size: 14px;
+            font-weight: 300;
+            letter-spacing: 1px;
+            z-index: 1000;
+            transition: all 0.3s ease;
+        }
+        .title {
+            position: absolute;
+            top: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: #e74c3c;
+            font-size: 24px;
+            font-weight: 300;
+            z-index: 100;
+        }
+        .instruction {
+            position: absolute;
+            bottom: 40px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: rgba(231, 76, 60, 0.7);
+            font-size: 14px;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            pointer-events: none;
+        }
+    </style>
+</head>
+<body>
+    <a href="../index.html" class="back-btn">← Back</a>
+    <div class="title">Empathy Network</div>
+    <div class="instruction">Feel the connections between hearts</div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script>
+        let scene, camera, renderer;
+        let humans = [], connections = [], heartBeats = [];
+        let time = 0;
+
+        function init() {
+            scene = new THREE.Scene();
+            scene.background = new THREE.Color(0x1a1a2e);
+
+            camera = new THREE.PerspectiveCamera(
+                70, window.innerWidth / window.innerHeight, 0.1, 1000
+            );
+            camera.position.set(0, 15, 30);
+            camera.lookAt(0, 0, 0);
+
+            renderer = new THREE.WebGLRenderer({ antialias: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            document.body.appendChild(renderer.domElement);
+
+            createHumans();
+            createConnections();
+            animate();
+        }
+
+        function createHumans() {
+            const positions = [
+                { x: 0, z: 0 },        // center
+                { x: -8, z: -8 },      // back left
+                { x: 8, z: -8 },       // back right
+                { x: -12, z: 0 },      // left
+                { x: 12, z: 0 },       // right
+                { x: -8, z: 8 },       // front left
+                { x: 8, z: 8 },        // front right
+                { x: 0, z: 12 }        // front center
+            ];
+
+            positions.forEach((pos, index) => {
+                const humanGroup = new THREE.Group();
+                
+                // Human figure
+                const bodyGeometry = new THREE.CylinderGeometry(0.8, 1, 3, 8);
+                const bodyMaterial = new THREE.MeshBasicMaterial({
+                    color: 0x3498db,
+                    transparent: true,
+                    opacity: 0.7
+                });
+                const body = new THREE.Mesh(bodyGeometry, bodyMaterial);
+                body.position.y = 1.5;
+                humanGroup.add(body);
+
+                // Head
+                const headGeometry = new THREE.SphereGeometry(0.6, 8, 6);
+                const head = new THREE.Mesh(headGeometry, bodyMaterial);
+                head.position.y = 3.5;
+                humanGroup.add(head);
+
+                // Heart (glowing core)
+                const heartGeometry = new THREE.SphereGeometry(0.3, 8, 6);
+                const heartMaterial = new THREE.MeshBasicMaterial({
+                    color: 0xe74c3c,
+                    transparent: true,
+                    opacity: 0.9
+                });
+                const heart = new THREE.Mesh(heartGeometry, heartMaterial);
+                heart.position.y = 2;
+                heart.userData = { isHeart: true, baseScale: 1 };
+                humanGroup.add(heart);
+
+                // Aura
+                const auraGeometry = new THREE.SphereGeometry(3, 16, 12);
+                const auraMaterial = new THREE.MeshBasicMaterial({
+                    color: 0xe74c3c,
+                    transparent: true,
+                    opacity: 0.03,
+                    side: THREE.BackSide
+                });
+                const aura = new THREE.Mesh(auraGeometry, auraMaterial);
+                aura.userData = { isAura: true };
+                humanGroup.add(aura);
+
+                humanGroup.position.set(pos.x, 0, pos.z);
+                humanGroup.userData = {
+                    heartbeatPhase: Math.random() * Math.PI * 2,
+                    heartbeatSpeed: 0.08 + Math.random() * 0.02,
+                    empathyLevel: Math.random() * 0.5 + 0.5
+                };
+                
+                humans.push(humanGroup);
+                scene.add(humanGroup);
+            });
+        }
+
+        function createConnections() {
+            // Create connections between all humans
+            for (let i = 0; i < humans.length; i++) {
+                for (let j = i + 1; j < humans.length; j++) {
+                    const human1 = humans[i];
+                    const human2 = humans[j];
+                    
+                    const distance = human1.position.distanceTo(human2.position);
+                    if (distance < 20) { // Only connect nearby humans
+                        const connectionPoints = [];
+                        
+                        // Create curved connection
+                        const start = human1.position.clone();
+                        start.y += 2; // Heart level
+                        const end = human2.position.clone();
+                        end.y += 2;
+                        
+                        const mid = start.clone().lerp(end, 0.5);
+                        mid.y += distance * 0.3; // Arc height
+                        
+                        // Generate curve points
+                        for (let t = 0; t <= 1; t += 0.05) {
+                            const point = new THREE.Vector3();
+                            point.copy(start).lerp(mid, t * 2);
+                            if (t > 0.5) {
+                                point.copy(mid).lerp(end, (t - 0.5) * 2);
+                            }
+                            connectionPoints.push(point);
+                        }
+                        
+                        const connectionGeometry = new THREE.BufferGeometry().setFromPoints(connectionPoints);
+                        const connectionMaterial = new THREE.LineBasicMaterial({
+                            color: 0xe74c3c,
+                            transparent: true,
+                            opacity: 0.2
+                        });
+                        
+                        const connection = new THREE.Line(connectionGeometry, connectionMaterial);
+                        connection.userData = {
+                            human1Index: i,
+                            human2Index: j,
+                            pulsePhase: Math.random() * Math.PI * 2,
+                            pulseSpeed: 0.05 + Math.random() * 0.03
+                        };
+                        
+                        connections.push(connection);
+                        scene.add(connection);
+                    }
+                }
+            }
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+            time += 0.01;
+
+            // Heartbeat animation
+            humans.forEach((human, index) => {
+                const heart = human.children.find(child => child.userData.isHeart);
+                const aura = human.children.find(child => child.userData.isAura);
+                
+                if (heart) {
+                    // Heartbeat scale
+                    const heartbeat = Math.sin(time * human.userData.heartbeatSpeed + human.userData.heartbeatPhase);
+                    const scale = 1 + heartbeat * 0.3;
+                    heart.scale.set(scale, scale, scale);
+                    
+                    // Heart glow intensity
+                    heart.material.opacity = 0.7 + heartbeat * 0.3;
+                }
+                
+                if (aura) {
+                    // Aura breathing
+                    const auraScale = 1 + Math.sin(time * human.userData.heartbeatSpeed * 0.5 + human.userData.heartbeatPhase) * 0.2;
+                    aura.scale.set(auraScale, auraScale, auraScale);
+                    aura.material.opacity = 0.03 + Math.sin(time * human.userData.heartbeatSpeed + human.userData.heartbeatPhase) * 0.02;
+                }
+            });
+
+            // Connection pulse animation
+            connections.forEach((connection, index) => {
+                const human1 = humans[connection.userData.human1Index];
+                const human2 = humans[connection.userData.human2Index];
+                
+                // Synchronize with heartbeats
+                const heartbeat1 = Math.sin(time * human1.userData.heartbeatSpeed + human1.userData.heartbeatPhase);
+                const heartbeat2 = Math.sin(time * human2.userData.heartbeatSpeed + human2.userData.heartbeatPhase);
+                
+                // Connection strength based on heartbeat synchrony
+                const sync = Math.abs(heartbeat1 - heartbeat2);
+                const empathyStrength = (2 - sync) / 2; // Inverse of difference
+                
+                connection.material.opacity = 0.1 + empathyStrength * 0.4;
+                
+                // Pulse along connection
+                const pulse = Math.sin(time * connection.userData.pulseSpeed + connection.userData.pulsePhase);
+                connection.material.color.setHSL(0, 0.8, 0.4 + pulse * 0.3);
+            });
+
+            // Camera gentle orbit
+            camera.position.x = Math.sin(time * 0.1) * 30;
+            camera.position.z = Math.cos(time * 0.1) * 30;
+            camera.lookAt(0, 2, 0);
+
+            renderer.render(scene, camera);
+        }
+
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+
+        init();
+    </script>
+</body>
+</html>

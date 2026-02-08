@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Wind Dancers - Mindful Journey</title>
+    <style>
+        body { 
+            margin: 0; 
+            overflow: hidden; 
+            background: #f8f8f8;
+            font-family: 'Inter', system-ui, sans-serif;
+        }
+        canvas { display: block; }
+        
+        .instruction {
+            position: absolute;
+            bottom: 40px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: rgba(26, 26, 26, 0.6);
+            font-size: 14px;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            pointer-events: none;
+            transition: opacity 0.5s ease;
+        }
+        
+        .back-btn {
+            position: absolute;
+            top: 40px;
+            left: 40px;
+            padding: 10px 20px;
+            background: transparent;
+            border: 1px solid rgba(26, 26, 26, 0.2);
+            color: #1a1a1a;
+            text-decoration: none;
+            font-size: 14px;
+            letter-spacing: 1px;
+            border-radius: 20px;
+            transition: all 0.3s ease;
+        }
+        
+        .back-btn:hover {
+            background: rgba(26, 26, 26, 0.05);
+            border-color: rgba(26, 26, 26, 0.4);
+        }
+    </style>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+</head>
+<body>
+    <a href="gallery.html" class="back-btn">← Back</a>
+    <div class="instruction">Figures flowing with invisible wind currents</div>
+    
+    <script>
+        let scene, camera, renderer;
+        let dancers = [];
+        let windParticles;
+        let windForces = [];
+        let time = 0;
+        
+        function init() {
+            scene = new THREE.Scene();
+            scene.background = new THREE.Color(0xf8f8f8);
+            
+            camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+            camera.position.set(0, 5, 12);
+            
+            renderer = new THREE.WebGLRenderer({ antialias: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.setClearColor(0xf8f8f8);
+            renderer.shadowMap.enabled = true;
+            renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+            document.body.appendChild(renderer.domElement);
+            
+            
+            createWindForces();
+            createDancers();
+            createWindParticles();
+            
+            animate();
+        }
+        
+        function createWindForces() {
+            // Create invisible wind force fields
+            for (let i = 0; i < 5; i++) {
+                windForces.push({
+                    position: new THREE.Vector3(
+                        (Math.random() - 0.5) * 20,
+                        Math.random() * 5 + 2,
+                        (Math.random() - 0.5) * 20
+                    ),
+                    direction: new THREE.Vector3(
+                        Math.random() - 0.5,
+                        Math.random() * 0.3,
+                        Math.random() - 0.5
+                    ).normalize(),
+                    strength: Math.random() * 2 + 0.5,
+                    radius: Math.random() * 5 + 3,
+                    phase: Math.random() * Math.PI * 2
+                });
+            }
+        }
+        
+        function createDancers() {
+            for (let i = 0; i < 6; i++) {
+                const dancer = createDancerFigure();
+                dancer.position.set(
+                    (Math.random() - 0.5) * 15,
+                    0.8,
+                    (Math.random() - 0.5) * 15
+                );
+                scene.add(dancer);
+                
+                dancers.push({
+                    mesh: dancer,
+                    velocity: new THREE.Vector3(),
+                    basePosition: dancer.position.clone(),
+                    phase: Math.random() * Math.PI * 2,
+                    danceStyle: Math.random() // Different dance styles
+                });
+            }
+        }
+        
+        function createDancerFigure() {
+            const group = new THREE.Group();
+            const material = new THREE.MeshBasicMaterial({ 
+                color: 0x1a1a1a,
+                transparent: true,
+                opacity: 0.8
+            });
+            
+            // Head
+            const headGeometry = new THREE.SphereGeometry(0.08, 8, 6);
+            const head = new THREE.Mesh(headGeometry, material);
+            head.position.y = 0.55;
+            group.add(head);
+            
+            // Torso
+            const torsoGeometry = new THREE.CylinderGeometry(0.06, 0.08, 0.3, 8);
+            const torso = new THREE.Mesh(torsoGeometry, material);
+            torso.position.y = 0.25;
+            group.add(torso);
+            
+            // Arms (more flexible for dancing)
+            const armGeometry = new THREE.CylinderGeometry(0.025, 0.03, 0.25, 6);
+            const leftArm = new THREE.Mesh(armGeometry, material);
+            const rightArm = new THREE.Mesh(armGeometry, material);
+            leftArm.position.set(-0.1, 0.35, 0);
+            rightArm.position.set(0.1, 0.35, 0);
+            group.add(leftArm);
+            group.add(rightArm);
+            
+            // Forearms
+            const forearmGeometry = new THREE.CylinderGeometry(0.02, 0.025, 0.2, 6);
+            const leftForearm = new THREE.Mesh(forearmGeometry, material);
+            const rightForearm = new THREE.Mesh(forearmGeometry, material);
+            leftForearm.position.set(-0.15, 0.15, 0);
+            rightForearm.position.set(0.15, 0.15, 0);
+            group.add(leftForearm);
+            group.add(rightForearm);
+            
+            // Legs
+            const legGeometry = new THREE.CylinderGeometry(0.04, 0.05, 0.35, 6);
+            const leftLeg = new THREE.Mesh(legGeometry, material);
+            const rightLeg = new THREE.Mesh(legGeometry, material);
+            leftLeg.position.set(-0.05, -0.1, 0);
+            rightLeg.position.set(0.05, -0.1, 0);
+            group.add(leftLeg);
+            group.add(rightLeg);
+            
+            // Flowing fabric/ribbons
+            const fabricMaterial = new THREE.MeshBasicMaterial({ 
+                color: 0x1a1a1a,
+                transparent: true,
+                opacity: 0.3
+            });
+            
+            for (let i = 0; i < 3; i++) {
+                const fabricGeometry = new THREE.PlaneGeometry(0.1, 0.8);
+                const fabric = new THREE.Mesh(fabricGeometry, fabricMaterial);
+                fabric.position.set(
+                    (Math.random() - 0.5) * 0.3,
+                    0.2,
+                    (Math.random() - 0.5) * 0.2
+                );
+                fabric.rotation.y = Math.random() * Math.PI * 2;
+                group.add(fabric);
+            }
+            
+            return group;
+        }
+        
+        function createWindParticles() {
+            const particleCount = 200;
+            const geometry = new THREE.BufferGeometry();
+            const positions = new Float32Array(particleCount * 3);
+            const velocities = new Float32Array(particleCount * 3);
+            
+            for (let i = 0; i < particleCount; i++) {
+                positions[i * 3] = (Math.random() - 0.5) * 40;
+                positions[i * 3 + 1] = Math.random() * 10;
+                positions[i * 3 + 2] = (Math.random() - 0.5) * 40;
+                
+                velocities[i * 3] = (Math.random() - 0.5) * 0.02;
+                velocities[i * 3 + 1] = (Math.random() - 0.5) * 0.01;
+                velocities[i * 3 + 2] = (Math.random() - 0.5) * 0.02;
+            }
+            
+            geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+            geometry.setAttribute('velocity', new THREE.BufferAttribute(velocities, 3));
+            
+            const material = new THREE.PointsMaterial({
+                color: 0x1a1a1a,
+                size: 0.02,
+                transparent: true,
+                opacity: 0.2
+            });
+            
+            windParticles = new THREE.Points(geometry, material);
+            scene.add(windParticles);
+        }
+        
+        function calculateWindForce(position) {
+            const totalForce = new THREE.Vector3();
+            
+            windForces.forEach(force => {
+                const distance = position.distanceTo(force.position);
+                if (distance < force.radius) {
+                    const influence = (force.radius - distance) / force.radius;
+                    const windEffect = force.direction.clone()
+                        .multiplyScalar(force.strength * influence * (1 + Math.sin(time + force.phase) * 0.5));
+                    totalForce.add(windEffect);
+                }
+            });
+            
+            return totalForce;
+        }
+        
+        function animate() {
+            requestAnimationFrame(animate);
+            
+            time += 0.016;
+            
+            // Update wind forces (they drift and change)
+            windForces.forEach(force => {
+                force.position.x += Math.sin(time * 0.5 + force.phase) * 0.02;
+                force.position.z += Math.cos(time * 0.3 + force.phase) * 0.02;
+                force.direction.applyAxisAngle(new THREE.Vector3(0, 1, 0), 0.005);
+            });
+            
+            // Animate dancers
+            dancers.forEach((dancer, index) => {
+                const windForce = calculateWindForce(dancer.mesh.position);
+                
+                // Apply wind force to dancer
+                dancer.velocity.add(windForce.multiplyScalar(0.01));
+                dancer.velocity.multiplyScalar(0.95); // Damping
+                
+                // Update position
+                dancer.mesh.position.add(dancer.velocity);
+                
+                // Keep dancers in bounds
+                if (dancer.mesh.position.x > 12) dancer.velocity.x -= 0.01;
+                if (dancer.mesh.position.x < -12) dancer.velocity.x += 0.01;
+                if (dancer.mesh.position.z > 12) dancer.velocity.z -= 0.01;
+                if (dancer.mesh.position.z < -12) dancer.velocity.z += 0.01;
+                
+                // Dance movements based on wind
+                const windStrength = windForce.length();
+                const danceIntensity = windStrength * 3 + 0.5;
+                
+                // Body sway
+                dancer.mesh.rotation.x = Math.sin(time * 2 + dancer.phase) * windStrength * 0.3;
+                dancer.mesh.rotation.z = Math.cos(time * 1.5 + dancer.phase) * windStrength * 0.2;
+                
+                // Arms flowing with wind
+                const armSway = Math.sin(time * 3 + dancer.phase) * danceIntensity;
+                dancer.mesh.children[2].rotation.z = 0.5 + armSway * 0.8; // Left arm
+                dancer.mesh.children[3].rotation.z = -0.5 - armSway * 0.8; // Right arm
+                dancer.mesh.children[2].rotation.x = Math.cos(time * 2 + dancer.phase) * 0.5;
+                dancer.mesh.children[3].rotation.x = Math.sin(time * 2 + dancer.phase) * 0.5;
+                
+                // Forearms follow
+                dancer.mesh.children[4].rotation.x = armSway * 0.5;
+                dancer.mesh.children[5].rotation.x = -armSway * 0.5;
+                
+                // Legs stepping with the wind
+                const stepCycle = Math.sin(time * 4 + dancer.phase);
+                dancer.mesh.children[6].rotation.x = stepCycle * 0.3; // Left leg
+                dancer.mesh.children[7].rotation.x = -stepCycle * 0.3; // Right leg
+                
+                // Body height variation (jumping/floating)
+                dancer.mesh.position.y = 0.8 + Math.sin(time * 3 + dancer.phase) * windStrength * 0.3;
+                
+                // Animate flowing fabric
+                for (let i = 8; i < dancer.mesh.children.length; i++) {
+                    const fabric = dancer.mesh.children[i];
+                    fabric.rotation.x = Math.sin(time * 4 + i) * windStrength * 0.5;
+                    fabric.rotation.z = Math.cos(time * 3 + i) * windStrength * 0.3;
+                    fabric.position.y = 0.2 + Math.sin(time * 5 + i) * windStrength * 0.1;
+                }
+            });
+            
+            // Animate wind particles
+            const positions = windParticles.geometry.attributes.position.array;
+            const velocities = windParticles.geometry.attributes.velocity.array;
+            
+            for (let i = 0; i < positions.length; i += 3) {
+                const particlePos = new THREE.Vector3(
+                    positions[i],
+                    positions[i + 1],
+                    positions[i + 2]
+                );
+                
+                const windForce = calculateWindForce(particlePos);
+                
+                velocities[i] += windForce.x * 0.001;
+                velocities[i + 1] += windForce.y * 0.001;
+                velocities[i + 2] += windForce.z * 0.001;
+                
+                positions[i] += velocities[i];
+                positions[i + 1] += velocities[i + 1];
+                positions[i + 2] += velocities[i + 2];
+                
+                // Reset particles that go too far
+                if (Math.abs(positions[i]) > 20) {
+                    positions[i] = (Math.random() - 0.5) * 40;
+                    velocities[i] = (Math.random() - 0.5) * 0.02;
+                }
+                if (positions[i + 1] > 12 || positions[i + 1] < 0) {
+                    positions[i + 1] = Math.random() * 10;
+                    velocities[i + 1] = (Math.random() - 0.5) * 0.01;
+                }
+                if (Math.abs(positions[i + 2]) > 20) {
+                    positions[i + 2] = (Math.random() - 0.5) * 40;
+                    velocities[i + 2] = (Math.random() - 0.5) * 0.02;
+                }
+            }
+            
+            windParticles.geometry.attributes.position.needsUpdate = true;
+            
+            // Camera movement
+            camera.position.x = Math.sin(time * 0.3) * 8;
+            camera.position.y = 5 + Math.sin(time * 0.2) * 2;
+            camera.position.z = 12 + Math.cos(time * 0.4) * 3;
+            camera.lookAt(0, 2, 0);
+            
+            renderer.render(scene, camera);
+        }
+        
+        function onWindowResize() {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        }
+        
+        window.addEventListener('resize', onWindowResize, false);
+        
+        init();
+    </script>
+</body>
+</html>

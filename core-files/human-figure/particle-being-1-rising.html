@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Particle Being - Rising Figure</title>
+    <style>
+        body { 
+            margin: 0; 
+            overflow: hidden; 
+            background: #f8f8f8;
+            font-family: 'Inter', system-ui, sans-serif;
+        }
+        canvas { display: block; }
+        
+        .back-btn {
+            position: absolute;
+            top: 40px;
+            left: 40px;
+            padding: 10px 20px;
+            background: transparent;
+            border: 1px solid rgba(26, 26, 26, 0.2);
+            color: #1a1a1a;
+            text-decoration: none;
+            font-size: 14px;
+            letter-spacing: 1px;
+            border-radius: 20px;
+            transition: all 0.3s ease;
+            z-index: 10;
+        }
+        
+        .back-btn:hover {
+            background: rgba(26, 26, 26, 0.05);
+            border-color: rgba(26, 26, 26, 0.4);
+        }
+        
+        .instruction {
+            position: absolute;
+            bottom: 40px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: rgba(26, 26, 26, 0.4);
+            font-size: 12px;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            pointer-events: none;
+        }
+    </style>
+</head>
+<body>
+    <a href="index.html" class="back-btn">BACK</a>
+    <div class="instruction">Move mouse to influence particles</div>
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="particle-being-library.js"></script>
+    <script>
+        let scene, camera, renderer;
+        let particleSystem;
+        let time = 0;
+        let mouse = new THREE.Vector2();
+
+        function init() {
+            scene = new THREE.Scene();
+            scene.background = new THREE.Color(0xf8f8f8);
+
+            camera = new THREE.PerspectiveCamera(
+                75, window.innerWidth / window.innerHeight, 0.1, 1000
+            );
+            camera.position.set(0, 10, 30);
+            camera.lookAt(0, 5, 0);
+
+            renderer = new THREE.WebGLRenderer({ antialias: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            document.body.appendChild(renderer.domElement);
+
+            // Initialize particle being system
+            particleSystem = new ParticleBeingSystem(scene, {
+                particleCount: 250,
+                speedMultiplier: 0.8, // Slowed down by 20%
+                colorRange: { h: 0, s: 0, lMin: 0.1, lMax: 0.4 }
+            });
+
+            // Create rising figure - starts from ground, rises up
+            const risingFigure = particleSystem.convertToParticleBeing(
+                null, // No mesh, use default human silhouette
+                { x: 0, y: -5, z: 0 },
+                {
+                    particleCount: 300,
+                    states: ['scattered', 'forming', 'rising', 'stable'],
+                    stateTimings: {
+                        scattered: 2,
+                        forming: 3,
+                        rising: 5,
+                        stable: 4
+                    },
+                    attractionForces: {
+                        scattered: 0.002,
+                        forming: 0.03,
+                        rising: 0.025,
+                        stable: 0.02
+                    }
+                }
+            );
+
+            // Override update for rising motion
+            const originalUpdateBeing = particleSystem.updateBeing.bind(particleSystem);
+            particleSystem.updateBeing = function(being, deltaTime) {
+                originalUpdateBeing(being, deltaTime);
+                
+                // Rising motion
+                if (being.userData.state === 'rising') {
+                    const riseProgress = being.userData.stateTimer / 5;
+                    being.userData.basePosition.y = -5 + (riseProgress * 5);
+                    
+                    being.particles.forEach(particle => {
+                        // Add upward force
+                        particle.userData.velocity.y += 0.001 * (1 - riseProgress);
+                    });
+                }
+            };
+
+            // Create ambient particles
+            particleSystem.createAmbientParticles(150);
+
+            animate();
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+            time += 0.016;
+
+            // Update particle system
+            particleSystem.update(0.016);
+
+            // Apply mouse influence
+            particleSystem.applyMouseInfluence(mouse.x, mouse.y, 0.5);
+
+            // Camera movement
+            const radius = 25 + Math.sin(time * 0.08) * 5;
+            camera.position.x = Math.sin(time * 0.05) * radius;
+            camera.position.z = Math.cos(time * 0.05) * radius;
+            camera.position.y = 10 + Math.sin(time * 0.04) * 3;
+            camera.lookAt(0, 5, 0);
+
+            renderer.render(scene, camera);
+        }
+
+        // Mouse tracking
+        document.addEventListener('mousemove', (event) => {
+            mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+            mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+        });
+
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+
+        init();
+    </script>
+</body>
+</html>

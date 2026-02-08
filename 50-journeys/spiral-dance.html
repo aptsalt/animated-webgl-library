@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Spiral Dance - Eternal Rotation</title>
+    <style>
+        body { 
+            margin: 0; 
+            overflow: hidden; 
+            background: #f8f8f8;
+            font-family: 'Inter', system-ui, sans-serif;
+        }
+        canvas { display: block; }
+        
+        .back-btn {
+            position: absolute;
+            top: 40px;
+            left: 40px;
+            padding: 10px 20px;
+            background: rgba(255, 255, 255, 0.9);
+            border: 1px solid rgba(26, 26, 26, 0.2);
+            color: #1a1a1a;
+            text-decoration: none;
+            font-size: 14px;
+            letter-spacing: 1px;
+            border-radius: 20px;
+            transition: all 0.3s ease;
+            z-index: 10;
+        }
+        
+        .back-btn:hover {
+            background: rgba(255, 255, 255, 1);
+            border-color: rgba(26, 26, 26, 0.4);
+        }
+    </style>
+</head>
+<body>
+    <a href="gallery.html" class="back-btn">← Back</a>
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="lib/theme-system.js"></script>
+    <script>
+        let scene, camera, renderer;
+        let dancers = [];
+        let spiralPaths = [];
+        let time = 0;
+        let themeSystem;
+        let materials = [];
+
+        function init() {
+            // Initialize theme system
+            themeSystem = new HumanFigureThemeSystem();
+            
+            scene = new THREE.Scene();
+            scene.background = new THREE.Color(0xf8f8f8);
+            scene.fog = new THREE.Fog(0xf0f0f0, 20, 80);
+
+            camera = new THREE.PerspectiveCamera(
+                60, window.innerWidth / window.innerHeight, 0.1, 1000
+            );
+            camera.position.set(0, 50, 0); // Top-down view
+            camera.lookAt(0, 0, 0);
+
+            renderer = new THREE.WebGLRenderer({ antialias: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.shadowMap.enabled = true;
+            document.body.appendChild(renderer.domElement);
+
+            // Lighting
+            const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+            scene.add(ambientLight);
+
+            const directionalLight = new THREE.DirectionalLight(0xffffff, 0.4);
+            directionalLight.position.set(20, 30, 20);
+            directionalLight.castShadow = true;
+            scene.add(directionalLight);
+
+            createSpiralDancers();
+            createSpiralPaths();
+            // Floor removed
+            setupThemeEventListeners();
+            animate();
+        }
+        
+        function setupThemeEventListeners() {
+            window.addEventListener('themeChanged', (event) => {
+                const { theme, palette } = event.detail;
+                updateDancersWithTheme(theme, palette);
+            });
+            
+            window.addEventListener('paletteChanged', (event) => {
+                const { palette } = event.detail;
+                updateDancersWithPalette(palette);
+            });
+        }
+        
+        function updateDancersWithTheme(theme, palette) {
+            // Update dancers with new theme
+            dancers.forEach(dancer => {
+                dancer.children.forEach(child => {
+                    if (child.material) {
+                        child.material.opacity = theme.particleOpacity || 0.7;
+                        child.material.transparent = true;
+                    }
+                });
+            });
+            
+            // Update scene background
+            scene.background.setHex(parseInt(palette.background.replace('#', ''), 16));
+        }
+        
+        function updateDancersWithPalette(palette) {
+            // Update scene background
+            scene.background.setHex(parseInt(palette.background.replace('#', ''), 16));
+            
+            // Update dancer colors
+            dancers.forEach((dancer, index) => {
+                const colorIndex = index % palette.gradient.length;
+                const color = palette.gradient[colorIndex];
+                
+                dancer.children.forEach(child => {
+                    if (child.material) {
+                        child.material.color.setHex(parseInt(color.replace('#', ''), 16));
+                    }
+                });
+            });
+        }
+
+        function createSpiralDancers() {
+            const dancerCount = 10;
+            const spiralLevels = 3;
+            let totalDancers = 0;
+            
+            // Create all dancers at same level for top view
+            const totalDancerCount = 23;
+            const centerRadius = 8; // Circle radius where figures come close
+            
+            for (let i = 0; i < totalDancerCount; i++) {
+                const dancer = createDancer();
+                
+                dancer.userData = {
+                    angle: (i / totalDancerCount) * Math.PI * 2,
+                    baseRadius: 25, // Start far from center
+                    centerRadius: centerRadius, // Close radius when in circle
+                    height: 0, // All at ground level for top view
+                    speed: 0.1 + Math.random() * 0.05,
+                    phase: Math.random() * Math.PI * 2,
+                    approachPhase: Math.random() * Math.PI * 2
+                };
+                    
+                scene.add(dancer);
+                dancers.push(dancer);
+            }
+        }
+
+        function createDancer() {
+            const group = new THREE.Group();
+            
+            const currentTheme = themeSystem.getCurrentTheme();
+            const currentPalette = themeSystem.getCurrentPalette();
+            const colorIndex = Math.floor(Math.random() * currentPalette.gradient.length);
+            const color = currentPalette.gradient[colorIndex];
+            
+            const material = new THREE.MeshStandardMaterial({
+                color: parseInt(color.replace('#', ''), 16),
+                transparent: true,
+                opacity: currentTheme.particleOpacity || 0.7
+            });
+            
+            materials.push(material);
+
+            // Body
+            const bodyGeometry = new THREE.CylinderGeometry(0.15, 0.2, 1, 6);
+            const body = new THREE.Mesh(bodyGeometry, material);
+            body.castShadow = true;
+            
+            // Head
+            const headGeometry = new THREE.SphereGeometry(0.2, 6, 6);
+            const head = new THREE.Mesh(headGeometry, material);
+            head.position.y = 0.7;
+            head.castShadow = true;
+            
+            // Arms (extended for dancing)
+            const armGeometry = new THREE.CylinderGeometry(0.04, 0.04, 0.6, 4);
+            const leftArm = new THREE.Mesh(armGeometry, material);
+            const rightArm = new THREE.Mesh(armGeometry, material);
+            
+            leftArm.position.set(-0.3, 0.3, 0);
+            rightArm.position.set(0.3, 0.3, 0);
+            leftArm.rotation.z = Math.PI / 3;
+            rightArm.rotation.z = -Math.PI / 3;
+            leftArm.castShadow = true;
+            rightArm.castShadow = true;
+            
+            // Legs
+            const legGeometry = new THREE.CylinderGeometry(0.05, 0.06, 0.6, 4);
+            const leftLeg = new THREE.Mesh(legGeometry, material);
+            const rightLeg = new THREE.Mesh(legGeometry, material);
+            
+            leftLeg.position.set(-0.1, -0.5, 0);
+            rightLeg.position.set(0.1, -0.5, 0);
+            leftLeg.castShadow = true;
+            rightLeg.castShadow = true;
+            
+            group.add(body);
+            group.add(head);
+            group.add(leftArm);
+            group.add(rightArm);
+            group.add(leftLeg);
+            group.add(rightLeg);
+            
+            return group;
+        }
+
+        function createSpiralPaths() {
+            // Create circular boundary (the red circle from image)
+            const circleGeometry = new THREE.RingGeometry(7, 9, 64);
+            const circleMaterial = new THREE.MeshBasicMaterial({
+                color: 0xcc0000,
+                transparent: true,
+                opacity: 0.3,
+                side: THREE.DoubleSide
+            });
+            const circle = new THREE.Mesh(circleGeometry, circleMaterial);
+            circle.rotation.x = -Math.PI / 2;
+            circle.position.y = 0.1;
+            scene.add(circle);
+            
+            // Add outer boundary indicators
+            for (let i = 0; i < 8; i++) {
+                const angle = (i / 8) * Math.PI * 2;
+                const markerGeometry = new THREE.BoxGeometry(0.5, 0.5, 0.5);
+                const markerMaterial = new THREE.MeshBasicMaterial({
+                    color: 0x999999,
+                    transparent: true,
+                    opacity: 0.5
+                });
+                const marker = new THREE.Mesh(markerGeometry, markerMaterial);
+                marker.position.set(
+                    Math.cos(angle) * 25,
+                    0,
+                    Math.sin(angle) * 25
+                );
+                scene.add(marker);
+            }
+        }
+
+        // Floor function removed
+
+        function animate() {
+            requestAnimationFrame(animate);
+            time += 0.003; // Much slower time progression
+
+            // Apply theme-specific animation to dancers
+            const animationFn = themeSystem.getAnimationFunction();
+            dancers.forEach((dancer, index) => {
+                animationFn(dancer, time);
+            });
+            
+            // Animate dancers in spiral motion
+            dancers.forEach((dancer, index) => {
+                const data = dancer.userData;
+                
+                // Update angle for rotation
+                data.angle += data.speed * 0.01;
+                
+                // Calculate if dancer should be near or far from center
+                const approachCycle = Math.sin(time * 0.5 + data.approachPhase);
+                const isNearCenter = approachCycle > 0.3; // 40% of time near center
+                
+                // Smoothly transition between far and near positions
+                let targetRadius;
+                if (isNearCenter) {
+                    targetRadius = data.centerRadius + Math.sin(time * 2 + data.phase) * 1;
+                } else {
+                    targetRadius = data.baseRadius + Math.sin(time * 0.8 + data.phase) * 3;
+                }
+                
+                // Smooth radius transition
+                const currentRadius = data.currentRadius || data.baseRadius;
+                data.currentRadius = currentRadius + (targetRadius - currentRadius) * 0.05;
+                
+                dancer.position.x = Math.cos(data.angle) * data.currentRadius;
+                dancer.position.z = Math.sin(data.angle) * data.currentRadius;
+                dancer.position.y = data.height; // Keep at ground level
+                
+                // Face direction of movement
+                dancer.rotation.y = data.angle + Math.PI / 2;
+                
+                // Dancing motion (slower)
+                dancer.rotation.z = Math.sin(time * 1.5 + data.phase) * 0.08;
+                dancer.rotation.x = Math.cos(time + data.phase) * 0.04;
+                
+                // Arm movement (slower)
+                if (dancer.children[2] && dancer.children[3]) {
+                    dancer.children[2].rotation.z = Math.PI / 3 + Math.sin(time + data.phase) * 0.25;
+                    dancer.children[3].rotation.z = -Math.PI / 3 - Math.sin(time + data.phase) * 0.25;
+                    dancer.children[2].rotation.y = Math.sin(time * 1.5 + data.phase) * 0.15;
+                    dancer.children[3].rotation.y = -Math.sin(time * 1.5 + data.phase) * 0.15;
+                }
+                
+                // Leg movement (slower)
+                if (dancer.children[4] && dancer.children[5]) {
+                    dancer.children[4].rotation.x = Math.sin(time * 2 + data.phase) * 0.15;
+                    dancer.children[5].rotation.x = -Math.sin(time * 2 + data.phase) * 0.15;
+                }
+                
+                // Opacity based on level
+                dancer.children.forEach(child => {
+                    child.material.opacity = 0.8 - data.level * 0.2;
+                });
+            });
+
+            // Rotate spiral paths (slower)
+            spiralPaths.forEach((spiral, index) => {
+                spiral.rotation.y += 0.0003 * (index + 1);
+            });
+
+            // Static top-down camera with slight movement
+            camera.position.x = Math.sin(time * 0.02) * 5;
+            camera.position.z = Math.cos(time * 0.02) * 5;
+            camera.position.y = 45 + Math.sin(time * 0.05) * 5;
+            camera.lookAt(0, 0, 0);
+
+            renderer.render(scene, camera);
+        }
+
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+
+        init();
+    </script>
+</body>
+</html>

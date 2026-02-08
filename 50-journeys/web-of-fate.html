@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Web of Fate - Intertwined Paths</title>
+    <style>
+        body { 
+            margin: 0; 
+            overflow: hidden; 
+            background: #fafafa;
+            font-family: 'Inter', system-ui, sans-serif;
+        }
+        canvas { display: block; }
+        
+        .back-btn {
+            position: absolute;
+            top: 40px;
+            left: 40px;
+            padding: 10px 20px;
+            background: rgba(255, 255, 255, 0.9);
+            border: 1px solid rgba(26, 26, 26, 0.2);
+            color: #1a1a1a;
+            text-decoration: none;
+            font-size: 14px;
+            letter-spacing: 1px;
+            border-radius: 20px;
+            transition: all 0.3s ease;
+            z-index: 10;
+        }
+        
+        .back-btn:hover {
+            background: rgba(255, 255, 255, 1);
+            border-color: rgba(26, 26, 26, 0.4);
+        }
+    </style>
+</head>
+<body>
+    <a href="gallery.html" class="back-btn">← Back</a>
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script>
+        let scene, camera, renderer;
+        let nodes = [];
+        let connections = [];
+        let particles = [];
+        let time = 0;
+        let mouse = new THREE.Vector2();
+
+        function init() {
+            scene = new THREE.Scene();
+            scene.background = new THREE.Color(0xfafafa);
+
+            camera = new THREE.PerspectiveCamera(
+                75, window.innerWidth / window.innerHeight, 0.1, 1000
+            );
+            camera.position.z = 60;
+
+            renderer = new THREE.WebGLRenderer({ antialias: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            document.body.appendChild(renderer.domElement);
+
+            createWeb();
+            createTravelingParticles();
+            animate();
+        }
+
+        function createWeb() {
+            const nodeCount = 30;
+            
+            // Create nodes (human figures at fate points)
+            for (let i = 0; i < nodeCount; i++) {
+                const group = new THREE.Group();
+                
+                // Minimalist human
+                const material = new THREE.MeshBasicMaterial({
+                    color: 0x1a1a1a,
+                    transparent: true,
+                    opacity: 0.7
+                });
+                
+                const bodyGeometry = new THREE.CylinderGeometry(0.1, 0.1, 0.8, 4);
+                const body = new THREE.Mesh(bodyGeometry, material);
+                
+                const headGeometry = new THREE.SphereGeometry(0.15, 4, 4);
+                const head = new THREE.Mesh(headGeometry, material);
+                head.position.y = 0.55;
+                
+                group.add(body);
+                group.add(head);
+                
+                // Position in web pattern
+                const angle = (i / nodeCount) * Math.PI * 2;
+                const radius = 20 + (i % 3) * 10;
+                const height = (Math.sin(i * 0.5) * 10);
+                
+                group.position.set(
+                    Math.cos(angle) * radius,
+                    height,
+                    Math.sin(angle) * radius
+                );
+                
+                group.userData = {
+                    id: i,
+                    connections: [],
+                    phase: Math.random() * Math.PI * 2,
+                    pulseSpeed: 1 + Math.random()
+                };
+                
+                scene.add(group);
+                nodes.push(group);
+            }
+            
+            // Create web connections
+            nodes.forEach((node, i) => {
+                // Connect to nearby nodes
+                const connectCount = 2 + Math.floor(Math.random() * 3);
+                for (let j = 0; j < connectCount; j++) {
+                    const targetIndex = (i + 1 + j * 3) % nodes.length;
+                    const target = nodes[targetIndex];
+                    
+                    if (!connectionExists(node, target)) {
+                        createConnection(node, target);
+                    }
+                }
+            });
+        }
+
+        function connectionExists(node1, node2) {
+            return connections.some(conn => 
+                (conn.userData.start === node1 && conn.userData.end === node2) ||
+                (conn.userData.start === node2 && conn.userData.end === node1)
+            );
+        }
+
+        function createConnection(node1, node2) {
+            const curve = new THREE.CatmullRomCurve3([
+                node1.position,
+                new THREE.Vector3(
+                    (node1.position.x + node2.position.x) / 2,
+                    (node1.position.y + node2.position.y) / 2 + Math.random() * 5,
+                    (node1.position.z + node2.position.z) / 2
+                ),
+                node2.position
+            ]);
+            
+            const points = curve.getPoints(50);
+            const geometry = new THREE.BufferGeometry().setFromPoints(points);
+            const material = new THREE.LineBasicMaterial({
+                color: 0x606060,
+                transparent: true,
+                opacity: 0.3
+            });
+            
+            const line = new THREE.Line(geometry, material);
+            line.userData = {
+                start: node1,
+                end: node2,
+                curve: curve,
+                baseOpacity: 0.3
+            };
+            
+            scene.add(line);
+            connections.push(line);
+            
+            node1.userData.connections.push(node2);
+            node2.userData.connections.push(node1);
+        }
+
+        function createTravelingParticles() {
+            // Create particles that travel along connections
+            connections.forEach(connection => {
+                for (let i = 0; i < 2; i++) {
+                    const particle = new THREE.Mesh(
+                        new THREE.SphereGeometry(0.2, 4, 4),
+                        new THREE.MeshBasicMaterial({
+                            color: 0xffffff,
+                            transparent: true,
+                            opacity: 0.8
+                        })
+                    );
+                    
+                    particle.userData = {
+                        connection: connection,
+                        progress: Math.random(),
+                        speed: 0.002 + Math.random() * 0.003,
+                        direction: Math.random() > 0.5 ? 1 : -1
+                    };
+                    
+                    scene.add(particle);
+                    particles.push(particle);
+                }
+            });
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+            time += 0.01;
+
+            // Animate nodes
+            nodes.forEach(node => {
+                // Pulsing effect
+                const pulse = Math.sin(time * node.userData.pulseSpeed + node.userData.phase);
+                node.scale.set(1 + pulse * 0.1, 1 + pulse * 0.1, 1 + pulse * 0.1);
+                
+                // Gentle rotation
+                node.rotation.y = Math.sin(time * 0.5 + node.userData.phase) * 0.2;
+                
+                // Opacity changes
+                node.children.forEach(child => {
+                    child.material.opacity = 0.5 + pulse * 0.2;
+                });
+            });
+
+            // Animate connections
+            connections.forEach((connection, index) => {
+                // Pulse opacity
+                connection.material.opacity = connection.userData.baseOpacity + 
+                    Math.sin(time * 2 + index) * 0.1;
+            });
+
+            // Animate traveling particles
+            particles.forEach(particle => {
+                // Move along connection
+                particle.userData.progress += particle.userData.speed * particle.userData.direction;
+                
+                // Reverse at ends
+                if (particle.userData.progress > 1 || particle.userData.progress < 0) {
+                    particle.userData.direction *= -1;
+                    particle.userData.progress = Math.max(0, Math.min(1, particle.userData.progress));
+                }
+                
+                // Position on curve
+                const point = particle.userData.connection.userData.curve.getPoint(particle.userData.progress);
+                particle.position.copy(point);
+                
+                // Glow effect
+                particle.material.opacity = 0.4 + Math.sin(time * 5 + particle.userData.progress * Math.PI) * 0.4;
+                const scale = 1 + Math.sin(time * 3) * 0.3;
+                particle.scale.set(scale, scale, scale);
+            });
+
+            // Camera movement
+            camera.position.x = Math.sin(time * 0.05) * 20;
+            camera.position.y = Math.cos(time * 0.08) * 10;
+            camera.lookAt(0, 0, 0);
+
+            renderer.render(scene, camera);
+        }
+
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+
+        window.addEventListener('mousemove', (event) => {
+            mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+            mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+        });
+
+        init();
+    </script>
+</body>
+</html>

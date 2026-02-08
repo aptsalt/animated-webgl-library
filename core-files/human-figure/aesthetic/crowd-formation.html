@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Crowd Formation - Aesthetic Human Figures</title>
+    <style>
+        body { 
+            margin: 0; 
+            overflow: hidden; 
+            background: linear-gradient(180deg, #e0e0e0 0%, #f0f0f0 100%);
+            font-family: 'Inter', system-ui, sans-serif;
+        }
+        canvas { display: block; }
+        
+        .back-btn {
+            position: absolute;
+            top: 40px;
+            left: 40px;
+            padding: 10px 20px;
+            background: transparent;
+            border: 1px solid rgba(26, 26, 26, 0.1);
+            color: #1a1a1a;
+            text-decoration: none;
+            font-size: 14px;
+            letter-spacing: 1px;
+            border-radius: 20px;
+            transition: all 0.3s ease;
+            z-index: 10;
+        }
+        
+        .back-btn:hover {
+            background: rgba(26, 26, 26, 0.05);
+            border-color: rgba(26, 26, 26, 0.2);
+        }
+    </style>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+</head>
+<body>
+    <a href="../index.html" class="back-btn">← Back</a>
+    
+    <script>
+        let scene, camera, renderer;
+        let figures = [];
+        let time = 0;
+        
+        function init() {
+            scene = new THREE.Scene();
+            scene.background = new THREE.Color(0xefefef);
+            scene.fog = new THREE.Fog(0xefefef, 20, 60);
+            
+            camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 0.1, 1000);
+            camera.position.set(0, 20, 30);
+            camera.lookAt(0, 0, 0);
+            
+            renderer = new THREE.WebGLRenderer({ antialias: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.shadowMap.enabled = true;
+            renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+            document.body.appendChild(renderer.domElement);
+            
+            // Lighting
+            const ambientLight = new THREE.AmbientLight(0xffffff, 0.7);
+            scene.add(ambientLight);
+            
+            const directionalLight = new THREE.DirectionalLight(0xffffff, 0.3);
+            directionalLight.position.set(10, 20, 10);
+            directionalLight.castShadow = true;
+            directionalLight.shadow.camera.near = 0.1;
+            directionalLight.shadow.camera.far = 100;
+            directionalLight.shadow.camera.left = -30;
+            directionalLight.shadow.camera.right = 30;
+            directionalLight.shadow.camera.top = 30;
+            directionalLight.shadow.camera.bottom = -30;
+            scene.add(directionalLight);
+            
+            // Ground plane for shadows
+            const groundGeometry = new THREE.PlaneGeometry(100, 100);
+            const groundMaterial = new THREE.MeshBasicMaterial({ 
+                color: 0xf5f5f5,
+                side: THREE.DoubleSide
+            });
+            const ground = new THREE.Mesh(groundGeometry, groundMaterial);
+            ground.rotation.x = -Math.PI / 2;
+            ground.receiveShadow = true;
+            scene.add(ground);
+            
+            createCrowd();
+            animate();
+        }
+        
+        function createSimpleFigure() {
+            const group = new THREE.Group();
+            
+            const material = new THREE.MeshBasicMaterial({
+                color: 0x1a1a1a
+            });
+            
+            // Simplified silhouette
+            const bodyGeometry = new THREE.CylinderGeometry(0.3, 0.35, 1.8, 6);
+            const body = new THREE.Mesh(bodyGeometry, material);
+            body.position.y = 0.9;
+            body.castShadow = true;
+            group.add(body);
+            
+            // Head
+            const headGeometry = new THREE.SphereGeometry(0.2, 6, 4);
+            const head = new THREE.Mesh(headGeometry, material);
+            head.position.y = 2;
+            head.castShadow = true;
+            group.add(head);
+            
+            // Shadow
+            const shadowGeometry = new THREE.PlaneGeometry(1, 0.5);
+            const shadowMaterial = new THREE.MeshBasicMaterial({
+                color: 0x000000,
+                transparent: true,
+                opacity: 0.2,
+                side: THREE.DoubleSide
+            });
+            const shadow = new THREE.Mesh(shadowGeometry, shadowMaterial);
+            shadow.rotation.x = -Math.PI / 2;
+            shadow.position.y = 0.01;
+            group.add(shadow);
+            
+            return group;
+        }
+        
+        function createCrowd() {
+            // Create scattered crowd formation
+            const positions = [
+                // Front scattered group
+                { x: -8, z: 10 }, { x: -5, z: 9 }, { x: -2, z: 11 },
+                { x: 1, z: 8 }, { x: 4, z: 10 }, { x: 7, z: 9 },
+                
+                // Middle group
+                { x: -10, z: 0 }, { x: -7, z: -1 }, { x: -4, z: 1 },
+                { x: -1, z: -2 }, { x: 2, z: 0 }, { x: 5, z: -1 },
+                { x: 8, z: 1 }, { x: 10, z: -2 },
+                
+                // Back group
+                { x: -9, z: -10 }, { x: -6, z: -9 }, { x: -3, z: -11 },
+                { x: 0, z: -8 }, { x: 3, z: -10 }, { x: 6, z: -9 },
+                { x: 9, z: -11 },
+                
+                // Random scattered
+                { x: -12, z: 5 }, { x: 12, z: 4 }, { x: -3, z: -5 },
+                { x: 6, z: 6 }, { x: -8, z: -6 }, { x: 11, z: -7 }
+            ];
+            
+            positions.forEach((pos, index) => {
+                const figure = createSimpleFigure();
+                
+                // Add variation in position
+                figure.position.x = pos.x + (Math.random() - 0.5) * 1;
+                figure.position.z = pos.z + (Math.random() - 0.5) * 1;
+                
+                // Random rotation
+                figure.rotation.y = Math.random() * Math.PI * 2;
+                
+                // Scale variation
+                const scale = 0.8 + Math.random() * 0.4;
+                figure.scale.set(scale, scale, scale);
+                
+                // Store animation data
+                figure.userData = {
+                    walkSpeed: 0.5 + Math.random() * 0.5,
+                    walkPhase: Math.random() * Math.PI * 2,
+                    walkRadius: 1 + Math.random() * 2,
+                    baseX: figure.position.x,
+                    baseZ: figure.position.z,
+                    swaySpeed: 0.5 + Math.random() * 0.5
+                };
+                
+                scene.add(figure);
+                figures.push(figure);
+            });
+        }
+        
+        function animate() {
+            requestAnimationFrame(animate);
+            time += 0.01;
+            
+            // Animate each figure
+            figures.forEach((figure, index) => {
+                const data = figure.userData;
+                
+                // Subtle walking motion
+                const walkOffset = Math.sin(time * data.walkSpeed + data.walkPhase);
+                figure.position.x = data.baseX + Math.sin(time * 0.3 + index) * data.walkRadius;
+                figure.position.z = data.baseZ + Math.cos(time * 0.3 + index) * data.walkRadius * 0.5;
+                
+                // Subtle vertical bob
+                figure.position.y = Math.abs(Math.sin(time * 2 + data.walkPhase)) * 0.1;
+                
+                // Gentle sway
+                figure.rotation.y += Math.sin(time * data.swaySpeed) * 0.002;
+                
+                // Update shadow
+                const shadow = figure.children[2];
+                if (shadow) {
+                    shadow.scale.x = 1 + Math.abs(walkOffset) * 0.2;
+                    shadow.material.opacity = 0.2 - figure.position.y * 0.5;
+                }
+            });
+            
+            // Camera orbit
+            camera.position.x = Math.sin(time * 0.1) * 35;
+            camera.position.z = Math.cos(time * 0.1) * 35;
+            camera.position.y = 20 + Math.sin(time * 0.2) * 5;
+            camera.lookAt(0, 0, 0);
+            
+            renderer.render(scene, camera);
+        }
+        
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+        
+        init();
+    </script>
+</body>
+</html>

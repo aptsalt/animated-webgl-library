@@ -1,0 +1,493 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bridge Walkers - Connecting Paths</title>
+    <style>
+        body {
+            margin: 0;
+            background: #f8f8f8;
+            overflow: hidden;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        }
+        canvas { display: block; }
+        .title {
+            position: absolute;
+            top: 30px;
+            left: 30px;
+            color: #1a1a1a;
+            font-size: 24px;
+            font-weight: 300;
+            z-index: 100;
+            opacity: 0;
+            animation: fadeIn 3s ease-in-out 1s forwards;
+        }
+        .subtitle {
+            position: absolute;
+            bottom: 30px;
+            right: 30px;
+            color: #666;
+            font-size: 14px;
+            z-index: 100;
+            opacity: 0;
+            animation: fadeIn 3s ease-in-out 2s forwards;
+        }
+        @keyframes fadeIn {
+            to { opacity: 1; }
+        }
+    </style>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="lib/theme-system.js"></script>
+</head>
+<body>
+    <div class="title">Bridge Walkers</div>
+    <div class="subtitle">Crossing the spaces between</div>
+    
+    <script>
+        let scene, camera, renderer;
+        let walkers = [];
+        let bridges = [];
+        let time = 0;
+        let themeSystem;
+        let materials = [];
+        
+        function init() {
+            // Initialize theme system
+            themeSystem = new HumanFigureThemeSystem();
+            
+            scene = new THREE.Scene();
+            scene.background = new THREE.Color(0xf8f8f8);
+            scene.fog = new THREE.Fog(0xf0f0f0, 8, 25);
+            
+            camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+            camera.position.set(0, 6, 12);
+            
+            renderer = new THREE.WebGLRenderer({ antialias: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.setClearColor(0xf8f8f8);
+            renderer.shadowMap.enabled = true;
+            renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+            document.body.appendChild(renderer.domElement);
+            
+            // Ambient light
+            const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
+            scene.add(ambientLight);
+            
+            // Main directional light
+            const directionalLight = new THREE.DirectionalLight(0xffffff, 0.4);
+            directionalLight.position.set(-10, 10, 5);
+            directionalLight.castShadow = true;
+            directionalLight.shadow.mapSize.width = 2048;
+            directionalLight.shadow.mapSize.height = 2048;
+            scene.add(directionalLight);
+            
+            // Rim light
+            const rimLight = new THREE.DirectionalLight(0xffffff, 0.3);
+            rimLight.position.set(10, 5, -5);
+            scene.add(rimLight);
+            
+            createBridges();
+            createWalkers();
+            setupThemeEventListeners();
+            
+            animate();
+        }
+        
+        function setupThemeEventListeners() {
+            window.addEventListener('themeChanged', (event) => {
+                const { theme, palette } = event.detail;
+                updateWalkersWithTheme(theme, palette);
+            });
+            
+            window.addEventListener('paletteChanged', (event) => {
+                const { palette } = event.detail;
+                updateWalkersWithPalette(palette);
+            });
+        }
+        
+        function updateWalkersWithTheme(theme, palette) {
+            // Update walkers with new theme
+            walkers.forEach(walker => {
+                walker.mesh.children.forEach(child => {
+                    if (child.material) {
+                        child.material.opacity = theme.particleOpacity || 0.8;
+                        child.material.transparent = true;
+                    }
+                });
+            });
+            
+            // Update scene background
+            scene.background.setHex(parseInt(palette.background.replace('#', ''), 16));
+        }
+        
+        function updateWalkersWithPalette(palette) {
+            // Update scene background
+            scene.background.setHex(parseInt(palette.background.replace('#', ''), 16));
+            
+            // Update walker colors
+            walkers.forEach((walker, index) => {
+                const colorIndex = index % palette.gradient.length;
+                const color = palette.gradient[colorIndex];
+                
+                walker.mesh.children.forEach(child => {
+                    if (child.material) {
+                        child.material.color.setHex(parseInt(color.replace('#', ''), 16));
+                    }
+                });
+            });
+        }
+        
+        function createBridges() {
+            const bridgePositions = [
+                { start: [-8, 2, 0], end: [8, 2.8, 0], angle: 10 },    // Horizontal bridge with 10% incline
+                { start: [-8, 4, -4], end: [8, 6.5, -4], angle: 40 }   // Horizontal bridge with 40% incline
+            ];
+            
+            bridgePositions.forEach((bridge, index) => {
+                const startVec = new THREE.Vector3(...bridge.start);
+                const endVec = new THREE.Vector3(...bridge.end);
+                const length = startVec.distanceTo(endVec);
+                const midpoint = new THREE.Vector3().addVectors(startVec, endVec).multiplyScalar(0.5);
+                
+                // Create bridge group
+                const bridgeGroup = new THREE.Group();
+                
+                // Bridge materials
+                const deckMaterial = new THREE.MeshLambertMaterial({ 
+                    color: 0xaaaaaa,
+                    transparent: true,
+                    opacity: 0.9
+                });
+                
+                const railingMaterial = new THREE.MeshLambertMaterial({ 
+                    color: 0x888888,
+                    transparent: true,
+                    opacity: 0.8
+                });
+                
+                // Create arched bridge deck with railings
+                const bridgeDeck = createArchedDeck(length, deckMaterial);
+                bridgeGroup.add(bridgeDeck);
+                
+                // Add railings
+                const railings = createBridgeRailings(length, railingMaterial);
+                railings.forEach(railing => bridgeGroup.add(railing));
+                
+                // Position and orient bridge
+                bridgeGroup.position.copy(midpoint);
+                
+                const direction = new THREE.Vector3().subVectors(endVec, startVec).normalize();
+                const lookAtPoint = new THREE.Vector3().addVectors(midpoint, direction);
+                bridgeGroup.lookAt(lookAtPoint);
+                
+                bridgeGroup.traverse((child) => {
+                    if (child.isMesh) {
+                        child.receiveShadow = true;
+                        child.castShadow = true;
+                    }
+                });
+                
+                scene.add(bridgeGroup);
+                
+                bridges.push({
+                    mesh: bridgeGroup,
+                    start: startVec,
+                    end: endVec,
+                    length: length
+                });
+            });
+        }
+        
+        function createArchedDeck(length, material) {
+            // Create slightly arched bridge deck
+            const deckGroup = new THREE.Group();
+            const segments = 20;
+            const deckWidth = 2.5; // Wide bridge
+            const deckThickness = 0.2;
+            const archHeight = length * 0.03; // Very subtle arch
+            
+            for (let i = 0; i < segments; i++) {
+                const t = (i + 0.5) / segments;
+                const x = (t - 0.5) * length;
+                const y = -Math.pow(t - 0.5, 2) * 4 * archHeight;
+                
+                const segmentGeometry = new THREE.BoxGeometry(length/segments * 1.05, deckThickness, deckWidth);
+                const segment = new THREE.Mesh(segmentGeometry, material);
+                segment.position.set(x, y, 0);
+                
+                deckGroup.add(segment);
+            }
+            
+            return deckGroup;
+        }
+        
+        function createBridgeRailings(length, material) {
+            const railings = [];
+            const postCount = Math.floor(length / 2) + 1;
+            const postHeight = 1.2;
+            const postRadius = 0.05;
+            
+            // Create posts and rails on both sides
+            [-1.2, 1.2].forEach(side => {
+                // Vertical posts
+                for (let i = 0; i < postCount; i++) {
+                    const t = i / (postCount - 1);
+                    const x = (t - 0.5) * length;
+                    const y = -Math.pow(t - 0.5, 2) * 4 * length * 0.03;
+                    
+                    const postGeometry = new THREE.CylinderGeometry(postRadius, postRadius, postHeight, 8);
+                    const post = new THREE.Mesh(postGeometry, material);
+                    post.position.set(x, y + postHeight/2, side);
+                    railings.push(post);
+                }
+                
+                // Horizontal rails
+                const railGeometry = new THREE.CylinderGeometry(0.03, 0.03, length * 0.95, 8);
+                const topRail = new THREE.Mesh(railGeometry, material);
+                const midRail = new THREE.Mesh(railGeometry, material);
+                
+                topRail.position.set(0, postHeight * 0.8, side);
+                midRail.position.set(0, postHeight * 0.4, side);
+                
+                topRail.rotation.z = Math.PI / 2;
+                midRail.rotation.z = Math.PI / 2;
+                
+                railings.push(topRail, midRail);
+            });
+            
+            return railings;
+        }
+        
+        function createWalkers() {
+            // Create exactly 2 bridge walkers per bridge
+            bridges.forEach((bridge, bridgeIndex) => {
+                for (let i = 0; i < 2; i++) {
+                    const walker = createWalkerFigure();
+                    walker.castShadow = true;
+                    scene.add(walker);
+                    
+                    walkers.push({
+                        mesh: walker,
+                        type: 'bridge',
+                        bridge: bridge,
+                        progress: 0.2 + i * 0.6, // Space them out on bridge
+                        speed: 0.008 + Math.random() * 0.004, // Fast speed
+                        bobPhase: Math.random() * Math.PI * 2,
+                        direction: i === 0 ? 1 : -1 // Opposite directions
+                    });
+                }
+            });
+            
+            // Create exactly 8 confused wandering ground walkers
+            for (let i = 0; i < 8; i++) {
+                const walker = createWalkerFigure();
+                walker.castShadow = true;
+                scene.add(walker);
+                
+                // Random starting position and wandering parameters
+                walkers.push({
+                    mesh: walker,
+                    type: 'ground',
+                    position: new THREE.Vector3(
+                        Math.random() * 16 - 8,
+                        0,
+                        Math.random() * 16 - 8
+                    ),
+                    targetPosition: new THREE.Vector3(),
+                    wanderTimer: 0,
+                    speed: 0.002 + Math.random() * 0.001, // Very slow
+                    bobPhase: Math.random() * Math.PI * 2,
+                    turnSpeed: 0.02 + Math.random() * 0.02
+                });
+            }
+        }
+        
+        function createWalkerFigure() {
+            const group = new THREE.Group();
+            const currentTheme = themeSystem.getCurrentTheme();
+            const currentPalette = themeSystem.getCurrentPalette();
+            const colorIndex = Math.floor(Math.random() * currentPalette.gradient.length);
+            const color = currentPalette.gradient[colorIndex];
+            
+            const material = new THREE.MeshLambertMaterial({ 
+                color: parseInt(color.replace('#', ''), 16),
+                transparent: true,
+                opacity: currentTheme.particleOpacity || 0.8
+            });
+            
+            materials.push(material);
+            
+            // Head
+            const headGeometry = new THREE.SphereGeometry(0.1, 8, 6);
+            const head = new THREE.Mesh(headGeometry, material);
+            head.position.y = 0.6;
+            group.add(head);
+            
+            // Body
+            const bodyGeometry = new THREE.CylinderGeometry(0.06, 0.08, 0.4, 8);
+            const body = new THREE.Mesh(bodyGeometry, material);
+            body.position.y = 0.25;
+            group.add(body);
+            
+            // Arms
+            const armGeometry = new THREE.CylinderGeometry(0.03, 0.03, 0.25, 6);
+            const leftArm = new THREE.Mesh(armGeometry, material);
+            const rightArm = new THREE.Mesh(armGeometry, material);
+            leftArm.position.set(-0.12, 0.3, 0);
+            rightArm.position.set(0.12, 0.3, 0);
+            leftArm.rotation.z = 0.2;
+            rightArm.rotation.z = -0.2;
+            group.add(leftArm);
+            group.add(rightArm);
+            
+            // Legs
+            const legGeometry = new THREE.CylinderGeometry(0.04, 0.05, 0.3, 6);
+            const leftLeg = new THREE.Mesh(legGeometry, material);
+            const rightLeg = new THREE.Mesh(legGeometry, material);
+            leftLeg.position.set(-0.05, -0.1, 0);
+            rightLeg.position.set(0.05, -0.1, 0);
+            group.add(leftLeg);
+            group.add(rightLeg);
+            
+            return group;
+        }
+        
+        function animate() {
+            requestAnimationFrame(animate);
+            
+            time += 0.01;
+            
+            // Apply theme-specific animation to walkers
+            const animationFn = themeSystem.getAnimationFunction();
+            walkers.forEach((walker, index) => {
+                animationFn(walker.mesh, time);
+            });
+            
+            // Animate walkers
+            walkers.forEach((walker, index) => {
+                if (walker.type === 'bridge') {
+                    // Bridge walker animation (faster)
+                    walker.progress += walker.speed * walker.direction;
+                    
+                    if (walker.progress >= 1) {
+                        walker.progress = 1;
+                        walker.direction = -1;
+                    } else if (walker.progress <= 0) {
+                        walker.progress = 0;
+                        walker.direction = 1;
+                    }
+                    
+                    // Position walker on bridge
+                    const position = new THREE.Vector3().lerpVectors(
+                        walker.bridge.start,
+                        walker.bridge.end,
+                        walker.progress
+                    );
+                    
+                    // Add slight arch curve
+                    const t = walker.progress;
+                    const archHeight = walker.bridge.length * 0.03;
+                    const archOffset = -Math.pow(t - 0.5, 2) * 4 * archHeight;
+                    position.y += archOffset;
+                    
+                    // Add walking bob
+                    const bob = Math.sin(time * 12 + walker.bobPhase) * 0.03;
+                    position.y += bob + 0.15; // Position on top of bridge surface
+                    
+                    walker.mesh.position.copy(position);
+                    
+                    // Orient walker along bridge direction
+                    const direction = new THREE.Vector3().subVectors(
+                        walker.bridge.end,
+                        walker.bridge.start
+                    ).normalize();
+                    
+                    if (walker.direction < 0) direction.multiplyScalar(-1);
+                    
+                    walker.mesh.lookAt(
+                        position.x + direction.x,
+                        position.y,
+                        position.z + direction.z
+                    );
+                    
+                    // Add fast walking animation
+                    const walkCycle = Math.sin(time * 15 + walker.bobPhase);
+                    walker.mesh.children[3].rotation.x = walkCycle * 0.4; // Left leg
+                    walker.mesh.children[4].rotation.x = -walkCycle * 0.4; // Right leg
+                    walker.mesh.children[1].rotation.x = walkCycle * 0.15; // Left arm
+                    walker.mesh.children[2].rotation.x = -walkCycle * 0.15; // Right arm
+                } else {
+                    // Ground walker - confused wandering motion
+                    walker.wanderTimer -= 0.01;
+                    
+                    // Pick new random target when timer expires
+                    if (walker.wanderTimer <= 0) {
+                        walker.targetPosition.set(
+                            Math.random() * 20 - 10,
+                            0,
+                            Math.random() * 20 - 10
+                        );
+                        walker.wanderTimer = 2 + Math.random() * 3; // New target every 2-5 seconds
+                    }
+                    
+                    // Move towards target with confusion
+                    const direction = new THREE.Vector3().subVectors(walker.targetPosition, walker.position);
+                    const distance = direction.length();
+                    
+                    if (distance > 0.5) {
+                        direction.normalize();
+                        
+                        // Add some random deviation for confused motion
+                        direction.x += Math.sin(time * 3 + walker.bobPhase) * 0.1;
+                        direction.z += Math.cos(time * 2 + walker.bobPhase * 2) * 0.1;
+                        
+                        walker.position.add(direction.multiplyScalar(walker.speed));
+                    }
+                    
+                    // Update mesh position with slight bob
+                    const y = Math.sin(time * 3 + walker.bobPhase) * 0.02;
+                    walker.mesh.position.set(walker.position.x, y, walker.position.z);
+                    
+                    // Rotate slowly towards movement direction
+                    if (distance > 0.1) {
+                        const lookTarget = walker.position.clone().add(direction);
+                        walker.mesh.lookAt(lookTarget.x, y, lookTarget.z);
+                    }
+                    
+                    // Very slow, uncertain walking animation
+                    const walkCycle = Math.sin(time * 4 + walker.bobPhase);
+                    walker.mesh.children[3].rotation.x = walkCycle * 0.15; // Left leg
+                    walker.mesh.children[4].rotation.x = -walkCycle * 0.15; // Right leg
+                    walker.mesh.children[1].rotation.x = walkCycle * 0.05; // Left arm
+                    walker.mesh.children[2].rotation.x = -walkCycle * 0.05; // Right arm
+                    
+                    // Occasional stop/pause
+                    if (Math.sin(time * 0.5 + walker.bobPhase * 3) > 0.8) {
+                        walker.mesh.children[3].rotation.x = 0;
+                        walker.mesh.children[4].rotation.x = 0;
+                    }
+                }
+            });
+            
+            // Subtle camera movement
+            camera.position.x = Math.sin(time * 0.1) * 2;
+            camera.position.y = 6 + Math.sin(time * 0.15) * 1;
+            camera.position.z = 12 + Math.sin(time * 0.08) * 1.5;
+            camera.lookAt(0, 2, -1);
+            
+            renderer.render(scene, camera);
+        }
+        
+        function onWindowResize() {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        }
+        
+        window.addEventListener('resize', onWindowResize, false);
+        
+        init();
+    </script>
+</body>
+</html>

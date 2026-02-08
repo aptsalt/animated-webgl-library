@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Human Figure Rising - Mindful Journey</title>
+    <style>
+        body { 
+            margin: 0; 
+            overflow: hidden; 
+            background: #f8f8f8;
+            font-family: 'Inter', system-ui, sans-serif;
+        }
+        canvas { display: block; }
+        
+        .back-btn {
+            position: absolute;
+            top: 40px;
+            left: 40px;
+            padding: 10px 20px;
+            background: transparent;
+            border: 1px solid rgba(26, 26, 26, 0.2);
+            color: #1a1a1a;
+            text-decoration: none;
+            font-size: 14px;
+            letter-spacing: 1px;
+            border-radius: 20px;
+            transition: all 0.3s ease;
+            z-index: 10;
+        }
+        
+        .back-btn:hover {
+            background: rgba(26, 26, 26, 0.05);
+            border-color: rgba(26, 26, 26, 0.4);
+        }
+        
+        .instruction {
+            position: absolute;
+            bottom: 40px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: rgba(26, 26, 26, 0.4);
+            font-size: 12px;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            pointer-events: none;
+        }
+    </style>
+</head>
+<body>
+    <a href="../index.html" class="back-btn">← Back</a>
+    <div class="instruction">Click to make figure rise upward</div>
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script>
+        let scene, camera, renderer;
+        let humanFigure;
+        let time = 0;
+        let rising = false;
+        let riseProgress = 0;
+
+        function init() {
+            scene = new THREE.Scene();
+            scene.background = new THREE.Color(0xf8f8f8);
+
+            camera = new THREE.PerspectiveCamera(
+                75, window.innerWidth / window.innerHeight, 0.1, 1000
+            );
+            camera.position.z = 10;
+
+            renderer = new THREE.WebGLRenderer({ antialias: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            document.body.appendChild(renderer.domElement);
+
+            createHumanFigure();
+            animate();
+        }
+
+        function createHumanFigure() {
+            const group = new THREE.Group();
+            
+            const material = new THREE.MeshBasicMaterial({
+                color: 0x1a1a1a,
+                transparent: true,
+                opacity: 0.8,
+                side: THREE.DoubleSide
+            });
+            
+            // Head
+            const headGeometry = new THREE.SphereGeometry(0.4, 8, 6);
+            const head = new THREE.Mesh(headGeometry, material.clone());
+            head.position.y = 4.2;
+            
+            // Neck
+            const neckGeometry = new THREE.CylinderGeometry(0.2, 0.25, 0.4, 6);
+            const neck = new THREE.Mesh(neckGeometry, material.clone());
+            neck.position.y = 3.7;
+            
+            // Torso
+            const torsoGeometry = new THREE.CylinderGeometry(0.4, 0.6, 1.8, 8);
+            const torso = new THREE.Mesh(torsoGeometry, material.clone());
+            torso.position.y = 2.6;
+            
+            // Waist
+            const waistGeometry = new THREE.CylinderGeometry(0.5, 0.4, 0.8, 8);
+            const waist = new THREE.Mesh(waistGeometry, material.clone());
+            waist.position.y = 1.4;
+            
+            // Left upper arm
+            const upperArmGeometry = new THREE.CylinderGeometry(0.15, 0.18, 1.0, 6);
+            const leftUpperArm = new THREE.Mesh(upperArmGeometry, material.clone());
+            leftUpperArm.position.set(-0.6, 3.2, 0);
+            leftUpperArm.rotation.z = 0.3;
+            
+            // Left lower arm
+            const lowerArmGeometry = new THREE.CylinderGeometry(0.12, 0.15, 1.0, 6);
+            const leftLowerArm = new THREE.Mesh(lowerArmGeometry, material.clone());
+            leftLowerArm.position.set(-0.8, 2.4, 0);
+            leftLowerArm.rotation.z = 0.2;
+            
+            // Right upper arm
+            const rightUpperArm = new THREE.Mesh(upperArmGeometry, material.clone());
+            rightUpperArm.position.set(0.6, 3.2, 0);
+            rightUpperArm.rotation.z = -0.3;
+            
+            // Right lower arm
+            const rightLowerArm = new THREE.Mesh(lowerArmGeometry, material.clone());
+            rightLowerArm.position.set(0.8, 2.4, 0);
+            rightLowerArm.rotation.z = -0.2;
+            
+            // Left upper leg
+            const upperLegGeometry = new THREE.CylinderGeometry(0.22, 0.3, 1.8, 6);
+            const leftUpperLeg = new THREE.Mesh(upperLegGeometry, material.clone());
+            leftUpperLeg.position.set(-0.4, 0.1, 0);
+            
+            // Left lower leg
+            const lowerLegGeometry = new THREE.CylinderGeometry(0.15, 0.22, 1.8, 6);
+            const leftLowerLeg = new THREE.Mesh(lowerLegGeometry, material.clone());
+            leftLowerLeg.position.set(-0.4, -1.4, 0);
+            
+            // Right upper leg
+            const rightUpperLeg = new THREE.Mesh(upperLegGeometry, material.clone());
+            rightUpperLeg.position.set(0.4, 0.1, 0);
+            
+            // Right lower leg
+            const rightLowerLeg = new THREE.Mesh(lowerLegGeometry, material.clone());
+            rightLowerLeg.position.set(0.4, -1.4, 0);
+            
+            // Add all parts
+            group.add(head);
+            group.add(neck);
+            group.add(torso);
+            group.add(waist);
+            group.add(leftUpperArm);
+            group.add(leftLowerArm);
+            group.add(rightUpperArm);
+            group.add(rightLowerArm);
+            group.add(leftUpperLeg);
+            group.add(leftLowerLeg);
+            group.add(rightUpperLeg);
+            group.add(rightLowerLeg);
+            
+            group.position.y = -3;
+            group.scale.set(1, 1, 1);
+            
+            scene.add(group);
+            humanFigure = group;
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+            time += 0.01;
+
+            if (rising) {
+                riseProgress += 0.003;
+                if (riseProgress >= 1) {
+                    riseProgress = 1;
+                    rising = false;
+                }
+            }
+
+            // Rising animation
+            const easeProgress = 1 - Math.pow(1 - riseProgress, 3);
+            humanFigure.position.y = -3 + easeProgress * 8;
+            
+            // Arms spreading during rise
+            const armSpread = easeProgress * 0.8;
+            humanFigure.children[4].rotation.z = 0.3 + armSpread; // left upper arm
+            humanFigure.children[6].rotation.z = -0.3 - armSpread; // right upper arm
+            
+            // Gentle breathing
+            humanFigure.scale.y = 1 + Math.sin(time * 0.5) * 0.02;
+            
+            // Subtle head movement
+            humanFigure.children[0].rotation.y = Math.sin(time * 0.3) * 0.1;
+
+            // Camera follows figure during rise
+            camera.position.y = humanFigure.position.y * 0.3;
+            camera.lookAt(0, humanFigure.position.y, 0);
+
+            renderer.render(scene, camera);
+        }
+
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+
+        window.addEventListener('click', () => {
+            if (!rising && riseProgress < 1) {
+                rising = true;
+            } else if (riseProgress >= 1) {
+                // Reset
+                riseProgress = 0;
+                rising = false;
+            }
+        });
+
+        init();
+    </script>
+</body>
+</html>

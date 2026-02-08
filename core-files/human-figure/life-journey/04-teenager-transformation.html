@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Life Journey - Teenager Transformation</title>
+    <style>
+        body { margin: 0; overflow: hidden; background: linear-gradient(135deg, #667eea, #764ba2); }
+        canvas { display: block; }
+        .title { position: absolute; top: 40px; left: 50%; transform: translateX(-50%); color: #fff; font-family: sans-serif; font-size: 24px; letter-spacing: 2px; }
+    </style>
+</head>
+<body>
+    <div class="title">TEENAGER TRANSFORMATION</div>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="../particle-being-library.js"></script>
+    <script>
+        let scene, camera, renderer, particleSystem;
+        let time = 0;
+
+        function init() {
+            scene = new THREE.Scene();
+            camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+            camera.position.set(0, 10, 30);
+
+            renderer = new THREE.WebGLRenderer({ antialias: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            document.body.appendChild(renderer.domElement);
+
+            // Teenager - constantly changing, searching for identity
+            particleSystem = new ParticleBeingSystem(scene, {
+                particleCount: 250,
+                particleSize: 0.09,
+                speedMultiplier: 1.0,
+                colorRange: { h: 0.75, s: 0.5, lMin: 0.3, lMax: 0.7 }
+            });
+
+            const teenager = particleSystem.convertToParticleBeing(
+                null,
+                { x: 0, y: 0, z: 0 },
+                {
+                    particleCount: 280,
+                    states: ['searching', 'transforming', 'rebelling', 'conforming'],
+                    stateTimings: { searching: 3, transforming: 4, rebelling: 2, conforming: 3 },
+                    attractionForces: { searching: 0.015, transforming: 0.025, rebelling: 0.01, conforming: 0.03 }
+                }
+            );
+
+            // Teenager-specific behaviors
+            const originalUpdate = particleSystem.updateBeing.bind(particleSystem);
+            particleSystem.updateBeing = function(being, deltaTime) {
+                originalUpdate(being, deltaTime);
+                
+                if (being.userData.state === 'transforming') {
+                    // Morphing between different forms
+                    being.particles.forEach((particle, i) => {
+                        const morphPhase = time * 2 + i * 0.05;
+                        particle.userData.targetPosition.x += Math.sin(morphPhase) * 0.05;
+                        particle.userData.targetPosition.y += Math.cos(morphPhase * 1.5) * 0.05;
+                    });
+                } else if (being.userData.state === 'rebelling') {
+                    // Particles scatter more chaotically
+                    being.particles.forEach(particle => {
+                        particle.userData.velocity.add(new THREE.Vector3(
+                            (Math.random() - 0.5) * 0.02,
+                            (Math.random() - 0.5) * 0.02,
+                            (Math.random() - 0.5) * 0.02
+                        ));
+                    });
+                } else if (being.userData.state === 'searching') {
+                    // Particles pulse with uncertainty
+                    const pulse = Math.sin(time * 5) * 0.5 + 0.5;
+                    being.particles.forEach(particle => {
+                        particle.material.opacity = particle.userData.originalOpacity * (0.5 + pulse * 0.5);
+                    });
+                }
+            };
+
+            particleSystem.createAmbientParticles(120);
+            animate();
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+            time += 0.016;
+            particleSystem.update(0.016);
+            
+            camera.position.x = Math.sin(time * 0.12) * 25;
+            camera.position.z = 30 + Math.cos(time * 0.12) * 15;
+            camera.lookAt(0, 3, 0);
+            
+            renderer.render(scene, camera);
+        }
+
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+
+        init();
+    </script>
+</body>
+</html>

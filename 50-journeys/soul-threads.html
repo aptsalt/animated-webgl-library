@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Soul Threads - Invisible Bonds</title>
+    <style>
+        body { 
+            margin: 0; 
+            overflow: hidden; 
+            background: #f8f8f8;
+            font-family: 'Inter', system-ui, sans-serif;
+        }
+        canvas { display: block; }
+        
+        .back-btn {
+            position: absolute;
+            top: 40px;
+            left: 40px;
+            padding: 10px 20px;
+            background: transparent;
+            border: 1px solid rgba(26, 26, 26, 0.2);
+            color: #1a1a1a;
+            text-decoration: none;
+            font-size: 14px;
+            letter-spacing: 1px;
+            border-radius: 20px;
+            transition: all 0.3s ease;
+            z-index: 10;
+        }
+        
+        .back-btn:hover {
+            background: rgba(26, 26, 26, 0.05);
+            border-color: rgba(26, 26, 26, 0.4);
+        }
+    </style>
+</head>
+<body>
+    <a href="gallery.html" class="back-btn">← Back</a>
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script>
+        let scene, camera, renderer;
+        let souls = [];
+        let threads = [];
+        let time = 0;
+
+        function init() {
+            scene = new THREE.Scene();
+            scene.background = new THREE.Color(0xf8f8f8);
+
+            camera = new THREE.PerspectiveCamera(
+                75, window.innerWidth / window.innerHeight, 0.1, 1000
+            );
+            camera.position.z = 50;
+
+            renderer = new THREE.WebGLRenderer({ antialias: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            document.body.appendChild(renderer.domElement);
+
+            createSouls();
+            createThreads();
+            animate();
+        }
+
+        function createSouls() {
+            const soulCount = 25;
+            
+            for (let i = 0; i < soulCount; i++) {
+                const group = new THREE.Group();
+                
+                // Simple human silhouette
+                const material = new THREE.MeshBasicMaterial({
+                    color: 0x1a1a1a,
+                    transparent: true,
+                    opacity: 0.6
+                });
+                
+                // Body
+                const bodyGeometry = new THREE.CylinderGeometry(0.2, 0.2, 1.2, 6);
+                const body = new THREE.Mesh(bodyGeometry, material);
+                
+                // Head
+                const headGeometry = new THREE.SphereGeometry(0.25, 6, 6);
+                const head = new THREE.Mesh(headGeometry, material);
+                head.position.y = 0.85;
+                
+                group.add(body);
+                group.add(head);
+                
+                // Random position in 3D space
+                group.position.set(
+                    (Math.random() - 0.5) * 40,
+                    (Math.random() - 0.5) * 30,
+                    (Math.random() - 0.5) * 20
+                );
+                
+                group.userData = {
+                    velocity: new THREE.Vector3(
+                        (Math.random() - 0.5) * 0.02,
+                        (Math.random() - 0.5) * 0.02,
+                        (Math.random() - 0.5) * 0.01
+                    ),
+                    connections: [],
+                    phase: Math.random() * Math.PI * 2
+                };
+                
+                scene.add(group);
+                souls.push(group);
+            }
+        }
+
+        function createThreads() {
+            // Create dynamic connecting threads between souls
+            updateThreads();
+        }
+
+        function updateThreads() {
+            // Remove old threads
+            threads.forEach(thread => {
+                scene.remove(thread);
+                thread.geometry.dispose();
+                thread.material.dispose();
+            });
+            threads = [];
+
+            // Create new threads based on proximity
+            for (let i = 0; i < souls.length; i++) {
+                for (let j = i + 1; j < souls.length; j++) {
+                    const distance = souls[i].position.distanceTo(souls[j].position);
+                    
+                    if (distance < 15) {
+                        // Create curved thread
+                        const curve = new THREE.QuadraticBezierCurve3(
+                            souls[i].position,
+                            new THREE.Vector3(
+                                (souls[i].position.x + souls[j].position.x) / 2,
+                                (souls[i].position.y + souls[j].position.y) / 2 + Math.sin(time) * 2,
+                                (souls[i].position.z + souls[j].position.z) / 2
+                            ),
+                            souls[j].position
+                        );
+                        
+                        const points = curve.getPoints(30);
+                        const geometry = new THREE.BufferGeometry().setFromPoints(points);
+                        
+                        const opacity = (1 - distance / 15) * 0.3;
+                        const material = new THREE.LineBasicMaterial({
+                            color: 0x404040,
+                            transparent: true,
+                            opacity: opacity
+                        });
+                        
+                        const thread = new THREE.Line(geometry, material);
+                        scene.add(thread);
+                        threads.push(thread);
+                    }
+                }
+            }
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+            time += 0.01;
+
+            // Animate souls
+            souls.forEach((soul, index) => {
+                // Gentle drift
+                soul.position.add(soul.userData.velocity);
+                
+                // Boundary check
+                if (Math.abs(soul.position.x) > 20) soul.userData.velocity.x *= -1;
+                if (Math.abs(soul.position.y) > 15) soul.userData.velocity.y *= -1;
+                if (Math.abs(soul.position.z) > 10) soul.userData.velocity.z *= -1;
+                
+                // Breathing motion
+                soul.position.y += Math.sin(time + soul.userData.phase) * 0.02;
+                
+                // Rotation
+                soul.rotation.y = Math.sin(time * 0.5 + index) * 0.2;
+                
+                // Opacity pulse
+                soul.children.forEach(child => {
+                    child.material.opacity = 0.4 + Math.sin(time + soul.userData.phase) * 0.2;
+                });
+            });
+
+            // Update threads periodically
+            if (Math.floor(time * 10) % 5 === 0) {
+                updateThreads();
+            }
+
+            // Camera rotation
+            camera.position.x = Math.sin(time * 0.1) * 50;
+            camera.position.z = Math.cos(time * 0.1) * 50;
+            camera.lookAt(0, 0, 0);
+
+            renderer.render(scene, camera);
+        }
+
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+
+        init();
+    </script>
+</body>
+</html>

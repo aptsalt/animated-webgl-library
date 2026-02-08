@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Life Journey - Child Playing</title>
+    <style>
+        body { margin: 0; overflow: hidden; background: linear-gradient(135deg, #87ceeb, #98fb98); }
+        canvas { display: block; }
+        .title { position: absolute; top: 40px; left: 50%; transform: translateX(-50%); color: #4169e1; font-family: sans-serif; font-size: 24px; letter-spacing: 2px; }
+    </style>
+</head>
+<body>
+    <div class="title">CHILD PLAYING</div>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="../particle-being-library.js"></script>
+    <script>
+        let scene, camera, renderer, particleSystem;
+        let time = 0;
+
+        function init() {
+            scene = new THREE.Scene();
+            camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+            camera.position.set(0, 10, 30);
+
+            renderer = new THREE.WebGLRenderer({ antialias: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            document.body.appendChild(renderer.domElement);
+
+            // Child - playful, energetic, imaginative
+            particleSystem = new ParticleBeingSystem(scene, {
+                particleCount: 200,
+                particleSize: 0.08,
+                speedMultiplier: 1.5,
+                colorRange: { h: 0.55, s: 0.7, lMin: 0.4, lMax: 0.7 }
+            });
+
+            // Create multiple children playing
+            for (let i = 0; i < 3; i++) {
+                const child = particleSystem.convertToParticleBeing(
+                    null,
+                    { x: (i - 1) * 8, y: 0, z: 0 },
+                    {
+                        particleCount: 180,
+                        states: ['running', 'spinning', 'jumping', 'dancing'],
+                        stateTimings: { running: 2, spinning: 2, jumping: 1.5, dancing: 2.5 },
+                        attractionForces: { running: 0.022, spinning: 0.025, jumping: 0.018, dancing: 0.02 }
+                    }
+                );
+            }
+
+            // Custom playful movements
+            const originalUpdate = particleSystem.updateBeing.bind(particleSystem);
+            particleSystem.updateBeing = function(being, deltaTime) {
+                originalUpdate(being, deltaTime);
+                const index = being.userData.index;
+                
+                if (being.userData.state === 'running') {
+                    // Running in circles
+                    const angle = time * 3 + index * Math.PI * 0.67;
+                    being.userData.basePosition.x = Math.cos(angle) * 8;
+                    being.userData.basePosition.z = Math.sin(angle) * 8;
+                } else if (being.userData.state === 'spinning') {
+                    // Spinning in place
+                    being.particles.forEach((particle, i) => {
+                        const spinAngle = time * 10 + i * 0.1;
+                        particle.userData.velocity.x += Math.cos(spinAngle) * 0.003;
+                        particle.userData.velocity.z += Math.sin(spinAngle) * 0.003;
+                    });
+                } else if (being.userData.state === 'jumping') {
+                    // Jumping motion
+                    being.userData.basePosition.y = Math.abs(Math.sin(time * 10)) * 4;
+                } else if (being.userData.state === 'dancing') {
+                    // Dancing motion
+                    being.userData.basePosition.x += Math.sin(time * 5 + index) * 0.1;
+                    being.userData.basePosition.y = Math.abs(Math.sin(time * 8)) * 2;
+                }
+            };
+
+            particleSystem.createAmbientParticles(150);
+            animate();
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+            time += 0.016;
+            particleSystem.update(0.016);
+            
+            camera.position.x = Math.sin(time * 0.1) * 20;
+            camera.position.z = 30 + Math.cos(time * 0.1) * 15;
+            camera.position.y = 10 + Math.sin(time * 0.05) * 5;
+            camera.lookAt(0, 2, 0);
+            
+            renderer.render(scene, camera);
+        }
+
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+
+        init();
+    </script>
+</body>
+</html>

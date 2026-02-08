@@ -1,0 +1,543 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mirror Souls - Abstract Beings</title>
+    <style>
+        body {
+            margin: 0;
+            background: linear-gradient(135deg, #e8e8e8 0%, #f5f5f5 100%);
+            overflow: hidden;
+            font-family: 'Inter', system-ui, sans-serif;
+        }
+        canvas { display: block; }
+        
+        .back-btn {
+            position: absolute;
+            top: 40px;
+            left: 40px;
+            padding: 10px 20px;
+            background: rgba(255, 255, 255, 0.9);
+            border: 1px solid rgba(26, 26, 26, 0.2);
+            color: #1a1a1a;
+            text-decoration: none;
+            font-size: 14px;
+            letter-spacing: 1px;
+            border-radius: 20px;
+            transition: all 0.3s ease;
+            z-index: 10;
+        }
+        
+        .back-btn:hover {
+            background: rgba(255, 255, 255, 1);
+            border-color: rgba(26, 26, 26, 0.4);
+        }
+        
+        .instruction {
+            position: absolute;
+            bottom: 40px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: rgba(26, 26, 26, 0.4);
+            font-size: 12px;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            pointer-events: none;
+        }
+    </style>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="lib/theme-system.js"></script>
+</head>
+<body>
+    <a href="gallery.html" class="back-btn">← Back</a>
+    <div class="instruction">Click to see souls combine into a hand</div>
+    
+    <script>
+        let scene, camera, renderer;
+        let particleSystem1, particleSystem2;
+        let time = 0;
+        let mouseX = 0, mouseY = 0;
+        let isHandFormation = false;
+        let transitionProgress = 0;
+        let themeSystem;
+        let materials = [];
+        
+        function init() {
+            // Initialize theme system
+            themeSystem = new HumanFigureThemeSystem();
+            
+            scene = new THREE.Scene();
+            scene.background = new THREE.Color(0xf0f0f0);
+            
+            camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
+            camera.position.set(0, 0, 15);
+            
+            renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.setPixelRatio(window.devicePixelRatio);
+            document.body.appendChild(renderer.domElement);
+            
+            // Soft ambient light
+            const ambientLight = new THREE.AmbientLight(0xffffff, 0.8);
+            scene.add(ambientLight);
+            
+            // Create two abstract pixelated figures
+            createAbstractFigure1();
+            createAbstractFigure2();
+            
+            // Setup theme system event listeners
+            setupThemeEventListeners();
+            
+            // Mouse movement tracking
+            document.addEventListener('mousemove', onMouseMove);
+            document.addEventListener('click', toggleFormation);
+            
+            animate();
+        }
+        
+        function setupThemeEventListeners() {
+            window.addEventListener('themeChanged', (event) => {
+                const { theme, palette } = event.detail;
+                updateFiguresWithTheme(theme, palette);
+            });
+            
+            window.addEventListener('paletteChanged', (event) => {
+                const { palette } = event.detail;
+                updateFiguresWithPalette(palette);
+            });
+        }
+        
+        function updateFiguresWithTheme(theme, palette) {
+            // Recreate figures with new theme
+            if (particleSystem1) {
+                scene.remove(particleSystem1);
+                particleSystem1.geometry.dispose();
+                particleSystem1.material.dispose();
+            }
+            if (particleSystem2) {
+                scene.remove(particleSystem2);
+                particleSystem2.geometry.dispose();
+                particleSystem2.material.dispose();
+            }
+            
+            createAbstractFigure1();
+            createAbstractFigure2();
+        }
+        
+        function updateFiguresWithPalette(palette) {
+            // Update scene background
+            scene.background.setHex(parseInt(palette.background.replace('#', ''), 16));
+            
+            // Update material colors
+            materials.forEach((material, index) => {
+                const colorIndex = index % palette.gradient.length;
+                const color = palette.gradient[colorIndex];
+                material.color.setHex(parseInt(color.replace('#', ''), 16));
+            });
+        }
+        
+        function createAbstractFigure1() {
+            const particleCount = 2000;
+            const geometry = new THREE.BufferGeometry();
+            const positions = new Float32Array(particleCount * 3);
+            const colors = new Float32Array(particleCount * 3);
+            const sizes = new Float32Array(particleCount);
+            const originalPositions = new Float32Array(particleCount * 3);
+            const handPositions = new Float32Array(particleCount * 3);
+            
+            // Create human-like silhouette with particles
+            for (let i = 0; i < particleCount; i++) {
+                const index = i * 3;
+                const t = i / particleCount;
+                
+                // Create body zones
+                let x, y, z;
+                const zone = Math.random();
+                
+                if (zone < 0.2) {
+                    // Head region
+                    const angle = Math.random() * Math.PI * 2;
+                    const radius = Math.random() * 0.4;
+                    x = Math.cos(angle) * radius;
+                    y = 2.5 + Math.random() * 0.5;
+                    z = Math.sin(angle) * radius * 0.5;
+                } else if (zone < 0.5) {
+                    // Torso region
+                    x = (Math.random() - 0.5) * 0.8;
+                    y = 0.5 + Math.random() * 1.5;
+                    z = (Math.random() - 0.5) * 0.4;
+                } else if (zone < 0.7) {
+                    // Arms region
+                    const side = Math.random() > 0.5 ? 1 : -1;
+                    x = side * (0.5 + Math.random() * 0.8);
+                    y = 1.2 + Math.random() * 0.8;
+                    z = (Math.random() - 0.5) * 0.3;
+                } else {
+                    // Legs region
+                    const side = Math.random() > 0.5 ? 0.2 : -0.2;
+                    x = side + (Math.random() - 0.5) * 0.3;
+                    y = -1 + Math.random() * 1.5;
+                    z = (Math.random() - 0.5) * 0.3;
+                }
+                
+                // Add noise for painterly effect
+                x += (Math.random() - 0.5) * 0.2;
+                y += (Math.random() - 0.5) * 0.1;
+                z += (Math.random() - 0.5) * 0.1;
+                
+                // Position
+                positions[index] = x - 2;
+                positions[index + 1] = y;
+                positions[index + 2] = z;
+                
+                // Store original positions
+                originalPositions[index] = x - 2;
+                originalPositions[index + 1] = y;
+                originalPositions[index + 2] = z;
+                
+                // Color from current palette
+                const currentPalette = themeSystem.getCurrentPalette();
+                const colorIndex = Math.floor(Math.random() * currentPalette.gradient.length);
+                const color = new THREE.Color(currentPalette.gradient[colorIndex]);
+                const brightness = 0.3 + Math.random() * 0.4;
+                colors[index] = color.r * brightness;
+                colors[index + 1] = color.g * brightness;
+                colors[index + 2] = color.b * brightness;
+                
+                // Size variation for texture
+                sizes[i] = Math.random() * 0.15 + 0.05;
+                
+                // Create hand positions (left side of hand)
+                const handT = i / particleCount;
+                let hx, hy, hz;
+                
+                if (handT < 0.15) {
+                    // Thumb - improved shape
+                    const thumbT = handT / 0.15;
+                    if (thumbT < 0.4) {
+                        // Thumb base (thicker)
+                        const baseT = thumbT / 0.4;
+                        hx = -1.8 + Math.random() * 0.25;
+                        hy = -1.2 + baseT * 0.8;
+                        hz = 0.2 + (Math.random() - 0.5) * 0.2;
+                    } else {
+                        // Thumb tip (extending outward)
+                        const tipT = (thumbT - 0.4) / 0.6;
+                        hx = -1.7 + tipT * 0.5 + Math.random() * 0.15;
+                        hy = -0.4 + tipT * 1.2;
+                        hz = 0.25 + Math.random() * 0.1;
+                    }
+                } else if (handT < 0.35) {
+                    // Index finger
+                    const fingerT = (handT - 0.15) / 0.2;
+                    hx = -0.8 + (Math.random() - 0.5) * 0.15;
+                    hy = 0.5 + fingerT * 2.2;
+                    hz = (Math.random() - 0.5) * 0.1;
+                } else if (handT < 0.55) {
+                    // Middle finger
+                    const fingerT = (handT - 0.35) / 0.2;
+                    hx = -0.3 + (Math.random() - 0.5) * 0.15;
+                    hy = 0.5 + fingerT * 2.5;
+                    hz = (Math.random() - 0.5) * 0.1;
+                } else if (handT < 0.75) {
+                    // Ring finger
+                    const fingerT = (handT - 0.55) / 0.2;
+                    hx = 0.2 + (Math.random() - 0.5) * 0.15;
+                    hy = 0.5 + fingerT * 2.2;
+                    hz = (Math.random() - 0.5) * 0.1;
+                } else if (handT < 0.85) {
+                    // Pinky finger
+                    const fingerT = (handT - 0.75) / 0.1;
+                    hx = 0.7 + (Math.random() - 0.5) * 0.12;
+                    hy = 0.5 + fingerT * 1.8;
+                    hz = (Math.random() - 0.5) * 0.1;
+                } else {
+                    // Palm
+                    hx = (Math.random() - 0.5) * 1.5 - 0.2;
+                    hy = -1 + Math.random() * 1.5;
+                    hz = (Math.random() - 0.5) * 0.3;
+                }
+                
+                handPositions[index] = hx;
+                handPositions[index + 1] = hy;
+                handPositions[index + 2] = hz;
+            }
+            
+            geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+            geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+            geometry.setAttribute('size', new THREE.BufferAttribute(sizes, 1));
+            geometry.userData.originalPositions = originalPositions;
+            geometry.userData.handPositions = handPositions;
+            
+            const currentTheme = themeSystem.getCurrentTheme();
+            const currentPalette = themeSystem.getCurrentPalette();
+            
+            const material = new THREE.PointsMaterial({
+                size: currentTheme.particleSize || 0.1,
+                vertexColors: true,
+                transparent: true,
+                opacity: currentTheme.particleOpacity || 0.8,
+                sizeAttenuation: true,
+                blending: currentTheme.blending || THREE.MultiplyBlending
+            });
+            
+            materials.push(material);
+            
+            particleSystem1 = new THREE.Points(geometry, material);
+            scene.add(particleSystem1);
+        }
+        
+        function createAbstractFigure2() {
+            const particleCount = 2000;
+            const geometry = new THREE.BufferGeometry();
+            const positions = new Float32Array(particleCount * 3);
+            const colors = new Float32Array(particleCount * 3);
+            const sizes = new Float32Array(particleCount);
+            const originalPositions = new Float32Array(particleCount * 3);
+            const handPositions = new Float32Array(particleCount * 3);
+            
+            // Create second human-like silhouette
+            for (let i = 0; i < particleCount; i++) {
+                const index = i * 3;
+                const t = i / particleCount;
+                
+                // Create body zones (slightly different proportions)
+                let x, y, z;
+                const zone = Math.random();
+                
+                if (zone < 0.2) {
+                    // Head region
+                    const angle = Math.random() * Math.PI * 2;
+                    const radius = Math.random() * 0.35;
+                    x = Math.cos(angle) * radius;
+                    y = 2.4 + Math.random() * 0.5;
+                    z = Math.sin(angle) * radius * 0.5;
+                } else if (zone < 0.5) {
+                    // Torso region (slightly wider)
+                    x = (Math.random() - 0.5) * 0.9;
+                    y = 0.5 + Math.random() * 1.4;
+                    z = (Math.random() - 0.5) * 0.4;
+                } else if (zone < 0.7) {
+                    // Arms region (different pose)
+                    const side = Math.random() > 0.5 ? 1 : -1;
+                    x = side * (0.4 + Math.random() * 0.7);
+                    y = 1.1 + Math.random() * 0.9;
+                    z = (Math.random() - 0.5) * 0.3;
+                } else {
+                    // Legs region
+                    const side = Math.random() > 0.5 ? 0.25 : -0.25;
+                    x = side + (Math.random() - 0.5) * 0.3;
+                    y = -1 + Math.random() * 1.5;
+                    z = (Math.random() - 0.5) * 0.3;
+                }
+                
+                // Add noise for painterly effect
+                x += (Math.random() - 0.5) * 0.25;
+                y += (Math.random() - 0.5) * 0.15;
+                z += (Math.random() - 0.5) * 0.1;
+                
+                // Position (offset to the right)
+                positions[index] = x + 2;
+                positions[index + 1] = y;
+                positions[index + 2] = z;
+                
+                // Store original positions
+                originalPositions[index] = x + 2;
+                originalPositions[index + 1] = y;
+                originalPositions[index + 2] = z;
+                
+                // Color from current palette
+                const currentPalette = themeSystem.getCurrentPalette();
+                const colorIndex = Math.floor(Math.random() * currentPalette.gradient.length);
+                const color = new THREE.Color(currentPalette.gradient[colorIndex]);
+                const brightness = 0.2 + Math.random() * 0.3;
+                colors[index] = color.r * brightness;
+                colors[index + 1] = color.g * brightness;
+                colors[index + 2] = color.b * brightness;
+                
+                // Size variation
+                sizes[i] = Math.random() * 0.12 + 0.06;
+                
+                // Create hand positions (right side/wrist of hand)
+                const handT = i / particleCount;
+                let hx, hy, hz;
+                
+                if (handT < 0.3) {
+                    // Wrist area
+                    hx = (Math.random() - 0.5) * 0.8;
+                    hy = -2.5 + Math.random() * 0.8;
+                    hz = (Math.random() - 0.5) * 0.4;
+                } else if (handT < 0.6) {
+                    // Lower palm
+                    hx = (Math.random() - 0.5) * 1.2;
+                    hy = -2 + Math.random() * 1;
+                    hz = (Math.random() - 0.5) * 0.3;
+                } else {
+                    // Fill in palm and finger bases
+                    const palmX = (Math.random() - 0.5) * 1.8;
+                    const palmY = -1.5 + Math.random() * 2;
+                    hx = palmX;
+                    hy = palmY;
+                    hz = (Math.random() - 0.5) * 0.2;
+                }
+                
+                handPositions[index] = hx;
+                handPositions[index + 1] = hy;
+                handPositions[index + 2] = hz;
+            }
+            
+            geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+            geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+            geometry.setAttribute('size', new THREE.BufferAttribute(sizes, 1));
+            geometry.userData.originalPositions = originalPositions;
+            geometry.userData.handPositions = handPositions;
+            
+            const currentTheme = themeSystem.getCurrentTheme();
+            const currentPalette = themeSystem.getCurrentPalette();
+            
+            const material = new THREE.PointsMaterial({
+                size: currentTheme.particleSize || 0.1,
+                vertexColors: true,
+                transparent: true,
+                opacity: currentTheme.particleOpacity || 0.85,
+                sizeAttenuation: true,
+                blending: currentTheme.blending || THREE.MultiplyBlending
+            });
+            
+            materials.push(material);
+            
+            particleSystem2 = new THREE.Points(geometry, material);
+            scene.add(particleSystem2);
+        }
+        
+        function toggleFormation() {
+            isHandFormation = !isHandFormation;
+        }
+        
+        function animate() {
+            requestAnimationFrame(animate);
+            
+            time += 0.003; // Slower movement
+            
+            // Update transition progress
+            if (isHandFormation && transitionProgress < 1) {
+                transitionProgress = Math.min(1, transitionProgress + 0.02);
+            } else if (!isHandFormation && transitionProgress > 0) {
+                transitionProgress = Math.max(0, transitionProgress - 0.02);
+            }
+            
+            // Apply theme-specific animation
+            const animationFn = themeSystem.getAnimationFunction();
+            if (particleSystem1) {
+                animationFn(particleSystem1, time);
+            }
+            if (particleSystem2) {
+                animationFn(particleSystem2, time);
+            }
+            
+            // Animate first figure
+            if (particleSystem1) {
+                const positions = particleSystem1.geometry.attributes.position.array;
+                const originalPositions = particleSystem1.geometry.userData.originalPositions;
+                const handPositions = particleSystem1.geometry.userData.handPositions;
+                
+                for (let i = 0; i < positions.length; i += 3) {
+                    // Subtle floating motion
+                    const offsetX = Math.sin(time + i * 0.01) * 0.008;
+                    const offsetY = Math.sin(time * 1.5 + i * 0.01) * 0.012;
+                    const offsetZ = Math.cos(time + i * 0.01) * 0.008;
+                    
+                    // Dissolving effect at edges
+                    const distance = Math.sqrt(
+                        originalPositions[i] * originalPositions[i] + 
+                        originalPositions[i + 1] * originalPositions[i + 1]
+                    );
+                    const dissolveFactor = 1 + Math.sin(time * 2 + distance * 2) * 0.04;
+                    
+                    // Interpolate between original and hand positions
+                    const origX = originalPositions[i] * dissolveFactor + offsetX;
+                    const origY = originalPositions[i + 1] + offsetY;
+                    const origZ = originalPositions[i + 2] + offsetZ;
+                    
+                    positions[i] = origX + (handPositions[i] - origX) * transitionProgress;
+                    positions[i + 1] = origY + (handPositions[i + 1] - origY) * transitionProgress;
+                    positions[i + 2] = origZ + (handPositions[i + 2] - origZ) * transitionProgress;
+                }
+                
+                particleSystem1.geometry.attributes.position.needsUpdate = true;
+                particleSystem1.rotation.y = Math.sin(time * 0.3) * 0.02;
+                
+                // Particle size pulsing
+                const sizes = particleSystem1.geometry.attributes.size.array;
+                for (let i = 0; i < sizes.length; i++) {
+                    sizes[i] = (0.05 + Math.random() * 0.1) * (1 + Math.sin(time * 3 + i) * 0.2);
+                }
+                particleSystem1.geometry.attributes.size.needsUpdate = true;
+            }
+            
+            // Animate second figure
+            if (particleSystem2) {
+                const positions = particleSystem2.geometry.attributes.position.array;
+                const originalPositions = particleSystem2.geometry.userData.originalPositions;
+                const handPositions = particleSystem2.geometry.userData.handPositions;
+                
+                for (let i = 0; i < positions.length; i += 3) {
+                    // Subtle floating pattern
+                    const offsetX = Math.cos(time + i * 0.01) * 0.01;
+                    const offsetY = Math.cos(time * 1.3 + i * 0.01) * 0.014;
+                    const offsetZ = Math.sin(time + i * 0.01) * 0.008;
+                    
+                    // Dissolving effect
+                    const distance = Math.sqrt(
+                        originalPositions[i] * originalPositions[i] + 
+                        originalPositions[i + 1] * originalPositions[i + 1]
+                    );
+                    const dissolveFactor = 1 + Math.cos(time * 2 + distance * 2) * 0.03;
+                    
+                    // Interpolate between original and hand positions
+                    const origX = originalPositions[i] * dissolveFactor + offsetX;
+                    const origY = originalPositions[i + 1] + offsetY;
+                    const origZ = originalPositions[i + 2] + offsetZ;
+                    
+                    positions[i] = origX + (handPositions[i] - origX) * transitionProgress;
+                    positions[i + 1] = origY + (handPositions[i + 1] - origY) * transitionProgress;
+                    positions[i + 2] = origZ + (handPositions[i + 2] - origZ) * transitionProgress;
+                }
+                
+                particleSystem2.geometry.attributes.position.needsUpdate = true;
+                particleSystem2.rotation.y = -Math.sin(time * 0.3) * 0.02;
+                
+                // Particle size pulsing
+                const sizes = particleSystem2.geometry.attributes.size.array;
+                for (let i = 0; i < sizes.length; i++) {
+                    sizes[i] = (0.06 + Math.random() * 0.08) * (1 + Math.cos(time * 3 + i) * 0.15);
+                }
+                particleSystem2.geometry.attributes.size.needsUpdate = true;
+            }
+            
+            // Camera movement based on mouse
+            camera.position.x = mouseX * 2;
+            camera.position.y = mouseY * 2;
+            camera.lookAt(0, 1, 0);
+            
+            renderer.render(scene, camera);
+        }
+        
+        function onMouseMove(event) {
+            mouseX = (event.clientX / window.innerWidth) * 2 - 1;
+            mouseY = -(event.clientY / window.innerHeight) * 2 + 1;
+        }
+        
+        function onWindowResize() {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        }
+        
+        window.addEventListener('resize', onWindowResize, false);
+        
+        init();
+    </script>
+</body>
+</html>

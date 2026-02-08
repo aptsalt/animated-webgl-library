@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Shadow Figures - Aesthetic Silhouettes</title>
+    <style>
+        body { 
+            margin: 0; 
+            overflow: hidden; 
+            background: linear-gradient(135deg, #e5e5e5 0%, #f8f8f8 100%);
+            font-family: 'Inter', system-ui, sans-serif;
+        }
+        canvas { display: block; }
+        
+        .back-btn {
+            position: absolute;
+            top: 40px;
+            left: 40px;
+            padding: 10px 20px;
+            background: transparent;
+            border: 1px solid rgba(26, 26, 26, 0.1);
+            color: #1a1a1a;
+            text-decoration: none;
+            font-size: 14px;
+            letter-spacing: 1px;
+            border-radius: 20px;
+            transition: all 0.3s ease;
+            z-index: 10;
+        }
+        
+        .back-btn:hover {
+            background: rgba(26, 26, 26, 0.05);
+            border-color: rgba(26, 26, 26, 0.2);
+        }
+    </style>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+</head>
+<body>
+    <a href="../index.html" class="back-btn">← Back</a>
+    
+    <script>
+        let scene, camera, renderer;
+        let figures = [];
+        let time = 0;
+        
+        function init() {
+            scene = new THREE.Scene();
+            scene.background = new THREE.Color(0xf2f2f2);
+            
+            camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
+            camera.position.set(0, 15, 25);
+            camera.lookAt(0, 0, 0);
+            
+            renderer = new THREE.WebGLRenderer({ antialias: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.shadowMap.enabled = true;
+            renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+            document.body.appendChild(renderer.domElement);
+            
+            // Lighting for long shadows
+            const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
+            scene.add(ambientLight);
+            
+            const sunLight = new THREE.DirectionalLight(0xffd4a3, 0.5);
+            sunLight.position.set(-10, 5, -10);
+            sunLight.castShadow = true;
+            sunLight.shadow.camera.near = 0.1;
+            sunLight.shadow.camera.far = 50;
+            sunLight.shadow.camera.left = -20;
+            sunLight.shadow.camera.right = 20;
+            sunLight.shadow.camera.top = 20;
+            sunLight.shadow.camera.bottom = -20;
+            sunLight.shadow.mapSize.width = 2048;
+            sunLight.shadow.mapSize.height = 2048;
+            scene.add(sunLight);
+            
+            // Ground
+            const groundGeometry = new THREE.PlaneGeometry(60, 60);
+            const groundMaterial = new THREE.MeshStandardMaterial({ 
+                color: 0xf5f5f5,
+                roughness: 0.8
+            });
+            const ground = new THREE.Mesh(groundGeometry, groundMaterial);
+            ground.rotation.x = -Math.PI / 2;
+            ground.receiveShadow = true;
+            scene.add(ground);
+            
+            createShadowFigures();
+            animate();
+        }
+        
+        function createStandingFigure(variation = 0) {
+            const group = new THREE.Group();
+            
+            const material = new THREE.MeshStandardMaterial({
+                color: 0x1a1a1a,
+                roughness: 0.9
+            });
+            
+            // Different poses based on variation
+            const poses = [
+                { armAngle: 0, legSpread: 0, headTilt: 0 }, // Standing straight
+                { armAngle: 0.3, legSpread: 0.1, headTilt: 0.1 }, // Casual
+                { armAngle: -0.2, legSpread: 0.15, headTilt: -0.05 }, // Relaxed
+                { armAngle: 0.4, legSpread: 0.05, headTilt: 0.15 } // Dynamic
+            ];
+            
+            const pose = poses[variation % poses.length];
+            
+            // Head
+            const headGeometry = new THREE.SphereGeometry(0.22, 8, 6);
+            const head = new THREE.Mesh(headGeometry, material);
+            head.position.y = 1.75;
+            head.rotation.z = pose.headTilt;
+            head.castShadow = true;
+            group.add(head);
+            
+            // Body
+            const bodyGeometry = new THREE.CylinderGeometry(0.18, 0.22, 0.9, 6);
+            const body = new THREE.Mesh(bodyGeometry, material);
+            body.position.y = 1.05;
+            body.castShadow = true;
+            group.add(body);
+            
+            // Arms
+            const armGeometry = new THREE.CylinderGeometry(0.06, 0.06, 0.7, 4);
+            
+            const leftArm = new THREE.Mesh(armGeometry, material);
+            leftArm.position.set(-0.25, 1.1, 0);
+            leftArm.rotation.z = 0.15 + pose.armAngle;
+            leftArm.castShadow = true;
+            group.add(leftArm);
+            
+            const rightArm = new THREE.Mesh(armGeometry, material);
+            rightArm.position.set(0.25, 1.1, 0);
+            rightArm.rotation.z = -0.15 - pose.armAngle;
+            rightArm.castShadow = true;
+            group.add(rightArm);
+            
+            // Legs
+            const legGeometry = new THREE.CylinderGeometry(0.08, 0.09, 1, 4);
+            
+            const leftLeg = new THREE.Mesh(legGeometry, material);
+            leftLeg.position.set(-0.12 - pose.legSpread, 0.5, 0);
+            leftLeg.castShadow = true;
+            group.add(leftLeg);
+            
+            const rightLeg = new THREE.Mesh(legGeometry, material);
+            rightLeg.position.set(0.12 + pose.legSpread, 0.5, 0);
+            rightLeg.castShadow = true;
+            group.add(rightLeg);
+            
+            return group;
+        }
+        
+        function createShadowFigures() {
+            // Create grid of figures with long shadows
+            const rows = 4;
+            const cols = 6;
+            const spacing = 4;
+            
+            for (let row = 0; row < rows; row++) {
+                for (let col = 0; col < cols; col++) {
+                    const figure = createStandingFigure(row * cols + col);
+                    
+                    const x = (col - cols / 2) * spacing + (Math.random() - 0.5) * 1;
+                    const z = (row - rows / 2) * spacing + (Math.random() - 0.5) * 1;
+                    
+                    figure.position.x = x;
+                    figure.position.z = z;
+                    
+                    // Random rotation
+                    figure.rotation.y = Math.random() * Math.PI * 2;
+                    
+                    // Scale variation
+                    const scale = 0.9 + Math.random() * 0.2;
+                    figure.scale.set(scale, scale, scale);
+                    
+                    figure.userData = {
+                        swaySpeed: 0.5 + Math.random() * 0.5,
+                        swayAmount: 0.02 + Math.random() * 0.03,
+                        baseRotation: figure.rotation.y,
+                        breathSpeed: 1 + Math.random() * 0.5
+                    };
+                    
+                    scene.add(figure);
+                    figures.push(figure);
+                }
+            }
+        }
+        
+        function animate() {
+            requestAnimationFrame(animate);
+            time += 0.01;
+            
+            // Animate figures with subtle movement
+            figures.forEach((figure, index) => {
+                const data = figure.userData;
+                
+                // Gentle sway
+                figure.rotation.y = data.baseRotation + Math.sin(time * data.swaySpeed + index) * data.swayAmount;
+                
+                // Breathing motion
+                const breathScale = 1 + Math.sin(time * data.breathSpeed + index) * 0.01;
+                figure.scale.y = breathScale;
+                
+                // Very subtle vertical movement
+                figure.position.y = Math.sin(time * 0.5 + index * 0.2) * 0.02;
+            });
+            
+            // Slowly rotate sun position for changing shadows
+            const sunAngle = time * 0.1;
+            const sunDistance = 15;
+            scene.children[2].position.x = Math.cos(sunAngle) * sunDistance;
+            scene.children[2].position.z = Math.sin(sunAngle) * sunDistance;
+            
+            // Camera subtle movement
+            camera.position.x = Math.sin(time * 0.1) * 5;
+            camera.position.y = 15 + Math.sin(time * 0.15) * 2;
+            camera.position.z = 25 + Math.cos(time * 0.1) * 5;
+            camera.lookAt(0, 0, 0);
+            
+            renderer.render(scene, camera);
+        }
+        
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+        
+        init();
+    </script>
+</body>
+</html>

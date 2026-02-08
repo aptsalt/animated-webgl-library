@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Human Figure Scaling - Mindful Journey</title>
+    <style>
+        body { 
+            margin: 0; 
+            overflow: hidden; 
+            background: #f8f8f8;
+            font-family: 'Inter', system-ui, sans-serif;
+        }
+        canvas { display: block; }
+        
+        .back-btn {
+            position: absolute;
+            top: 40px;
+            left: 40px;
+            padding: 10px 20px;
+            background: transparent;
+            border: 1px solid rgba(26, 26, 26, 0.2);
+            color: #1a1a1a;
+            text-decoration: none;
+            font-size: 14px;
+            letter-spacing: 1px;
+            border-radius: 20px;
+            transition: all 0.3s ease;
+            z-index: 10;
+        }
+        
+        .back-btn:hover {
+            background: rgba(26, 26, 26, 0.05);
+            border-color: rgba(26, 26, 26, 0.4);
+        }
+        
+        .instruction {
+            position: absolute;
+            bottom: 40px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: rgba(26, 26, 26, 0.4);
+            font-size: 12px;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            pointer-events: none;
+        }
+    </style>
+</head>
+<body>
+    <a href="../index.html" class="back-btn">← Back</a>
+    <div class="instruction">Dancing figure - click to reset</div>
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script>
+        let scene, camera, renderer;
+        let humanFigure;
+        let time = 0;
+        let scaling = true; // Start in scaled state
+        let scaleProgress = 1; // Start fully scaled
+
+        function init() {
+            scene = new THREE.Scene();
+            scene.background = new THREE.Color(0xf8f8f8);
+
+            camera = new THREE.PerspectiveCamera(
+                75, window.innerWidth / window.innerHeight, 0.1, 1000
+            );
+            // Start camera in final position for scaled figure
+            camera.position.z = 42; // 10 + (5-1) * 8
+            camera.position.y = 8; // (5-1) * 2
+
+            renderer = new THREE.WebGLRenderer({ antialias: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            document.body.appendChild(renderer.domElement);
+
+            createHumanFigure();
+            
+            // Initialize figure in final scaled state
+            initializeScaledState();
+            
+            animate();
+        }
+
+        function createHumanFigure() {
+            const group = new THREE.Group();
+            
+            const material = new THREE.MeshBasicMaterial({
+                color: 0x1a1a1a,
+                transparent: true,
+                opacity: 0.8,
+                side: THREE.DoubleSide
+            });
+            
+            // Head
+            const headGeometry = new THREE.SphereGeometry(0.4, 8, 6);
+            const head = new THREE.Mesh(headGeometry, material.clone());
+            head.position.y = 2.2;
+            
+            // Torso
+            const torsoGeometry = new THREE.CylinderGeometry(0.4, 0.6, 1.8, 8);
+            const torso = new THREE.Mesh(torsoGeometry, material.clone());
+            torso.position.y = 1;
+            
+            // Arms
+            const armGeometry = new THREE.CylinderGeometry(0.15, 0.18, 1.0, 6);
+            const leftArm = new THREE.Mesh(armGeometry, material.clone());
+            leftArm.position.set(-0.6, 1.5, 0);
+            leftArm.rotation.z = 0.3;
+            
+            const rightArm = new THREE.Mesh(armGeometry, material.clone());
+            rightArm.position.set(0.6, 1.5, 0);
+            rightArm.rotation.z = -0.3;
+            
+            // Legs
+            const legGeometry = new THREE.CylinderGeometry(0.22, 0.3, 1.8, 6);
+            const leftLeg = new THREE.Mesh(legGeometry, material.clone());
+            leftLeg.position.set(-0.4, -0.5, 0);
+            
+            const rightLeg = new THREE.Mesh(legGeometry, material.clone());
+            rightLeg.position.set(0.4, -0.5, 0);
+            
+            group.add(head, torso, leftArm, rightArm, leftLeg, rightLeg);
+            group.position.y = -1;
+            
+            scene.add(group);
+            humanFigure = group;
+        }
+        
+        function initializeScaledState() {
+            // Set initial scale to final state
+            humanFigure.scale.set(5, 5, 5);
+            
+            // Set initial arm positions
+            humanFigure.children[2].rotation.z = 0.3 + 0.8; // left arm spread
+            humanFigure.children[3].rotation.z = -0.3 - 0.8; // right arm spread
+            
+            // Set initial head tilt
+            humanFigure.children[0].rotation.x = -0.4;
+            
+            // Set initial leg spread
+            humanFigure.children[4].rotation.z = 0.4; // left leg
+            humanFigure.children[5].rotation.z = -0.4; // right leg
+            
+            // Set initial colors (intense state)
+            humanFigure.children.forEach(child => {
+                child.material.color.setRGB(0.4, 0.2, 0.5); // Purple-ish intense color
+            });
+            
+            // Set initial position
+            humanFigure.position.y = 7; // -1 + (5-1) * 2
+            
+            // Set initial background darkness
+            scene.background.setRGB(0.87, 0.87, 0.87); // Darker background
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+            time += 0.01;
+
+            if (scaling) {
+                scaleProgress += 0.006;
+                if (scaleProgress >= 1) {
+                    scaleProgress = 1;
+                }
+            }
+
+            // Dramatic scaling with easing
+            let currentScale = 1;
+            if (scaleProgress > 0) {
+                // Smooth easing function
+                const easedProgress = 1 - Math.pow(1 - scaleProgress, 3);
+                currentScale = 1 + easedProgress * 4; // Scale up to 5x
+            }
+            
+            humanFigure.scale.set(currentScale, currentScale, currentScale);
+
+            // Arms spread wider as figure grows
+            const armSpread = (currentScale - 1) * 0.2;
+            humanFigure.children[2].rotation.z = 0.3 + armSpread; // left arm
+            humanFigure.children[3].rotation.z = -0.3 - armSpread; // right arm
+
+            // Head tilts back slightly
+            humanFigure.children[0].rotation.x = -(currentScale - 1) * 0.1;
+
+            // Legs spread slightly
+            humanFigure.children[4].rotation.z = (currentScale - 1) * 0.1; // left leg
+            humanFigure.children[5].rotation.z = -(currentScale - 1) * 0.1; // right leg
+
+            // Color becomes more intense as figure grows
+            const intensity = (currentScale - 1) / 4;
+            humanFigure.children.forEach(child => {
+                child.material.color.setRGB(
+                    0.1 + intensity * 0.3,
+                    0.1 + intensity * 0.1,
+                    0.1 + intensity * 0.4
+                );
+            });
+
+            // Camera pulls back to accommodate larger figure
+            camera.position.z = 10 + (currentScale - 1) * 8;
+            camera.position.y = (currentScale - 1) * 2;
+
+            // Figure rises as it grows
+            humanFigure.position.y = -1 + (currentScale - 1) * 2;
+
+            // Gentle breathing effect (less pronounced as figure grows)
+            const breathIntensity = Math.max(0.02 - (currentScale - 1) * 0.01, 0.005);
+            const breathScale = 1 + Math.sin(time * 0.5) * breathIntensity;
+            humanFigure.scale.multiplyScalar(breathScale);
+
+            // Environment effects - background darkens slightly
+            const darkness = intensity * 0.1;
+            scene.background.setRGB(0.97 - darkness, 0.97 - darkness, 0.97 - darkness);
+
+            // Dancing motion - keep position static, only move limbs
+            if (currentScale >= 5) { // Final dancing shape
+                // Hand movements - rhythmic arm swaying
+                const handMotion = Math.sin(time * 2) * 0.4;
+                humanFigure.children[2].rotation.x = handMotion; // left arm
+                humanFigure.children[3].rotation.x = -handMotion; // right arm
+                
+                // Leg movements - gentle stepping motion
+                const legMotion = Math.sin(time * 1.5) * 0.2;
+                humanFigure.children[4].rotation.x = legMotion; // left leg
+                humanFigure.children[5].rotation.x = -legMotion; // right leg
+                
+                // Stop rotation - stay in same position
+                humanFigure.rotation.y = 0;
+            } else {
+                // Original rotation during scaling
+                humanFigure.rotation.y = Math.sin(time * 0.1) * 0.1 * intensity;
+            }
+
+            renderer.render(scene, camera);
+        }
+
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+
+        window.addEventListener('click', () => {
+            if (!scaling) {
+                scaling = true;
+            } else {
+                // Reset
+                scaleProgress = 0;
+                scaling = false;
+                
+                // Reset colors
+                humanFigure.children.forEach(child => {
+                    child.material.color.setRGB(0.1, 0.1, 0.1);
+                });
+                
+                // Reset environment
+                scene.background.setRGB(0.97, 0.97, 0.97);
+                camera.position.set(0, 0, 10);
+                humanFigure.position.y = -1;
+            }
+        });
+
+        init();
+    </script>
+</body>
+</html>

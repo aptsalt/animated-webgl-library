@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Digital Detox - Therapeutic Journey</title>
+    <style>
+        body {
+            margin: 0;
+            background: linear-gradient(to bottom, #1a1a1a, #0d4f3c);
+            overflow: hidden;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        }
+        canvas { display: block; }
+        .back-btn {
+            position: absolute;
+            top: 30px;
+            left: 30px;
+            background: rgba(26, 188, 156, 0.2);
+            border: 1px solid rgba(26, 188, 156, 0.3);
+            color: #1abc9c;
+            padding: 12px 24px;
+            text-decoration: none;
+            border-radius: 4px;
+            font-size: 14px;
+            font-weight: 300;
+            letter-spacing: 1px;
+            z-index: 1000;
+            transition: all 0.3s ease;
+        }
+        .back-btn:hover {
+            background: rgba(26, 188, 156, 0.3);
+            transform: translateY(-1px);
+        }
+        .title {
+            position: absolute;
+            top: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: #1abc9c;
+            font-size: 24px;
+            font-weight: 300;
+            z-index: 100;
+        }
+        .instruction {
+            position: absolute;
+            bottom: 40px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: rgba(26, 188, 156, 0.7);
+            font-size: 14px;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            pointer-events: none;
+        }
+        .progress {
+            position: absolute;
+            bottom: 80px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: rgba(26, 188, 156, 0.5);
+            font-size: 12px;
+            letter-spacing: 1px;
+        }
+    </style>
+</head>
+<body>
+    <a href="../index.html" class="back-btn">← Back</a>
+    <div class="title">Digital Detox</div>
+    <div class="instruction">Watch technology fade into nature</div>
+    <div class="progress" id="progress">Disconnecting... 0%</div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script>
+        let scene, camera, renderer;
+        let digitalElements = [], naturalElements = [];
+        let humanFigure;
+        let time = 0, detoxProgress = 0;
+
+        function init() {
+            scene = new THREE.Scene();
+            scene.background = new THREE.Color(0x1a1a1a);
+
+            camera = new THREE.PerspectiveCamera(
+                65, window.innerWidth / window.innerHeight, 0.1, 1000
+            );
+            camera.position.set(0, 5, 25);
+            camera.lookAt(0, 0, 0);
+
+            renderer = new THREE.WebGLRenderer({ antialias: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            document.body.appendChild(renderer.domElement);
+
+            createHumanFigure();
+            createDigitalElements();
+            createNaturalElements();
+            animate();
+        }
+
+        function createHumanFigure() {
+            const figureGroup = new THREE.Group();
+            
+            // Head
+            const headGeometry = new THREE.SphereGeometry(1, 12, 8);
+            const headMaterial = new THREE.MeshBasicMaterial({
+                color: 0x3498db,
+                transparent: true,
+                opacity: 0.8
+            });
+            const head = new THREE.Mesh(headGeometry, headMaterial);
+            head.position.y = 4;
+            figureGroup.add(head);
+
+            // Body
+            const bodyGeometry = new THREE.CylinderGeometry(1, 1.5, 4, 8);
+            const body = new THREE.Mesh(bodyGeometry, headMaterial);
+            body.position.y = 1;
+            figureGroup.add(body);
+
+            // Digital screen in front of face (initially)
+            const screenGeometry = new THREE.PlaneGeometry(2, 1.5);
+            const screenMaterial = new THREE.MeshBasicMaterial({
+                color: 0x00ffff,
+                transparent: true,
+                opacity: 0.8
+            });
+            const screen = new THREE.Mesh(screenGeometry, screenMaterial);
+            screen.position.set(0, 4, 2);
+            screen.userData = { isScreen: true };
+            figureGroup.add(screen);
+
+            humanFigure = figureGroup;
+            scene.add(humanFigure);
+        }
+
+        function createDigitalElements() {
+            // Screens, devices, notifications
+            for (let i = 0; i < 20; i++) {
+                const elementType = Math.floor(Math.random() * 3);
+                let element;
+
+                if (elementType === 0) {
+                    // Phone/tablet
+                    const geometry = new THREE.BoxGeometry(0.5, 1, 0.1);
+                    const material = new THREE.MeshBasicMaterial({
+                        color: 0x00ffff,
+                        transparent: true,
+                        opacity: 0.7
+                    });
+                    element = new THREE.Mesh(geometry, material);
+                } else if (elementType === 1) {
+                    // Notification bubble
+                    const geometry = new THREE.SphereGeometry(0.3, 8, 6);
+                    const material = new THREE.MeshBasicMaterial({
+                        color: 0xff4757,
+                        transparent: true,
+                        opacity: 0.8
+                    });
+                    element = new THREE.Mesh(geometry, material);
+                } else {
+                    // WiFi/signal waves
+                    const geometry = new THREE.RingGeometry(0.5, 0.7, 16);
+                    const material = new THREE.MeshBasicMaterial({
+                        color: 0x00ffff,
+                        transparent: true,
+                        opacity: 0.5,
+                        side: THREE.DoubleSide
+                    });
+                    element = new THREE.Mesh(geometry, material);
+                }
+
+                element.position.set(
+                    (Math.random() - 0.5) * 30,
+                    Math.random() * 15 + 2,
+                    (Math.random() - 0.5) * 20
+                );
+                
+                element.userData = {
+                    originalOpacity: element.material.opacity,
+                    floatSpeed: Math.random() * 0.02 + 0.01,
+                    rotSpeed: Math.random() * 0.03 + 0.01,
+                    initialY: element.position.y
+                };
+                
+                digitalElements.push(element);
+                scene.add(element);
+            }
+        }
+
+        function createNaturalElements() {
+            // Trees, flowers, leaves
+            for (let i = 0; i < 15; i++) {
+                const elementType = Math.floor(Math.random() * 3);
+                let element;
+
+                if (elementType === 0) {
+                    // Tree
+                    const trunkGeometry = new THREE.CylinderGeometry(0.2, 0.3, 3, 6);
+                    const trunkMaterial = new THREE.MeshBasicMaterial({
+                        color: 0x8b4513,
+                        transparent: true,
+                        opacity: 0
+                    });
+                    element = new THREE.Mesh(trunkGeometry, trunkMaterial);
+                    
+                    // Tree crown
+                    const crownGeometry = new THREE.SphereGeometry(1.5, 8, 6);
+                    const crownMaterial = new THREE.MeshBasicMaterial({
+                        color: 0x27ae60,
+                        transparent: true,
+                        opacity: 0
+                    });
+                    const crown = new THREE.Mesh(crownGeometry, crownMaterial);
+                    crown.position.y = 2.5;
+                    element.add(crown);
+                    
+                } else if (elementType === 1) {
+                    // Flower
+                    const flowerGeometry = new THREE.SphereGeometry(0.3, 6, 4);
+                    const flowerMaterial = new THREE.MeshBasicMaterial({
+                        color: new THREE.Color().setHSL(Math.random() * 0.3 + 0.1, 0.8, 0.6),
+                        transparent: true,
+                        opacity: 0
+                    });
+                    element = new THREE.Mesh(flowerGeometry, flowerMaterial);
+                } else {
+                    // Leaf
+                    const leafGeometry = new THREE.PlaneGeometry(0.5, 0.8);
+                    const leafMaterial = new THREE.MeshBasicMaterial({
+                        color: 0x27ae60,
+                        transparent: true,
+                        opacity: 0,
+                        side: THREE.DoubleSide
+                    });
+                    element = new THREE.Mesh(leafGeometry, leafMaterial);
+                }
+
+                element.position.set(
+                    (Math.random() - 0.5) * 25,
+                    Math.random() * 10,
+                    (Math.random() - 0.5) * 15
+                );
+                
+                element.userData = {
+                    targetOpacity: 0.8,
+                    growSpeed: Math.random() * 0.02 + 0.01,
+                    swaySpeed: Math.random() * 0.015 + 0.008,
+                    initialY: element.position.y
+                };
+                
+                naturalElements.push(element);
+                scene.add(element);
+            }
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+            time += 0.01;
+            detoxProgress = Math.min(100, (time * 2) % 100);
+
+            // Update progress display
+            document.getElementById('progress').textContent = 
+                `Disconnecting... ${Math.floor(detoxProgress)}%`;
+
+            // Fade out digital elements
+            digitalElements.forEach((element, index) => {
+                const fadeRate = 0.005 + (detoxProgress / 100) * 0.02;
+                element.material.opacity = Math.max(0, element.material.opacity - fadeRate);
+                
+                // Floating motion
+                element.position.y = element.userData.initialY + 
+                    Math.sin(time * element.userData.floatSpeed + index) * 0.5;
+                element.rotation.y += element.userData.rotSpeed;
+                
+                // Make them smaller as they fade
+                const scale = element.material.opacity;
+                element.scale.set(scale, scale, scale);
+            });
+
+            // Fade in natural elements
+            naturalElements.forEach((element, index) => {
+                if (detoxProgress > 30) {
+                    const growRate = 0.008;
+                    element.material.opacity = Math.min(element.userData.targetOpacity, 
+                        element.material.opacity + growRate);
+                    
+                    // Natural swaying
+                    element.position.y = element.userData.initialY + 
+                        Math.sin(time * element.userData.swaySpeed + index) * 0.3;
+                    element.rotation.y = Math.sin(time * element.userData.swaySpeed + index) * 0.1;
+                    
+                    // Growing effect
+                    const scale = element.material.opacity / element.userData.targetOpacity;
+                    element.scale.set(scale, scale, scale);
+                }
+            });
+
+            // Transform human figure
+            const screen = humanFigure.children.find(child => child.userData.isScreen);
+            if (screen) {
+                screen.material.opacity = Math.max(0, screen.material.opacity - 0.01);
+                screen.position.z = 2 + (1 - screen.material.opacity) * 5; // Move away
+            }
+
+            // Human figure becomes more relaxed
+            if (detoxProgress > 50) {
+                const relaxAmount = (detoxProgress - 50) / 50;
+                humanFigure.children[0].material.color.setHSL(0.4, 0.6, 0.5 + relaxAmount * 0.3); // Head color to green
+                humanFigure.children[1].material.color.setHSL(0.4, 0.6, 0.5 + relaxAmount * 0.3); // Body color to green
+                
+                // Breathing becomes deeper
+                const breathScale = 1 + Math.sin(time * 0.3) * (0.05 + relaxAmount * 0.1);
+                humanFigure.scale.set(breathScale, breathScale, breathScale);
+            }
+
+            // Background color transition
+            const bgColor = new THREE.Color();
+            bgColor.lerpColors(
+                new THREE.Color(0x1a1a1a), 
+                new THREE.Color(0x0d4f3c), 
+                detoxProgress / 100
+            );
+            scene.background = bgColor;
+
+            renderer.render(scene, camera);
+        }
+
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+
+        init();
+    </script>
+</body>
+</html>

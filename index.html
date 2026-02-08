@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Revolutionary WebGL - Digital Wellness Framework</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, system-ui, sans-serif;
+            background: #fafafa;
+            color: #1a1a1a;
+            overflow-x: hidden;
+        }
+
+        canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 0;
+        }
+
+        .container {
+            position: relative;
+            z-index: 1;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 60px 40px;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 60px;
+            opacity: 0;
+            animation: fadeIn 2s ease forwards;
+        }
+
+        h1 {
+            font-size: 48px;
+            font-weight: 200;
+            letter-spacing: 8px;
+            margin-bottom: 20px;
+            color: #1a1a1a;
+        }
+
+        .subtitle {
+            font-size: 18px;
+            color: #666;
+            letter-spacing: 2px;
+            font-weight: 300;
+        }
+
+        .collections {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            gap: 40px;
+            margin-top: 80px;
+        }
+
+        .collection-card {
+            background: rgba(255, 255, 255, 0.95);
+            border: 1px solid rgba(0, 0, 0, 0.05);
+            border-radius: 8px;
+            padding: 50px;
+            text-align: center;
+            transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+            cursor: pointer;
+            opacity: 0;
+            animation: fadeInUp 1s ease forwards;
+            backdrop-filter: blur(10px);
+            text-decoration: none;
+            color: inherit;
+        }
+
+        .collection-card:nth-child(1) { animation-delay: 0.2s; }
+        .collection-card:nth-child(2) { animation-delay: 0.4s; }
+
+        .collection-card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 25px 50px rgba(0, 0, 0, 0.12);
+            background: rgba(255, 255, 255, 1);
+        }
+
+        .collection-icon {
+            font-size: 64px;
+            margin-bottom: 30px;
+            opacity: 0.8;
+        }
+
+        .collection-title {
+            font-size: 28px;
+            font-weight: 300;
+            margin-bottom: 20px;
+            letter-spacing: 2px;
+            color: #1a1a1a;
+        }
+
+        .collection-description {
+            font-size: 16px;
+            line-height: 1.8;
+            color: #666;
+            margin-bottom: 25px;
+        }
+
+        .collection-stats {
+            font-size: 14px;
+            color: #999;
+            font-weight: 300;
+        }
+
+        @keyframes fadeIn {
+            to { opacity: 1; }
+        }
+
+        @keyframes fadeInUp {
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .intro {
+            text-align: center;
+            max-width: 700px;
+            margin: 0 auto 60px;
+            font-size: 16px;
+            line-height: 1.8;
+            color: #666;
+            opacity: 0;
+            animation: fadeIn 2s ease 0.5s forwards;
+        }
+    </style>
+</head>
+<body>
+    <canvas id="bgCanvas"></canvas>
+    
+    <div class="container">
+        <header>
+            <h1>REVOLUTIONARY WEBGL</h1>
+            <p class="subtitle">Therapeutic Digital Experiences Framework</p>
+        </header>
+
+        <div class="intro">
+            Explore the complete framework for digital wellness through immersive WebGL experiences. 
+            Built on psychological research and therapeutic principles, each component serves a specific 
+            purpose in the journey toward mindful technology interaction.
+        </div>
+
+        <div class="collections">
+            <a href="50-journeys/" class="collection-card">
+                <div class="collection-icon">🌟</div>
+                <h2 class="collection-title">50 Mindful Journeys</h2>
+                <p class="collection-description">
+                    Complete collection of therapeutic WebGL experiences organized into meaningful series. 
+                    Each journey is designed to guide users through specific emotional and psychological states.
+                </p>
+                <div class="collection-stats">50 Interactive Experiences • 5 Thematic Series</div>
+            </a>
+
+            <a href="core-files/" class="collection-card">
+                <div class="collection-icon">🔧</div>
+                <h2 class="collection-title">Framework & Documentation</h2>
+                <p class="collection-description">
+                    Technical foundation, human figure libraries, psychological frameworks, and comprehensive 
+                    documentation for developers and therapeutic practitioners.
+                </p>
+                <div class="collection-stats">Core Libraries • Research Docs • Implementation Guides</div>
+            </a>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script>
+        // Simple charcoal-style background animation
+        let scene, camera, renderer;
+        let particles = [];
+        let time = 0;
+
+        function init() {
+            scene = new THREE.Scene();
+            scene.background = new THREE.Color(0xfafafa);
+
+            camera = new THREE.PerspectiveCamera(
+                50, window.innerWidth / window.innerHeight, 0.1, 1000
+            );
+            camera.position.z = 30;
+
+            renderer = new THREE.WebGLRenderer({ 
+                canvas: document.getElementById('bgCanvas'),
+                antialias: true,
+                alpha: true 
+            });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+
+            createCharcoalParticles();
+            animate();
+        }
+
+        function createCharcoalParticles() {
+            const particleCount = 40;
+            
+            for (let i = 0; i < particleCount; i++) {
+                const geometry = new THREE.CircleGeometry(Math.random() * 0.6 + 0.1, 6);
+                const material = new THREE.MeshBasicMaterial({
+                    color: 0x1a1a1a,
+                    transparent: true,
+                    opacity: Math.random() * 0.08 + 0.02
+                });
+                
+                const particle = new THREE.Mesh(geometry, material);
+                particle.position.set(
+                    (Math.random() - 0.5) * 60,
+                    (Math.random() - 0.5) * 60,
+                    (Math.random() - 0.5) * 25
+                );
+                
+                particle.userData = {
+                    velocity: new THREE.Vector3(
+                        (Math.random() - 0.5) * 0.015,
+                        (Math.random() - 0.5) * 0.015,
+                        0
+                    ),
+                    rotationSpeed: (Math.random() - 0.5) * 0.001
+                };
+                
+                scene.add(particle);
+                particles.push(particle);
+            }
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+            time += 0.01;
+
+            particles.forEach(particle => {
+                particle.position.add(particle.userData.velocity);
+                particle.rotation.z += particle.userData.rotationSpeed;
+                
+                // Gentle floating motion
+                particle.position.y += Math.sin(time + particle.position.x) * 0.001;
+                
+                // Wrap around edges
+                if (Math.abs(particle.position.x) > 30) {
+                    particle.position.x *= -1;
+                }
+                if (Math.abs(particle.position.y) > 30) {
+                    particle.position.y *= -1;
+                }
+                
+                // Subtle opacity changes
+                particle.material.opacity = 0.04 + Math.sin(time + particle.position.x) * 0.02;
+            });
+
+            renderer.render(scene, camera);
+        }
+
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+
+        init();
+    </script>
+</body>
+</html>

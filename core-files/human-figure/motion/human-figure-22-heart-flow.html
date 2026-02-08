@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Human Figure Heart Flow - Mindful Journey</title>
+    <style>
+        body { 
+            margin: 0; 
+            overflow: hidden; 
+            background: #1a1a1a;
+            font-family: 'Inter', system-ui, sans-serif;
+        }
+        canvas { display: block; }
+        
+        .back-btn {
+            position: absolute;
+            top: 40px;
+            left: 40px;
+            padding: 10px 20px;
+            background: transparent;
+            border: 1px solid rgba(255, 107, 129, 0.4);
+            color: #ff6b81;
+            text-decoration: none;
+            font-size: 14px;
+            letter-spacing: 1px;
+            border-radius: 20px;
+            transition: all 0.3s ease;
+            z-index: 10;
+        }
+        
+        .back-btn:hover {
+            background: rgba(255, 107, 129, 0.1);
+            border-color: rgba(255, 107, 129, 0.8);
+        }
+        
+        .instruction {
+            position: absolute;
+            bottom: 40px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: rgba(255, 107, 129, 0.8);
+            font-size: 12px;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            pointer-events: none;
+        }
+    </style>
+</head>
+<body>
+    <a href="../index.html" class="back-btn">← Back</a>
+    <div class="instruction">Click to create heart flow around figure</div>
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script>
+        let scene, camera, renderer;
+        let humanFigure;
+        let heartFlows = [];
+        let time = 0;
+        let flowing = false;
+        let flowProgress = 0;
+
+        function init() {
+            scene = new THREE.Scene();
+            scene.background = new THREE.Color(0x1a1a1a);
+
+            camera = new THREE.PerspectiveCamera(
+                75, window.innerWidth / window.innerHeight, 0.1, 1000
+            );
+            camera.position.z = 12;
+
+            renderer = new THREE.WebGLRenderer({ antialias: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            document.body.appendChild(renderer.domElement);
+
+            createHumanFigure();
+            createHeartFlows();
+            animate();
+        }
+
+        function createHumanFigure() {
+            const group = new THREE.Group();
+            
+            const material = new THREE.MeshBasicMaterial({
+                color: 0xff6b81,
+                transparent: true,
+                opacity: 0.7,
+                side: THREE.DoubleSide
+            });
+            
+            // Head
+            const head = new THREE.Mesh(new THREE.SphereGeometry(0.4, 8, 6), material.clone());
+            head.position.y = 2.2;
+            
+            // Torso
+            const torso = new THREE.Mesh(new THREE.CylinderGeometry(0.3, 0.5, 1.4, 8), material.clone());
+            torso.position.y = 1.2;
+            
+            // Arms in loving gesture
+            const leftArm = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.12, 0.9, 6), material.clone());
+            leftArm.position.set(-0.6, 1.6, 0);
+            leftArm.rotation.z = 0.8;
+            
+            const rightArm = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.12, 0.9, 6), material.clone());
+            rightArm.position.set(0.6, 1.6, 0);
+            rightArm.rotation.z = -0.8;
+            
+            // Legs
+            const leftLeg = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.15, 1.2, 6), material.clone());
+            leftLeg.position.set(-0.2, 0.1, 0);
+            
+            const rightLeg = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.15, 1.2, 6), material.clone());
+            rightLeg.position.set(0.2, 0.1, 0);
+            
+            group.add(head, torso, leftArm, rightArm, leftLeg, rightLeg);
+            scene.add(group);
+            humanFigure = group;
+        }
+
+        function createHeartShape(scale = 1) {
+            const shape = new THREE.Shape();
+            const x = 0, y = 0;
+            
+            shape.moveTo(x + 25 * scale, y + 25 * scale);
+            
+            for (let i = 0; i <= Math.PI * 2; i += 0.1) {
+                const heartX = 16 * Math.pow(Math.sin(i), 3);
+                const heartY = 13 * Math.cos(i) - 5 * Math.cos(2 * i) - 2 * Math.cos(3 * i) - Math.cos(4 * i);
+                shape.lineTo((x + heartX) * scale, (y + heartY) * scale);
+            }
+            
+            return shape;
+        }
+
+        function createHeartFlows() {
+            for (let i = 0; i < 8; i++) {
+                const heartShape = createHeartShape(0.02);
+                const geometry = new THREE.ShapeGeometry(heartShape);
+                
+                const material = new THREE.MeshBasicMaterial({
+                    color: 0xff6b81,
+                    transparent: true,
+                    opacity: 0,
+                    side: THREE.DoubleSide
+                });
+                
+                const heart = new THREE.Mesh(geometry, material);
+                heart.position.set(0, 1.5, 0); // Start from chest area
+                
+                heart.userData = {
+                    angle: (i / 8) * Math.PI * 2,
+                    radius: 0,
+                    speed: 0.02 + Math.random() * 0.01,
+                    targetRadius: 4 + Math.random() * 2,
+                    opacity: 0.6 + Math.random() * 0.3,
+                    scale: 0.5 + Math.random() * 0.5,
+                    rotationSpeed: (Math.random() - 0.5) * 0.05
+                };
+                
+                scene.add(heart);
+                heartFlows.push(heart);
+            }
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+            time += 0.01;
+
+            if (flowing) {
+                flowProgress += 0.008;
+                if (flowProgress >= 1) {
+                    flowProgress = 1;
+                }
+            }
+
+            // Animate human figure - gentle breathing and loving gestures
+            humanFigure.scale.y = 1 + Math.sin(time * 0.8) * 0.03;
+            humanFigure.children[2].rotation.z = 0.8 + Math.sin(time * 0.6) * 0.2; // left arm
+            humanFigure.children[3].rotation.z = -0.8 - Math.sin(time * 0.6) * 0.2; // right arm
+
+            // Animate heart flows
+            heartFlows.forEach((heart, index) => {
+                if (flowing && flowProgress > 0) {
+                    const userData = heart.userData;
+                    
+                    // Spiral outward from chest
+                    userData.radius += userData.speed * flowProgress;
+                    userData.angle += userData.rotationSpeed;
+                    
+                    // Position in spiral
+                    heart.position.x = Math.cos(userData.angle) * userData.radius;
+                    heart.position.y = 1.5 + Math.sin(userData.angle) * userData.radius * 0.5;
+                    heart.position.z = Math.sin(userData.angle + time) * userData.radius * 0.3;
+                    
+                    // Scale and opacity animation
+                    const progress = Math.min(userData.radius / userData.targetRadius, 1);
+                    heart.material.opacity = userData.opacity * (1 - progress) * flowProgress;
+                    heart.scale.setScalar(userData.scale * (1 + progress * 2));
+                    
+                    // Rotation
+                    heart.rotation.z += userData.rotationSpeed;
+                    heart.rotation.y = time * 0.5;
+                    
+                    // Color shifting
+                    const hue = 0.95 + Math.sin(time + index) * 0.05;
+                    heart.material.color.setHSL(hue, 0.8, 0.6);
+                    
+                    // Reset when too far
+                    if (userData.radius > userData.targetRadius) {
+                        userData.radius = 0;
+                        userData.angle = (index / heartFlows.length) * Math.PI * 2;
+                        heart.position.set(0, 1.5, 0);
+                    }
+                }
+            });
+
+            // Camera gentle movement
+            camera.position.x = Math.sin(time * 0.1) * 1;
+            camera.position.y = Math.cos(time * 0.08) * 0.8;
+            camera.lookAt(0, 1, 0);
+
+            renderer.render(scene, camera);
+        }
+
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+
+        window.addEventListener('click', () => {
+            if (!flowing) {
+                flowing = true;
+                flowProgress = 0;
+            } else {
+                // Reset
+                flowing = false;
+                flowProgress = 0;
+                
+                heartFlows.forEach((heart, index) => {
+                    heart.userData.radius = 0;
+                    heart.userData.angle = (index / heartFlows.length) * Math.PI * 2;
+                    heart.position.set(0, 1.5, 0);
+                    heart.material.opacity = 0;
+                });
+            }
+        });
+
+        init();
+    </script>
+</body>
+</html>

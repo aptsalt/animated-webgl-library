@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Human Figure Motion Blur - Mindful Journey</title>
+    <style>
+        body { 
+            margin: 0; 
+            overflow: hidden; 
+            background: #f8f8f8;
+            font-family: 'Inter', system-ui, sans-serif;
+        }
+        canvas { display: block; }
+        
+        .back-btn {
+            position: absolute;
+            top: 40px;
+            left: 40px;
+            padding: 10px 20px;
+            background: transparent;
+            border: 1px solid rgba(26, 26, 26, 0.2);
+            color: #1a1a1a;
+            text-decoration: none;
+            font-size: 14px;
+            letter-spacing: 1px;
+            border-radius: 20px;
+            transition: all 0.3s ease;
+            z-index: 10;
+        }
+        
+        .back-btn:hover {
+            background: rgba(26, 26, 26, 0.05);
+            border-color: rgba(26, 26, 26, 0.4);
+        }
+        
+        .instruction {
+            position: absolute;
+            bottom: 40px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: rgba(26, 26, 26, 0.4);
+            font-size: 12px;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            pointer-events: none;
+        }
+    </style>
+</head>
+<body>
+    <a href="../index.html" class="back-btn">← Back</a>
+    <div class="instruction">Click to create motion blur trail</div>
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script>
+        let scene, camera, renderer;
+        let humanFigure, trailFigures = [];
+        let time = 0;
+        let blurring = false;
+        let blurProgress = 0;
+
+        function init() {
+            scene = new THREE.Scene();
+            scene.background = new THREE.Color(0xf8f8f8);
+
+            camera = new THREE.PerspectiveCamera(
+                75, window.innerWidth / window.innerHeight, 0.1, 1000
+            );
+            camera.position.z = 10;
+
+            renderer = new THREE.WebGLRenderer({ antialias: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            document.body.appendChild(renderer.domElement);
+
+            createHumanFigure();
+            createTrailFigures();
+            animate();
+        }
+
+        function createHumanFigure() {
+            const group = new THREE.Group();
+            
+            const material = new THREE.MeshBasicMaterial({
+                color: 0x1a1a1a,
+                transparent: true,
+                opacity: 0.8,
+                side: THREE.DoubleSide
+            });
+            
+            // Head
+            const headGeometry = new THREE.SphereGeometry(0.4, 8, 6);
+            const head = new THREE.Mesh(headGeometry, material.clone());
+            head.position.y = 2.2;
+            
+            // Torso
+            const torsoGeometry = new THREE.CylinderGeometry(0.4, 0.6, 1.8, 8);
+            const torso = new THREE.Mesh(torsoGeometry, material.clone());
+            torso.position.y = 1;
+            
+            // Arms in running position
+            const armGeometry = new THREE.CylinderGeometry(0.15, 0.18, 1.0, 6);
+            const leftArm = new THREE.Mesh(armGeometry, material.clone());
+            leftArm.position.set(-0.4, 1.8, 0);
+            leftArm.rotation.z = 0.8;
+            leftArm.rotation.x = -0.5;
+            
+            const rightArm = new THREE.Mesh(armGeometry, material.clone());
+            rightArm.position.set(0.4, 1.2, 0);
+            rightArm.rotation.z = -0.8;
+            rightArm.rotation.x = 0.5;
+            
+            // Legs in running position
+            const legGeometry = new THREE.CylinderGeometry(0.22, 0.3, 1.8, 6);
+            const leftLeg = new THREE.Mesh(legGeometry, material.clone());
+            leftLeg.position.set(-0.4, -0.3, 0);
+            leftLeg.rotation.x = 0.3;
+            
+            const rightLeg = new THREE.Mesh(legGeometry, material.clone());
+            rightLeg.position.set(0.4, -0.8, 0);
+            rightLeg.rotation.x = -0.3;
+            
+            group.add(head, torso, leftArm, rightArm, leftLeg, rightLeg);
+            
+            scene.add(group);
+            humanFigure = group;
+        }
+
+        function createTrailFigures() {
+            // Create multiple trail figures for motion blur effect
+            for (let i = 0; i < 8; i++) {
+                const trailGroup = new THREE.Group();
+                
+                const opacity = 0.1 - (i * 0.01);
+                const material = new THREE.MeshBasicMaterial({
+                    color: 0x1a1a1a,
+                    transparent: true,
+                    opacity: 0,
+                    side: THREE.DoubleSide
+                });
+                
+                // Create simplified trail figure
+                const headGeometry = new THREE.SphereGeometry(0.4, 6, 4);
+                const head = new THREE.Mesh(headGeometry, material.clone());
+                head.position.y = 2.2;
+                
+                const torsoGeometry = new THREE.CylinderGeometry(0.4, 0.6, 1.8, 6);
+                const torso = new THREE.Mesh(torsoGeometry, material.clone());
+                torso.position.y = 1;
+                
+                const armGeometry = new THREE.CylinderGeometry(0.15, 0.18, 1.0, 4);
+                const leftArm = new THREE.Mesh(armGeometry, material.clone());
+                leftArm.position.set(-0.4, 1.8, 0);
+                leftArm.rotation.z = 0.8;
+                leftArm.rotation.x = -0.5;
+                
+                const rightArm = new THREE.Mesh(armGeometry, material.clone());
+                rightArm.position.set(0.4, 1.2, 0);
+                rightArm.rotation.z = -0.8;
+                rightArm.rotation.x = 0.5;
+                
+                const legGeometry = new THREE.CylinderGeometry(0.22, 0.3, 1.8, 4);
+                const leftLeg = new THREE.Mesh(legGeometry, material.clone());
+                leftLeg.position.set(-0.4, -0.3, 0);
+                leftLeg.rotation.x = 0.3;
+                
+                const rightLeg = new THREE.Mesh(legGeometry, material.clone());
+                rightLeg.position.set(0.4, -0.8, 0);
+                rightLeg.rotation.x = -0.3;
+                
+                trailGroup.add(head, torso, leftArm, rightArm, leftLeg, rightLeg);
+                scene.add(trailGroup);
+                
+                trailFigures.push({
+                    group: trailGroup,
+                    delay: i * 2, // Frame delay
+                    opacity: opacity,
+                    positions: []
+                });
+            }
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+            time += 0.01;
+
+            if (blurring) {
+                blurProgress += 0.01;
+                if (blurProgress >= 1) {
+                    blurProgress = 1;
+                }
+            }
+
+            const speed = blurProgress * 0.3;
+            const runCycle = time * 8;
+
+            // Main figure fast movement
+            if (blurring) {
+                humanFigure.position.x = Math.sin(time * 1.5) * 6;
+                humanFigure.position.y = Math.cos(time * 2) * 2;
+                
+                // Running animation
+                humanFigure.children[2].rotation.x = -0.5 + Math.sin(runCycle) * 0.8; // left arm
+                humanFigure.children[3].rotation.x = 0.5 - Math.sin(runCycle) * 0.8; // right arm
+                humanFigure.children[4].rotation.x = 0.3 - Math.sin(runCycle) * 0.6; // left leg
+                humanFigure.children[5].rotation.x = -0.3 + Math.sin(runCycle) * 0.6; // right leg
+                
+                // Body lean forward during fast movement
+                humanFigure.rotation.x = 0.2;
+                humanFigure.rotation.z = Math.sin(time * 1.5) * 0.1;
+            } else {
+                // Slow return to center
+                humanFigure.position.x *= 0.95;
+                humanFigure.position.y *= 0.95;
+                humanFigure.rotation.x *= 0.95;
+                humanFigure.rotation.z *= 0.95;
+            }
+
+            // Update trail figures
+            trailFigures.forEach((trail, index) => {
+                // Store current position for trail
+                trail.positions.push({
+                    x: humanFigure.position.x,
+                    y: humanFigure.position.y,
+                    z: humanFigure.position.z,
+                    rotationX: humanFigure.rotation.x,
+                    rotationY: humanFigure.rotation.y,
+                    rotationZ: humanFigure.rotation.z
+                });
+                
+                // Keep only recent positions
+                if (trail.positions.length > trail.delay + 5) {
+                    trail.positions.shift();
+                }
+                
+                // Set trail figure position from delayed position
+                if (trail.positions.length > trail.delay) {
+                    const delayedPos = trail.positions[trail.positions.length - trail.delay - 1];
+                    if (delayedPos) {
+                        trail.group.position.set(delayedPos.x, delayedPos.y, delayedPos.z);
+                        trail.group.rotation.set(delayedPos.rotationX, delayedPos.rotationY, delayedPos.rotationZ);
+                    }
+                }
+                
+                // Fade trail based on blur progress and distance
+                const trailOpacity = blurProgress * trail.opacity * (1 - index / trailFigures.length);
+                trail.group.children.forEach(child => {
+                    child.material.opacity = trailOpacity;
+                });
+                
+                // Copy running pose from main figure
+                if (trail.group.children.length > 0) {
+                    trail.group.children[2].rotation.x = humanFigure.children[2].rotation.x;
+                    trail.group.children[3].rotation.x = humanFigure.children[3].rotation.x;
+                    trail.group.children[4].rotation.x = humanFigure.children[4].rotation.x;
+                    trail.group.children[5].rotation.x = humanFigure.children[5].rotation.x;
+                }
+            });
+
+            // Main figure opacity adjustment during blur
+            humanFigure.children.forEach(child => {
+                child.material.opacity = 0.8 - blurProgress * 0.2;
+            });
+
+            // Camera movement to follow action
+            if (blurring) {
+                camera.position.x = humanFigure.position.x * 0.3;
+                camera.position.y = humanFigure.position.y * 0.2;
+            }
+            
+            camera.lookAt(humanFigure.position);
+
+            renderer.render(scene, camera);
+        }
+
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+
+        window.addEventListener('click', () => {
+            if (!blurring) {
+                blurring = true;
+                blurProgress = 0;
+            } else {
+                blurring = false;
+                blurProgress = 0;
+                
+                // Clear trail positions
+                trailFigures.forEach(trail => {
+                    trail.positions = [];
+                });
+            }
+        });
+
+        init();
+    </script>
+</body>
+</html>

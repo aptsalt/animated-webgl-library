@@ -1,0 +1,1267 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Island Figure - Mindful Journey</title>
+    <style>
+        body { 
+            margin: 0; 
+            overflow: hidden; 
+            background: linear-gradient(180deg, #87CEEB 0%, #E0F6FF 50%, #FFE4B5 100%);
+            font-family: 'Inter', system-ui, sans-serif;
+            cursor: grab;
+        }
+        body.dragging { cursor: grabbing; }
+        canvas { display: block; }
+        
+        .instruction {
+            position: absolute;
+            bottom: 40px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: rgba(26, 26, 26, 0.7);
+            font-size: 14px;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            pointer-events: none;
+            transition: opacity 0.5s ease;
+            text-shadow: 0 2px 4px rgba(255,255,255,0.5);
+        }
+        
+        .back-btn {
+            position: absolute;
+            top: 40px;
+            left: 40px;
+            padding: 12px 24px;
+            background: rgba(255,255,255,0.9);
+            border: 1px solid rgba(26, 26, 26, 0.1);
+            color: #1a1a1a;
+            text-decoration: none;
+            font-size: 14px;
+            letter-spacing: 1px;
+            border-radius: 25px;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+        
+        .back-btn:hover {
+            background: rgba(255,255,255,1);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0,0,0,0.15);
+        }
+
+        .controls {
+            position: absolute;
+            top: 40px;
+            right: 40px;
+            display: flex;
+            gap: 10px;
+            flex-direction: column;
+        }
+
+        .control-btn {
+            padding: 8px 16px;
+            background: rgba(255,255,255,0.9);
+            border: 1px solid rgba(26, 26, 26, 0.1);
+            color: #1a1a1a;
+            font-size: 12px;
+            border-radius: 20px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(10px);
+        }
+
+        .control-btn:hover {
+            background: rgba(255,255,255,1);
+            transform: translateY(-1px);
+        }
+
+        .control-btn.active {
+            background: rgba(100,150,200,0.9);
+            color: white;
+        }
+
+        .time-display {
+            position: absolute;
+            top: 120px;
+            right: 40px;
+            color: rgba(26, 26, 26, 0.6);
+            font-size: 12px;
+            background: rgba(255,255,255,0.8);
+            padding: 8px 12px;
+            border-radius: 15px;
+            backdrop-filter: blur(10px);
+        }
+    </style>
+</head>
+<body>
+    <a href="gallery.html" class="back-btn">← Back</a>
+    <div class="instruction">Explore the mystical floating islands • Drag to orbit • Scroll to zoom</div>
+    
+    <div class="controls">
+        <button class="control-btn" id="followBtn">Follow Figure</button>
+        <button class="control-btn" id="weatherBtn">Change Weather</button>
+        <button class="control-btn" id="timeBtn">Time Cycle</button>
+        <button class="control-btn" id="qualityBtn">High Quality</button>
+    </div>
+    
+    <div class="time-display" id="timeDisplay">Dawn</div>
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script>
+        let scene, camera, renderer, controls;
+        let island, figure;
+        let floatingIslands = [];
+        let time = 0;
+        let clouds = [];
+        let particles = [];
+        let weatherSystem;
+        let lightingSystem;
+        let audioVisualizer;
+        let performanceMonitor;
+        
+        // Enhanced state management
+        let gameState = {
+            followMode: false,
+            weatherType: 'clear', // clear, cloudy, stormy, magical
+            timeOfDay: 0, // 0-1 representing day cycle
+            qualityLevel: 'high', // low, medium, high
+            cameraTarget: new THREE.Vector3(0, 0, 0),
+            windStrength: 0.5,
+            isInteracting: false
+        };
+        
+        // Performance monitoring
+        let frameCount = 0;
+        let lastTime = performance.now();
+        let fps = 60;
+        
+        // Mouse/touch controls
+        let mouseDown = false;
+        let mouseX = 0, mouseY = 0;
+        let targetCameraPosition = new THREE.Vector3();
+        let cameraOffset = new THREE.Vector3(0, 5, 30);
+
+        function init() {
+            scene = new THREE.Scene();
+            scene.fog = new THREE.FogExp2(0x87CEEB, 0.01);
+            
+            camera = new THREE.PerspectiveCamera(
+                75, window.innerWidth / window.innerHeight, 0.1, 1000
+            );
+            camera.position.copy(cameraOffset);
+            targetCameraPosition.copy(cameraOffset);
+
+            renderer = new THREE.WebGLRenderer({ 
+                antialias: true,
+                alpha: false,
+                powerPreference: "high-performance"
+            });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.shadowMap.enabled = true;
+            renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+            renderer.setClearColor(0x87CEEB);
+            renderer.toneMapping = THREE.ACESFilmicToneMapping;
+            renderer.toneMappingExposure = 1.2;
+            document.body.appendChild(renderer.domElement);
+
+            setupLighting();
+            setupControls();
+            createMainIsland();
+            createDetailedFigure();
+            createFloatingIslands();
+            createEnhancedClouds();
+            createParticleSystems();
+            createWeatherSystem();
+            setupEventListeners();
+            
+            performanceMonitor = new PerformanceMonitor();
+            
+            animate();
+        }
+        
+        function setupLighting() {
+            // Ambient light for overall scene illumination
+            const ambientLight = new THREE.AmbientLight(0x87CEEB, 0.4);
+            scene.add(ambientLight);
+            
+            // Directional light (sun)
+            const directionalLight = new THREE.DirectionalLight(0xFFE4B5, 1.2);
+            directionalLight.position.set(50, 100, 50);
+            directionalLight.castShadow = true;
+            directionalLight.shadow.mapSize.width = 2048;
+            directionalLight.shadow.mapSize.height = 2048;
+            directionalLight.shadow.camera.near = 0.5;
+            directionalLight.shadow.camera.far = 500;
+            directionalLight.shadow.camera.left = -100;
+            directionalLight.shadow.camera.right = 100;
+            directionalLight.shadow.camera.top = 100;
+            directionalLight.shadow.camera.bottom = -100;
+            scene.add(directionalLight);
+            
+            lightingSystem = {
+                ambient: ambientLight,
+                directional: directionalLight,
+                updateTimeOfDay: function(timeRatio) {
+                    const sunAngle = timeRatio * Math.PI * 2 - Math.PI / 2;
+                    const sunHeight = Math.sin(sunAngle) * 100 + 20;
+                    const sunX = Math.cos(sunAngle) * 80;
+                    
+                    this.directional.position.set(sunX, sunHeight, 50);
+                    
+                    // Color changes throughout day
+                    if (timeRatio < 0.3) { // Dawn
+                        this.directional.color.setHex(0xFFB347);
+                        this.ambient.color.setHex(0x87CEEB);
+                        scene.fog.color.setHex(0xFFA07A);
+                    } else if (timeRatio < 0.7) { // Day
+                        this.directional.color.setHex(0xFFFFE0);
+                        this.ambient.color.setHex(0x87CEEB);
+                        scene.fog.color.setHex(0x87CEEB);
+                    } else { // Dusk/Night
+                        this.directional.color.setHex(0x4169E1);
+                        this.ambient.color.setHex(0x191970);
+                        scene.fog.color.setHex(0x2F4F4F);
+                    }
+                }
+            };
+        }
+        
+        function setupControls() {
+            renderer.domElement.addEventListener('mousedown', onMouseDown);
+            renderer.domElement.addEventListener('mousemove', onMouseMove);
+            renderer.domElement.addEventListener('mouseup', onMouseUp);
+            renderer.domElement.addEventListener('wheel', onMouseWheel);
+            
+            // Touch controls
+            renderer.domElement.addEventListener('touchstart', onTouchStart);
+            renderer.domElement.addEventListener('touchmove', onTouchMove);
+            renderer.domElement.addEventListener('touchend', onTouchEnd);
+        }
+
+        function createMainIsland() {
+            const islandGroup = new THREE.Group();
+            
+            // Enhanced island generation with realistic topography
+            const islandGeometry = new THREE.CylinderGeometry(8, 12, 4, 24, 1, false);
+            const islandMaterial = new THREE.MeshLambertMaterial({ 
+                color: 0x228B22,
+                transparent: false
+            });
+            
+            // Advanced procedural terrain generation
+            const positions = islandGeometry.attributes.position.array;
+            for (let i = 0; i < positions.length; i += 3) {
+                const x = positions[i];
+                const z = positions[i + 2];
+                const distance = Math.sqrt(x * x + z * z);
+                
+                // Multi-octave noise for realistic terrain
+                const noise1 = Math.sin(distance * 0.3) * Math.cos(distance * 0.2) * 0.8;
+                const noise2 = Math.sin(distance * 0.8) * Math.cos(distance * 0.6) * 0.3;
+                const noise3 = Math.sin(distance * 1.5) * Math.cos(distance * 1.2) * 0.1;
+                
+                // Erosion patterns
+                const erosion = Math.sin(x * 0.5) * Math.cos(z * 0.5) * 0.2;
+                
+                positions[i + 1] += noise1 + noise2 + noise3 + erosion;
+                
+                // Create cliff edges
+                if (distance > 7) {
+                    positions[i + 1] -= (distance - 7) * 0.5;
+                }
+            }
+            islandGeometry.attributes.position.needsUpdate = true;
+            islandGeometry.computeVertexNormals();
+            
+            const islandMesh = new THREE.Mesh(islandGeometry, islandMaterial);
+            islandMesh.castShadow = true;
+            islandMesh.receiveShadow = true;
+            islandGroup.add(islandMesh);
+            
+            // Realistic rock formations with varied materials
+            const rockMaterials = [
+                new THREE.MeshLambertMaterial({ color: 0x696969 }),
+                new THREE.MeshLambertMaterial({ color: 0x808080 }),
+                new THREE.MeshLambertMaterial({ color: 0x2F4F4F })
+            ];
+            
+            for (let i = 0; i < 12; i++) {
+                const rockGeometry = new THREE.SphereGeometry(
+                    0.8 + Math.random() * 2.5, 8, 6
+                );
+                
+                // Deform rocks for natural look
+                const rockPositions = rockGeometry.attributes.position.array;
+                for (let j = 0; j < rockPositions.length; j += 3) {
+                    const x = rockPositions[j];
+                    const y = rockPositions[j + 1];
+                    const z = rockPositions[j + 2];
+                    const deform = (Math.random() - 0.5) * 0.3;
+                    rockPositions[j] += deform;
+                    rockPositions[j + 1] += deform;
+                    rockPositions[j + 2] += deform;
+                }
+                rockGeometry.attributes.position.needsUpdate = true;
+                rockGeometry.computeVertexNormals();
+                
+                const rock = new THREE.Mesh(rockGeometry, rockMaterials[Math.floor(Math.random() * rockMaterials.length)]);
+                const angle = (i / 12) * Math.PI * 2 + Math.random() * 0.8;
+                const radius = 3 + Math.random() * 6;
+                rock.position.set(
+                    Math.cos(angle) * radius,
+                    2 + Math.random() * 1.5,
+                    Math.sin(angle) * radius
+                );
+                rock.scale.set(
+                    0.8 + Math.random() * 0.4,
+                    0.5 + Math.random() * 0.8,
+                    0.8 + Math.random() * 0.4
+                );
+                rock.rotation.set(
+                    Math.random() * Math.PI,
+                    Math.random() * Math.PI,
+                    Math.random() * Math.PI
+                );
+                rock.castShadow = true;
+                rock.receiveShadow = true;
+                islandGroup.add(rock);
+            }
+            
+            // Enhanced vegetation system
+            createVegetation(islandGroup);
+            
+            // Add water features
+            createWaterFeatures(islandGroup);
+            
+            scene.add(islandGroup);
+            island = islandGroup;
+        }
+        
+        function createVegetation(islandGroup) {
+            // Various tree types
+            const treeTypes = ['pine', 'oak', 'palm'];
+            
+            for (let i = 0; i < 15; i++) {
+                const treeType = treeTypes[Math.floor(Math.random() * treeTypes.length)];
+                const treeGroup = createTree(treeType);
+                
+                const angle = (i / 15) * Math.PI * 2 + Math.random() * 0.8;
+                const radius = 2 + Math.random() * 7;
+                treeGroup.position.set(
+                    Math.cos(angle) * radius,
+                    2,
+                    Math.sin(angle) * radius
+                );
+                treeGroup.userData.swayPhase = Math.random() * Math.PI * 2;
+                treeGroup.userData.swayAmount = 0.05 + Math.random() * 0.1;
+                islandGroup.add(treeGroup);
+            }
+            
+            // Add grass and small plants
+            for (let i = 0; i < 30; i++) {
+                const grassGroup = new THREE.Group();
+                
+                for (let j = 0; j < 3 + Math.random() * 5; j++) {
+                    const grassGeometry = new THREE.CylinderGeometry(0.02, 0.01, 0.3 + Math.random() * 0.4, 3);
+                    const grassMaterial = new THREE.MeshLambertMaterial({ 
+                        color: new THREE.Color().setHSL(0.25 + Math.random() * 0.1, 0.6, 0.4)
+                    });
+                    const grass = new THREE.Mesh(grassGeometry, grassMaterial);
+                    grass.position.set(
+                        (Math.random() - 0.5) * 0.5,
+                        0.2,
+                        (Math.random() - 0.5) * 0.5
+                    );
+                    grass.rotation.z = (Math.random() - 0.5) * 0.3;
+                    grassGroup.add(grass);
+                }
+                
+                const angle = Math.random() * Math.PI * 2;
+                const radius = Math.random() * 8;
+                grassGroup.position.set(
+                    Math.cos(angle) * radius,
+                    2,
+                    Math.sin(angle) * radius
+                );
+                grassGroup.userData.swayPhase = Math.random() * Math.PI * 2;
+                islandGroup.add(grassGroup);
+            }
+        }
+        
+        function createTree(type) {
+            const treeGroup = new THREE.Group();
+            
+            if (type === 'pine') {
+                // Pine tree
+                const trunkGeometry = new THREE.CylinderGeometry(0.15, 0.25, 3, 8);
+                const trunkMaterial = new THREE.MeshLambertMaterial({ color: 0x8B4513 });
+                const trunk = new THREE.Mesh(trunkGeometry, trunkMaterial);
+                trunk.castShadow = true;
+                treeGroup.add(trunk);
+                
+                // Pine layers
+                for (let i = 0; i < 4; i++) {
+                    const size = 1.2 - i * 0.2;
+                    const coneGeometry = new THREE.ConeGeometry(size, 1.5, 8);
+                    const coneMaterial = new THREE.MeshLambertMaterial({ color: 0x228B22 });
+                    const cone = new THREE.Mesh(coneGeometry, coneMaterial);
+                    cone.position.y = 1.5 + i * 0.8;
+                    cone.castShadow = true;
+                    treeGroup.add(cone);
+                }
+            } else if (type === 'oak') {
+                // Oak tree
+                const trunkGeometry = new THREE.CylinderGeometry(0.2, 0.3, 2.5, 8);
+                const trunkMaterial = new THREE.MeshLambertMaterial({ color: 0x8B4513 });
+                const trunk = new THREE.Mesh(trunkGeometry, trunkMaterial);
+                trunk.castShadow = true;
+                treeGroup.add(trunk);
+                
+                // Canopy
+                const canopyGeometry = new THREE.SphereGeometry(1.5, 12, 8);
+                const canopyMaterial = new THREE.MeshLambertMaterial({ color: 0x32CD32 });
+                const canopy = new THREE.Mesh(canopyGeometry, canopyMaterial);
+                canopy.position.y = 2.8;
+                canopy.scale.y = 0.8;
+                canopy.castShadow = true;
+                treeGroup.add(canopy);
+            } else {
+                // Palm tree
+                const trunkGeometry = new THREE.CylinderGeometry(0.1, 0.15, 4, 6);
+                const trunkMaterial = new THREE.MeshLambertMaterial({ color: 0xD2B48C });
+                const trunk = new THREE.Mesh(trunkGeometry, trunkMaterial);
+                trunk.castShadow = true;
+                treeGroup.add(trunk);
+                
+                // Palm fronds
+                for (let i = 0; i < 8; i++) {
+                    const frondGeometry = new THREE.PlaneGeometry(0.3, 2);
+                    const frondMaterial = new THREE.MeshLambertMaterial({ 
+                        color: 0x228B22,
+                        side: THREE.DoubleSide
+                    });
+                    const frond = new THREE.Mesh(frondGeometry, frondMaterial);
+                    frond.position.y = 3.5;
+                    frond.rotation.y = (i / 8) * Math.PI * 2;
+                    frond.rotation.x = -0.3;
+                    frond.castShadow = true;
+                    treeGroup.add(frond);
+                }
+            }
+            
+            return treeGroup;
+        }
+        
+        function createWaterFeatures(islandGroup) {
+            // Small pond
+            const pondGeometry = new THREE.CylinderGeometry(2, 2, 0.1, 16);
+            const pondMaterial = new THREE.MeshLambertMaterial({ 
+                color: 0x006994,
+                transparent: true,
+                opacity: 0.8
+            });
+            const pond = new THREE.Mesh(pondGeometry, pondMaterial);
+            pond.position.set(3, 1.8, -2);
+            pond.receiveShadow = true;
+            islandGroup.add(pond);
+            
+            // Waterfall (simple)
+            const waterfallGeometry = new THREE.PlaneGeometry(0.5, 3);
+            const waterfallMaterial = new THREE.MeshLambertMaterial({ 
+                color: 0x87CEEB,
+                transparent: true,
+                opacity: 0.6,
+                side: THREE.DoubleSide
+            });
+            const waterfall = new THREE.Mesh(waterfallGeometry, waterfallMaterial);
+            waterfall.position.set(-5, 2.5, 3);
+            waterfall.rotation.x = 0.2;
+            islandGroup.add(waterfall);
+        }
+
+        function createDetailedFigure() {
+            const figureGroup = new THREE.Group();
+            
+            // Enhanced materials for figure
+            const skinMaterial = new THREE.MeshLambertMaterial({ color: 0xFFDBAE });
+            const clothMaterial = new THREE.MeshLambertMaterial({ color: 0x4A5568 });
+            const hairMaterial = new THREE.MeshLambertMaterial({ color: 0x4A5568 });
+            
+            // Torso with more detail
+            const torsoGeometry = new THREE.CylinderGeometry(0.5, 0.7, 2.8, 12);
+            const torso = new THREE.Mesh(torsoGeometry, clothMaterial);
+            torso.castShadow = true;
+            figureGroup.add(torso);
+            
+            // Head with better proportions
+            const headGeometry = new THREE.SphereGeometry(0.6, 16, 12);
+            const head = new THREE.Mesh(headGeometry, skinMaterial);
+            head.position.y = 2.2;
+            head.castShadow = true;
+            figureGroup.add(head);
+            
+            // Hair
+            const hairGeometry = new THREE.SphereGeometry(0.65, 12, 8);
+            const hair = new THREE.Mesh(hairGeometry, hairMaterial);
+            hair.position.y = 2.4;
+            hair.scale.y = 0.8;
+            hair.castShadow = true;
+            figureGroup.add(hair);
+            
+            // Upper arms
+            const upperArmGeometry = new THREE.CylinderGeometry(0.12, 0.15, 1.2, 8);
+            const leftUpperArm = new THREE.Mesh(upperArmGeometry, skinMaterial);
+            leftUpperArm.position.set(-0.9, 1.2, 0);
+            leftUpperArm.rotation.z = 0.4;
+            leftUpperArm.castShadow = true;
+            figureGroup.add(leftUpperArm);
+            
+            const rightUpperArm = new THREE.Mesh(upperArmGeometry, skinMaterial);
+            rightUpperArm.position.set(0.9, 1.2, 0);
+            rightUpperArm.rotation.z = -0.4;
+            rightUpperArm.castShadow = true;
+            figureGroup.add(rightUpperArm);
+            
+            // Forearms
+            const forearmGeometry = new THREE.CylinderGeometry(0.1, 0.12, 1.1, 8);
+            const leftForearm = new THREE.Mesh(forearmGeometry, skinMaterial);
+            leftForearm.position.set(-1.6, 0.2, 0.3);
+            leftForearm.rotation.z = 0.8;
+            leftForearm.rotation.x = -0.3;
+            leftForearm.castShadow = true;
+            figureGroup.add(leftForearm);
+            
+            const rightForearm = new THREE.Mesh(forearmGeometry, skinMaterial);
+            rightForearm.position.set(1.6, 0.2, 0.3);
+            rightForearm.rotation.z = -0.8;
+            rightForearm.rotation.x = -0.3;
+            rightForearm.castShadow = true;
+            figureGroup.add(rightForearm);
+            
+            // Hands
+            const handGeometry = new THREE.SphereGeometry(0.15, 8, 6);
+            const leftHand = new THREE.Mesh(handGeometry, skinMaterial);
+            leftHand.position.set(-2, -0.3, 0.8);
+            leftHand.castShadow = true;
+            figureGroup.add(leftHand);
+            
+            const rightHand = new THREE.Mesh(handGeometry, skinMaterial);
+            rightHand.position.set(2, -0.3, 0.8);
+            rightHand.castShadow = true;
+            figureGroup.add(rightHand);
+            
+            // Thighs
+            const thighGeometry = new THREE.CylinderGeometry(0.18, 0.22, 1.8, 8);
+            const leftThigh = new THREE.Mesh(thighGeometry, clothMaterial);
+            leftThigh.position.set(-0.35, -2.2, 0);
+            leftThigh.castShadow = true;
+            figureGroup.add(leftThigh);
+            
+            const rightThigh = new THREE.Mesh(thighGeometry, clothMaterial);
+            rightThigh.position.set(0.35, -2.2, 0);
+            rightThigh.castShadow = true;
+            figureGroup.add(rightThigh);
+            
+            // Shins
+            const shinGeometry = new THREE.CylinderGeometry(0.15, 0.18, 1.6, 8);
+            const leftShin = new THREE.Mesh(shinGeometry, skinMaterial);
+            leftShin.position.set(-0.35, -3.8, 0);
+            leftShin.castShadow = true;
+            figureGroup.add(leftShin);
+            
+            const rightShin = new THREE.Mesh(shinGeometry, skinMaterial);
+            rightShin.position.set(0.35, -3.8, 0);
+            rightShin.castShadow = true;
+            figureGroup.add(rightShin);
+            
+            // Feet
+            const footGeometry = new THREE.BoxGeometry(0.3, 0.15, 0.8);
+            const leftFoot = new THREE.Mesh(footGeometry, clothMaterial);
+            leftFoot.position.set(-0.35, -4.8, 0.2);
+            leftFoot.castShadow = true;
+            figureGroup.add(leftFoot);
+            
+            const rightFoot = new THREE.Mesh(footGeometry, clothMaterial);
+            rightFoot.position.set(0.35, -4.8, 0.2);
+            rightFoot.castShadow = true;
+            figureGroup.add(rightFoot);
+            
+            // Simple robe/clothing flowing effect
+            const robeGeometry = new THREE.CylinderGeometry(1.2, 0.8, 2, 12, 1, true);
+            const robeMaterial = new THREE.MeshLambertMaterial({ 
+                color: 0x8B7D6B,
+                transparent: true,
+                opacity: 0.7,
+                side: THREE.DoubleSide
+            });
+            const robe = new THREE.Mesh(robeGeometry, robeMaterial);
+            robe.position.y = -1.5;
+            robe.castShadow = true;
+            figureGroup.add(robe);
+            
+            figureGroup.position.set(0, 7, 0);
+            figureGroup.scale.setScalar(0.7);
+            figureGroup.userData = {
+                walkCycle: 0,
+                isWalking: false,
+                breathCycle: 0,
+                meditationPose: true
+            };
+            
+            scene.add(figureGroup);
+            figure = figureGroup;
+        }
+
+        function createFloatingIslands() {
+            const islandCount = 12;
+            
+            for (let i = 0; i < islandCount; i++) {
+                const floatingIsland = new THREE.Group();
+                
+                // Varied island sizes and shapes
+                const size = 2 + Math.random() * 4;
+                const complexity = Math.floor(8 + Math.random() * 8);
+                
+                // Create base island with procedural generation
+                const islandGeometry = new THREE.SphereGeometry(size, complexity, Math.floor(complexity * 0.75));
+                
+                // Apply noise to create irregular shapes
+                const positions = islandGeometry.attributes.position.array;
+                for (let j = 0; j < positions.length; j += 3) {
+                    const x = positions[j];
+                    const y = positions[j + 1];
+                    const z = positions[j + 2];
+                    
+                    const noise = Math.sin(x * 0.5) * Math.cos(z * 0.5) * Math.sin(y * 0.8) * 0.3;
+                    const distance = Math.sqrt(x * x + z * z);
+                    const heightModifier = Math.max(0, 1 - distance / size) * 0.5;
+                    
+                    positions[j] += noise * 0.3;
+                    positions[j + 1] = y * 0.3 + heightModifier + noise * 0.2;
+                    positions[j + 2] += noise * 0.3;
+                }
+                islandGeometry.attributes.position.needsUpdate = true;
+                islandGeometry.computeVertexNormals();
+                
+                const islandMaterial = new THREE.MeshLambertMaterial({ 
+                    color: new THREE.Color().setHSL(0.25 + Math.random() * 0.1, 0.6, 0.4),
+                    transparent: false
+                });
+                
+                const islandMesh = new THREE.Mesh(islandGeometry, islandMaterial);
+                islandMesh.castShadow = true;
+                islandMesh.receiveShadow = true;
+                floatingIsland.add(islandMesh);
+                
+                // Add varied vegetation based on island size
+                const vegetationCount = Math.floor(size * 2);
+                for (let v = 0; v < vegetationCount; v++) {
+                    if (Math.random() > 0.3) {
+                        const plantType = Math.random();
+                        let plant;
+                        
+                        if (plantType < 0.4) {
+                            // Tree
+                            const treeHeight = 0.8 + Math.random() * 1.2;
+                            const trunkGeometry = new THREE.CylinderGeometry(0.05, 0.08, treeHeight, 6);
+                            const trunkMaterial = new THREE.MeshLambertMaterial({ color: 0x8B4513 });
+                            const trunk = new THREE.Mesh(trunkGeometry, trunkMaterial);
+                            
+                            const foliageGeometry = new THREE.SphereGeometry(0.3 + Math.random() * 0.3, 8, 6);
+                            const foliageMaterial = new THREE.MeshLambertMaterial({ color: 0x228B22 });
+                            const foliage = new THREE.Mesh(foliageGeometry, foliageMaterial);
+                            foliage.position.y = treeHeight * 0.7;
+                            
+                            plant = new THREE.Group();
+                            plant.add(trunk);
+                            plant.add(foliage);
+                        } else if (plantType < 0.7) {
+                            // Bush
+                            const bushGeometry = new THREE.SphereGeometry(0.2 + Math.random() * 0.3, 8, 6);
+                            const bushMaterial = new THREE.MeshLambertMaterial({ color: 0x32CD32 });
+                            plant = new THREE.Mesh(bushGeometry, bushMaterial);
+                        } else {
+                            // Grass cluster
+                            plant = new THREE.Group();
+                            for (let g = 0; g < 3 + Math.random() * 4; g++) {
+                                const grassGeometry = new THREE.CylinderGeometry(0.01, 0.005, 0.15 + Math.random() * 0.15, 3);
+                                const grassMaterial = new THREE.MeshLambertMaterial({ color: 0x9ACD32 });
+                                const grass = new THREE.Mesh(grassGeometry, grassMaterial);
+                                grass.position.set(
+                                    (Math.random() - 0.5) * 0.2,
+                                    0.1,
+                                    (Math.random() - 0.5) * 0.2
+                                );
+                                plant.add(grass);
+                            }
+                        }
+                        
+                        const angle = Math.random() * Math.PI * 2;
+                        const radius = Math.random() * size * 0.8;
+                        plant.position.set(
+                            Math.cos(angle) * radius,
+                            size * 0.3,
+                            Math.sin(angle) * radius
+                        );
+                        plant.castShadow = true;
+                        floatingIsland.add(plant);
+                    }
+                }
+                
+                // Add rocks and details
+                const rockCount = Math.floor(size);
+                for (let r = 0; r < rockCount; r++) {
+                    const rockGeometry = new THREE.SphereGeometry(0.1 + Math.random() * 0.3, 6, 4);
+                    const rockMaterial = new THREE.MeshLambertMaterial({ color: 0x696969 });
+                    const rock = new THREE.Mesh(rockGeometry, rockMaterial);
+                    
+                    const angle = Math.random() * Math.PI * 2;
+                    const radius = Math.random() * size;
+                    rock.position.set(
+                        Math.cos(angle) * radius,
+                        size * 0.2 + Math.random() * 0.2,
+                        Math.sin(angle) * radius
+                    );
+                    rock.castShadow = true;
+                    floatingIsland.add(rock);
+                }
+                
+                // Position in layered 3D space around main island
+                const layer = Math.floor(i / 4); // 3 layers of 4 islands each
+                const angleInLayer = (i % 4) / 4 * Math.PI * 2;
+                const radius = 25 + layer * 15 + Math.random() * 10;
+                const height = -10 + layer * 15 + Math.random() * 25;
+                
+                floatingIsland.position.set(
+                    Math.cos(angleInLayer) * radius,
+                    height,
+                    Math.sin(angleInLayer) * radius
+                );
+                
+                floatingIsland.userData = {
+                    orbitSpeed: 0.0005 + Math.random() * 0.001,
+                    floatSpeed: 0.3 + Math.random() * 0.4,
+                    floatPhase: Math.random() * Math.PI * 2,
+                    originalY: height,
+                    rotationSpeed: (Math.random() - 0.5) * 0.02,
+                    size: size,
+                    layer: layer
+                };
+                
+                scene.add(floatingIsland);
+                floatingIslands.push(floatingIsland);
+            }
+        }
+
+        function createEnhancedClouds() {
+            const cloudCount = 20;
+            
+            for (let i = 0; i < cloudCount; i++) {
+                const cloudGroup = new THREE.Group();
+                
+                // Enhanced cloud generation with better shapes
+                const cloudSize = 3 + Math.random() * 5;
+                const sphereCount = 5 + Math.floor(Math.random() * 8);
+                
+                for (let j = 0; j < sphereCount; j++) {
+                    const sphereSize = cloudSize * (0.3 + Math.random() * 0.7);
+                    const sphereGeometry = new THREE.SphereGeometry(sphereSize, 12, 8);
+                    
+                    // Create gradient effect for more realistic clouds
+                    const opacity = 0.15 + Math.random() * 0.25;
+                    const brightness = 0.8 + Math.random() * 0.2;
+                    
+                    const sphereMaterial = new THREE.MeshLambertMaterial({
+                        color: new THREE.Color(brightness, brightness, brightness),
+                        transparent: true,
+                        opacity: opacity,
+                        fog: false
+                    });
+                    
+                    const sphere = new THREE.Mesh(sphereGeometry, sphereMaterial);
+                    
+                    // Position spheres to create natural cloud shapes
+                    const angle = (j / sphereCount) * Math.PI * 2;
+                    const radius = cloudSize * 0.5 * Math.random();
+                    sphere.position.set(
+                        Math.cos(angle) * radius + (Math.random() - 0.5) * cloudSize,
+                        (Math.random() - 0.5) * cloudSize * 0.3,
+                        Math.sin(angle) * radius + (Math.random() - 0.5) * cloudSize
+                    );
+                    
+                    // Slight random scaling for variation
+                    const scale = 0.8 + Math.random() * 0.4;
+                    sphere.scale.set(scale, scale * 0.7, scale);
+                    
+                    cloudGroup.add(sphere);
+                }
+                
+                // Position clouds in layers at different heights
+                const layer = Math.floor(i / 7); // 3 layers
+                const height = 15 + layer * 10 + Math.random() * 8;
+                
+                cloudGroup.position.set(
+                    (Math.random() - 0.5) * 120,
+                    height,
+                    (Math.random() - 0.5) * 120
+                );
+                
+                cloudGroup.userData = {
+                    driftSpeed: 0.01 + Math.random() * 0.02,
+                    direction: Math.random() * Math.PI * 2,
+                    morphSpeed: 0.5 + Math.random() * 0.5,
+                    originalOpacity: 0.2 + Math.random() * 0.3,
+                    size: cloudSize,
+                    layer: layer
+                };
+                
+                scene.add(cloudGroup);
+                clouds.push(cloudGroup);
+            }
+        }
+
+        // Continue with particle systems and enhanced features...
+        function createParticleSystems() {
+            // Floating particles (dust, pollen, magical elements)
+            const particleCount = 200;
+            const particleGeometry = new THREE.BufferGeometry();
+            const particlePositions = new Float32Array(particleCount * 3);
+            const particleVelocities = new Float32Array(particleCount * 3);
+            const particleSizes = new Float32Array(particleCount);
+            
+            for (let i = 0; i < particleCount; i++) {
+                const i3 = i * 3;
+                particlePositions[i3] = (Math.random() - 0.5) * 100;
+                particlePositions[i3 + 1] = Math.random() * 50;
+                particlePositions[i3 + 2] = (Math.random() - 0.5) * 100;
+                
+                particleVelocities[i3] = (Math.random() - 0.5) * 0.02;
+                particleVelocities[i3 + 1] = Math.random() * 0.01;
+                particleVelocities[i3 + 2] = (Math.random() - 0.5) * 0.02;
+                
+                particleSizes[i] = Math.random() * 0.1 + 0.05;
+            }
+            
+            particleGeometry.setAttribute('position', new THREE.BufferAttribute(particlePositions, 3));
+            particleGeometry.setAttribute('size', new THREE.BufferAttribute(particleSizes, 1));
+            
+            const particleMaterial = new THREE.PointsMaterial({
+                color: 0xFFFFFF,
+                size: 0.1,
+                transparent: true,
+                opacity: 0.6,
+                sizeAttenuation: true
+            });
+            
+            const particleSystem = new THREE.Points(particleGeometry, particleMaterial);
+            particleSystem.userData = {
+                velocities: particleVelocities,
+                originalPositions: [...particlePositions]
+            };
+            
+            scene.add(particleSystem);
+            particles.push(particleSystem);
+        }
+        
+        function createWeatherSystem() {
+            weatherSystem = {
+                type: gameState.weatherType,
+                intensity: 0.5,
+                transition: 0,
+                
+                changeWeather: function(newType) {
+                    this.type = newType;
+                    this.transition = 0;
+                    
+                    // Update visual elements based on weather
+                    switch(newType) {
+                        case 'stormy':
+                            scene.fog.density = 0.02;
+                            lightingSystem.directional.intensity = 0.3;
+                            break;
+                        case 'cloudy':
+                            scene.fog.density = 0.015;
+                            lightingSystem.directional.intensity = 0.7;
+                            break;
+                        case 'magical':
+                            scene.fog.density = 0.005;
+                            lightingSystem.directional.intensity = 1.5;
+                            break;
+                        default: // clear
+                            scene.fog.density = 0.01;
+                            lightingSystem.directional.intensity = 1.2;
+                    }
+                },
+                
+                update: function(deltaTime) {
+                    this.transition = Math.min(1, this.transition + deltaTime * 0.5);
+                    
+                    if (this.type === 'magical') {
+                        // Add magical particle effects
+                        particles.forEach(system => {
+                            system.material.color.setHSL(
+                                (time * 0.1) % 1,
+                                0.8,
+                                0.6 + Math.sin(time * 2) * 0.2
+                            );
+                        });
+                    }
+                }
+            };
+        }
+        
+        class PerformanceMonitor {
+            constructor() {
+                this.frameTime = 0;
+                this.lastFrameTime = performance.now();
+                this.adaptiveQuality = true;
+            }
+            
+            update() {
+                const currentTime = performance.now();
+                this.frameTime = currentTime - this.lastFrameTime;
+                this.lastFrameTime = currentTime;
+                
+                frameCount++;
+                if (frameCount % 60 === 0) {
+                    fps = Math.round(1000 / this.frameTime);
+                    
+                    if (this.adaptiveQuality) {
+                        if (fps < 30 && gameState.qualityLevel === 'high') {
+                            this.adjustQuality('medium');
+                        } else if (fps < 20 && gameState.qualityLevel === 'medium') {
+                            this.adjustQuality('low');
+                        }
+                    }
+                }
+            }
+            
+            adjustQuality(level) {
+                gameState.qualityLevel = level;
+                
+                switch(level) {
+                    case 'low':
+                        renderer.shadowMap.enabled = false;
+                        scene.fog.density *= 1.5;
+                        break;
+                    case 'medium':
+                        renderer.shadowMap.enabled = true;
+                        renderer.shadowMap.type = THREE.BasicShadowMap;
+                        break;
+                    case 'high':
+                        renderer.shadowMap.enabled = true;
+                        renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+                        break;
+                }
+                
+                document.getElementById('qualityBtn').textContent = level.charAt(0).toUpperCase() + level.slice(1) + ' Quality';
+            }
+        }
+
+        // Enhanced animation loop with all new features
+        function animate() {
+            requestAnimationFrame(animate);
+            const deltaTime = 0.016;
+            time += deltaTime;
+            
+            // Performance monitoring
+            performanceMonitor.update();
+            
+            // Update time of day
+            if (document.getElementById('timeBtn').classList.contains('active')) {
+                gameState.timeOfDay = (gameState.timeOfDay + 0.001) % 1;
+                lightingSystem.updateTimeOfDay(gameState.timeOfDay);
+                updateTimeDisplay();
+            }
+            
+            // Weather system update
+            if (weatherSystem) {
+                weatherSystem.update(deltaTime);
+            }
+            
+            // Enhanced main island animation
+            if (island) {
+                island.position.y = Math.sin(time * 0.3) * 0.8;
+                island.rotation.y = time * 0.01;
+                
+                // Enhanced vegetation animation with wind effects
+                island.children.forEach(child => {
+                    if (child.userData.swayPhase !== undefined) {
+                        const windEffect = gameState.windStrength * Math.sin(time * 0.5 + child.userData.swayPhase);
+                        const sway = Math.sin(time * 0.8 + child.userData.swayPhase) * child.userData.swayAmount + windEffect * 0.1;
+                        child.rotation.z = sway;
+                        
+                        child.children.forEach(part => {
+                            if (part.position.y > 1) {
+                                part.rotation.z = sway * 1.5;
+                                part.rotation.x = windEffect * 0.05;
+                            }
+                        });
+                    }
+                });
+            }
+            
+            // Enhanced figure animation
+            if (figure) {
+                const baseY = 7 + Math.sin(time * 0.3) * 0.8;
+                figure.position.y = baseY;
+                
+                if (figure.userData.meditationPose) {
+                    // Breathing animation
+                    const breathCycle = Math.sin(time * 0.8) * 0.5 + 0.5;
+                    figure.children[0].scale.y = 1 + breathCycle * 0.08;
+                    
+                    // Subtle meditation movements
+                    figure.rotation.z = Math.sin(time * 0.4) * 0.03;
+                    figure.rotation.y = Math.sin(time * 0.2) * 0.05;
+                    
+                    // Head movements (awareness)
+                    if (Math.sin(time * 0.15) > 0.7) {
+                        figure.children[1].rotation.y = Math.sin(time * 0.6) * 0.2;
+                    }
+                    
+                    // Gentle robe movement
+                    const robeIndex = figure.children.length - 1;
+                    if (figure.children[robeIndex]) {
+                        figure.children[robeIndex].rotation.y = Math.sin(time * 0.3) * 0.1;
+                    }
+                }
+            }
+            
+            // Enhanced floating islands with LOD
+            floatingIslands.forEach((island, index) => {
+                const distanceToCamera = island.position.distanceTo(camera.position);
+                
+                // LOD system
+                if (distanceToCamera > 100 && gameState.qualityLevel !== 'high') {
+                    island.visible = false;
+                    return;
+                } else {
+                    island.visible = true;
+                }
+                
+                // Orbital motion
+                const orbitAngle = time * island.userData.orbitSpeed + index;
+                const radius = Math.sqrt(island.position.x * island.position.x + island.position.z * island.position.z);
+                
+                island.position.x = Math.cos(orbitAngle) * radius;
+                island.position.z = Math.sin(orbitAngle) * radius;
+                
+                // Enhanced floating motion
+                island.position.y = island.userData.originalY + 
+                    Math.sin(time * island.userData.floatSpeed + island.userData.floatPhase) * 3 +
+                    Math.sin(time * 0.2 + index) * 0.5;
+                
+                // Rotation
+                island.rotation.y += island.userData.rotationSpeed;
+                island.rotation.x = Math.sin(time * 0.3 + index) * 0.1;
+            });
+            
+            // Enhanced cloud system
+            clouds.forEach((cloud, index) => {
+                // Wind-driven movement
+                const windEffect = gameState.windStrength;
+                cloud.position.x += Math.cos(cloud.userData.direction) * cloud.userData.driftSpeed * windEffect;
+                cloud.position.z += Math.sin(cloud.userData.direction) * cloud.userData.driftSpeed * windEffect;
+                
+                // Enhanced wrapping with larger bounds
+                const bound = 80;
+                if (cloud.position.x > bound) cloud.position.x = -bound;
+                if (cloud.position.x < -bound) cloud.position.x = bound;
+                if (cloud.position.z > bound) cloud.position.z = -bound;
+                if (cloud.position.z < -bound) cloud.position.z = bound;
+                
+                // Advanced cloud morphing
+                cloud.children.forEach((sphere, i) => {
+                    const baseOpacity = cloud.userData.originalOpacity;
+                    const variation = Math.sin(time * cloud.userData.morphSpeed + i * 0.5) * 0.1;
+                    sphere.material.opacity = Math.max(0.05, baseOpacity + variation);
+                    
+                    // Subtle size changes
+                    const scaleVariation = 1 + Math.sin(time * 0.3 + i) * 0.1;
+                    sphere.scale.setScalar(scaleVariation);
+                });
+                
+                // Height variation
+                cloud.position.y += Math.sin(time * 0.1 + index) * 0.02;
+            });
+            
+            // Particle system animation
+            particles.forEach(system => {
+                const positions = system.geometry.attributes.position.array;
+                const velocities = system.userData.velocities;
+                
+                for (let i = 0; i < positions.length; i += 3) {
+                    positions[i] += velocities[i] * gameState.windStrength;
+                    positions[i + 1] += velocities[i + 1];
+                    positions[i + 2] += velocities[i + 2] * gameState.windStrength;
+                    
+                    // Wrap particles
+                    if (positions[i] > 50) positions[i] = -50;
+                    if (positions[i] < -50) positions[i] = 50;
+                    if (positions[i + 1] > 60) positions[i + 1] = 0;
+                    if (positions[i + 2] > 50) positions[i + 2] = -50;
+                    if (positions[i + 2] < -50) positions[i + 2] = 50;
+                }
+                
+                system.geometry.attributes.position.needsUpdate = true;
+            });
+            
+            // Enhanced camera system
+            if (!gameState.isInteracting) {
+                if (gameState.followMode && figure) {
+                    const targetPos = figure.position.clone();
+                    targetPos.add(new THREE.Vector3(0, 5, 15));
+                    camera.position.lerp(targetPos, 0.02);
+                    camera.lookAt(figure.position);
+                } else {
+                    // Smooth orbital camera movement
+                    const orbitRadius = 30;
+                    const orbitSpeed = 0.05;
+                    const targetX = Math.sin(time * orbitSpeed) * orbitRadius;
+                    const targetZ = Math.cos(time * orbitSpeed) * orbitRadius;
+                    const targetY = 8 + Math.sin(time * 0.03) * 4;
+                    
+                    targetCameraPosition.set(targetX, targetY, targetZ);
+                    camera.position.lerp(targetCameraPosition, 0.02);
+                    camera.lookAt(gameState.cameraTarget);
+                }
+            }
+            
+            renderer.render(scene, camera);
+        }
+        
+        // Control event handlers
+        function setupEventListeners() {
+            document.getElementById('followBtn').addEventListener('click', () => {
+                gameState.followMode = !gameState.followMode;
+                const btn = document.getElementById('followBtn');
+                btn.classList.toggle('active');
+                btn.textContent = gameState.followMode ? 'Free Camera' : 'Follow Figure';
+            });
+            
+            document.getElementById('weatherBtn').addEventListener('click', () => {
+                const weatherTypes = ['clear', 'cloudy', 'stormy', 'magical'];
+                const currentIndex = weatherTypes.indexOf(gameState.weatherType);
+                const nextIndex = (currentIndex + 1) % weatherTypes.length;
+                gameState.weatherType = weatherTypes[nextIndex];
+                weatherSystem.changeWeather(gameState.weatherType);
+                
+                const btn = document.getElementById('weatherBtn');
+                btn.textContent = gameState.weatherType.charAt(0).toUpperCase() + gameState.weatherType.slice(1);
+            });
+            
+            document.getElementById('timeBtn').addEventListener('click', () => {
+                const btn = document.getElementById('timeBtn');
+                btn.classList.toggle('active');
+                btn.textContent = btn.classList.contains('active') ? 'Stop Time' : 'Time Cycle';
+            });
+            
+            document.getElementById('qualityBtn').addEventListener('click', () => {
+                const qualities = ['low', 'medium', 'high'];
+                const currentIndex = qualities.indexOf(gameState.qualityLevel);
+                const nextIndex = (currentIndex + 1) % qualities.length;
+                performanceMonitor.adjustQuality(qualities[nextIndex]);
+            });
+        }
+        
+        function updateTimeDisplay() {
+            const timeDisplay = document.getElementById('timeDisplay');
+            if (gameState.timeOfDay < 0.25) {
+                timeDisplay.textContent = 'Dawn';
+            } else if (gameState.timeOfDay < 0.5) {
+                timeDisplay.textContent = 'Morning';
+            } else if (gameState.timeOfDay < 0.75) {
+                timeDisplay.textContent = 'Afternoon';
+            } else {
+                timeDisplay.textContent = 'Evening';
+            }
+        }
+        
+        // Mouse and touch controls
+        function onMouseDown(event) {
+            mouseDown = true;
+            gameState.isInteracting = true;
+            mouseX = event.clientX;
+            mouseY = event.clientY;
+            document.body.classList.add('dragging');
+        }
+        
+        function onMouseMove(event) {
+            if (!mouseDown) return;
+            
+            const deltaX = event.clientX - mouseX;
+            const deltaY = event.clientY - mouseY;
+            
+            // Orbit camera around target
+            const spherical = new THREE.Spherical();
+            spherical.setFromVector3(camera.position.clone().sub(gameState.cameraTarget));
+            
+            spherical.theta -= deltaX * 0.01;
+            spherical.phi += deltaY * 0.01;
+            spherical.phi = Math.max(0.1, Math.min(Math.PI - 0.1, spherical.phi));
+            
+            camera.position.setFromSpherical(spherical).add(gameState.cameraTarget);
+            camera.lookAt(gameState.cameraTarget);
+            
+            mouseX = event.clientX;
+            mouseY = event.clientY;
+        }
+        
+        function onMouseUp() {
+            mouseDown = false;
+            gameState.isInteracting = false;
+            document.body.classList.remove('dragging');
+        }
+        
+        function onMouseWheel(event) {
+            const distance = camera.position.distanceTo(gameState.cameraTarget);
+            const zoomFactor = distance * 0.001;
+            const zoomDirection = camera.position.clone().sub(gameState.cameraTarget).normalize();
+            
+            if (event.deltaY > 0) {
+                camera.position.add(zoomDirection.multiplyScalar(zoomFactor));
+            } else {
+                camera.position.sub(zoomDirection.multiplyScalar(zoomFactor));
+            }
+            
+            // Limit zoom distance
+            const newDistance = camera.position.distanceTo(gameState.cameraTarget);
+            if (newDistance < 5) {
+                camera.position.setFromSpherical(new THREE.Spherical(5, 0, 0)).add(gameState.cameraTarget);
+            } else if (newDistance > 100) {
+                camera.position.setFromSpherical(new THREE.Spherical(100, 0, 0)).add(gameState.cameraTarget);
+            }
+        }
+        
+        // Touch controls
+        function onTouchStart(event) {
+            if (event.touches.length === 1) {
+                onMouseDown({ clientX: event.touches[0].clientX, clientY: event.touches[0].clientY });
+            }
+        }
+        
+        function onTouchMove(event) {
+            if (event.touches.length === 1) {
+                onMouseMove({ clientX: event.touches[0].clientX, clientY: event.touches[0].clientY });
+            }
+            event.preventDefault();
+        }
+        
+        function onTouchEnd() {
+            onMouseUp();
+        }
+        
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+
+        init();
+    </script>
+</body>
+</html>

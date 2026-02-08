@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Life Journey - Athlete Competing</title>
+    <style>
+        body { margin: 0; overflow: hidden; background: linear-gradient(135deg, #ff4e50, #f9d423); }
+        canvas { display: block; }
+        .title { position: absolute; top: 40px; left: 50%; transform: translateX(-50%); color: #fff; font-family: sans-serif; font-size: 24px; letter-spacing: 2px; font-weight: bold; }
+    </style>
+</head>
+<body>
+    <div class="title">ATHLETE COMPETING</div>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="../particle-being-library.js"></script>
+    <script>
+        let scene, camera, renderer, particleSystem;
+        let time = 0;
+        let energyTrails = [];
+
+        function init() {
+            scene = new THREE.Scene();
+            camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+            camera.position.set(0, 10, 30);
+
+            renderer = new THREE.WebGLRenderer({ antialias: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            document.body.appendChild(renderer.domElement);
+
+            // Athlete - powerful, focused, explosive
+            particleSystem = new ParticleBeingSystem(scene, {
+                particleCount: 280,
+                particleSize: 0.09,
+                speedMultiplier: 1.8,
+                colorRange: { h: 0.05, s: 0.8, lMin: 0.4, lMax: 0.7 }
+            });
+
+            const athlete = particleSystem.convertToParticleBeing(
+                null,
+                { x: -15, y: 0, z: 0 },
+                {
+                    particleCount: 300,
+                    states: ['preparing', 'sprinting', 'jumping', 'recovering'],
+                    stateTimings: { preparing: 3, sprinting: 4, jumping: 2, recovering: 3 },
+                    attractionForces: { preparing: 0.03, sprinting: 0.015, jumping: 0.01, recovering: 0.025 }
+                }
+            );
+
+            // Athlete behaviors
+            const originalUpdate = particleSystem.updateBeing.bind(particleSystem);
+            particleSystem.updateBeing = function(being, deltaTime) {
+                originalUpdate(being, deltaTime);
+                
+                if (being.userData.state === 'preparing') {
+                    // Tensing, gathering energy
+                    being.particles.forEach((particle, i) => {
+                        const tensePhase = Math.sin(time * 8 + i * 0.1);
+                        particle.position.multiplyScalar(1 + tensePhase * 0.01);
+                        
+                        // Energy buildup
+                        particle.material.opacity = particle.userData.originalOpacity + Math.abs(tensePhase) * 0.2;
+                    });
+                } else if (being.userData.state === 'sprinting') {
+                    // Fast forward movement
+                    being.userData.basePosition.x += 0.5;
+                    if (being.userData.basePosition.x > 15) {
+                        being.userData.basePosition.x = -15;
+                    }
+                    
+                    // Create speed trails
+                    if (Math.random() < 0.3) {
+                        const trail = new THREE.Mesh(
+                            new THREE.SphereGeometry(0.05, 4, 4),
+                            new THREE.MeshBasicMaterial({
+                                color: 0xff6600,
+                                transparent: true,
+                                opacity: 0.6
+                            })
+                        );
+                        trail.position.copy(being.userData.basePosition);
+                        trail.position.x -= 2;
+                        trail.position.y += Math.random() * 3;
+                        trail.userData = { life: 0 };
+                        scene.add(trail);
+                        energyTrails.push(trail);
+                    }
+                    
+                    // Forward lean
+                    being.particles.forEach(particle => {
+                        particle.userData.velocity.x += 0.008;
+                    });
+                } else if (being.userData.state === 'jumping') {
+                    // Explosive jump
+                    const jumpPhase = being.userData.stateTimer / 2;
+                    being.userData.basePosition.y = Math.sin(jumpPhase * Math.PI) * 10;
+                    
+                    // Particles explode outward during jump
+                    if (jumpPhase < 0.3) {
+                        being.particles.forEach(particle => {
+                            particle.userData.velocity.y += 0.02;
+                            particle.userData.velocity.x += (Math.random() - 0.5) * 0.01;
+                            particle.userData.velocity.z += (Math.random() - 0.5) * 0.01;
+                        });
+                    }
+                } else if (being.userData.state === 'recovering') {
+                    // Breathing, slowing down
+                    const breathe = Math.sin(time * 4);
+                    being.particles.forEach(particle => {
+                        particle.position.y += breathe * 0.02;
+                        particle.userData.velocity.multiplyScalar(0.9);
+                    });
+                }
+                
+                // Update energy trails
+                energyTrails = energyTrails.filter(trail => {
+                    trail.userData.life += 0.016;
+                    trail.material.opacity = Math.max(0, 0.6 - trail.userData.life);
+                    trail.position.x -= 0.1;
+                    
+                    if (trail.material.opacity <= 0) {
+                        scene.remove(trail);
+                        return false;
+                    }
+                    return true;
+                });
+            };
+
+            particleSystem.createAmbientParticles(100);
+            animate();
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+            time += 0.016;
+            particleSystem.update(0.016);
+            
+            camera.position.x = Math.sin(time * 0.1) * 20;
+            camera.position.z = 30 + Math.cos(time * 0.1) * 10;
+            camera.lookAt(0, 3, 0);
+            
+            renderer.render(scene, camera);
+        }
+
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+
+        init();
+    </script>
+</body>
+</html>

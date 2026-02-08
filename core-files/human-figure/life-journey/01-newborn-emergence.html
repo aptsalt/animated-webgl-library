@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Life Journey - Newborn Emergence</title>
+    <style>
+        body { margin: 0; overflow: hidden; background: linear-gradient(135deg, #fff5f5, #ffe0e0); }
+        canvas { display: block; }
+        .title { position: absolute; top: 40px; left: 50%; transform: translateX(-50%); color: #ff6b6b; font-family: serif; font-size: 24px; letter-spacing: 2px; }
+    </style>
+</head>
+<body>
+    <div class="title">NEWBORN EMERGENCE</div>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="../particle-being-library.js"></script>
+    <script>
+        let scene, camera, renderer, particleSystem;
+        let time = 0;
+
+        function init() {
+            scene = new THREE.Scene();
+            scene.background = new THREE.Color(0xfff5f5);
+
+            camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+            camera.position.set(0, 5, 20);
+
+            renderer = new THREE.WebGLRenderer({ antialias: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            document.body.appendChild(renderer.domElement);
+
+            // Newborn particle system - small, delicate, emerging
+            particleSystem = new ParticleBeingSystem(scene, {
+                particleCount: 150,
+                particleSize: 0.05,
+                speedMultiplier: 0.5,
+                colorRange: { h: 0, s: 0.3, lMin: 0.8, lMax: 1.0 }
+            });
+
+            // Create newborn figure
+            const newborn = particleSystem.convertToParticleBeing(
+                null,
+                { x: 0, y: 0, z: 0 },
+                {
+                    particleCount: 200,
+                    states: ['emerging', 'forming', 'breathing', 'stable'],
+                    stateTimings: { emerging: 6, forming: 4, breathing: 3, stable: 3 },
+                    attractionForces: { emerging: 0.008, forming: 0.015, breathing: 0.02, stable: 0.018 }
+                }
+            );
+
+            // Custom update for emerging effect
+            const originalUpdate = particleSystem.updateBeing.bind(particleSystem);
+            particleSystem.updateBeing = function(being, deltaTime) {
+                originalUpdate(being, deltaTime);
+                
+                if (being.userData.state === 'emerging') {
+                    // Particles emerge from center in spiral
+                    being.particles.forEach((particle, i) => {
+                        const spiral = i * 0.1;
+                        particle.userData.velocity.x += Math.cos(time * 2 + spiral) * 0.002;
+                        particle.userData.velocity.z += Math.sin(time * 2 + spiral) * 0.002;
+                        particle.userData.velocity.y += 0.001;
+                    });
+                } else if (being.userData.state === 'breathing') {
+                    // Gentle breathing motion
+                    const breathe = Math.sin(time * 3) * 0.2;
+                    being.particles.forEach(particle => {
+                        particle.position.multiplyScalar(1 + breathe * 0.01);
+                    });
+                }
+            };
+
+            particleSystem.createAmbientParticles(80);
+            animate();
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+            time += 0.016;
+
+            particleSystem.update(0.016);
+
+            // Gentle camera movement
+            camera.position.x = Math.sin(time * 0.1) * 10;
+            camera.position.z = 20 + Math.cos(time * 0.1) * 5;
+            camera.lookAt(0, 0, 0);
+
+            renderer.render(scene, camera);
+        }
+
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+
+        init();
+    </script>
+</body>
+</html>

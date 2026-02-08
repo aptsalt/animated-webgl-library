@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Orbit Beings - Circular Paths of Life</title>
+    <style>
+        body {
+            margin: 0;
+            background: #f8f8f8;
+            overflow: hidden;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        }
+        canvas { display: block; }
+        .back-btn {
+            position: absolute;
+            top: 30px;
+            left: 30px;
+            background: rgba(26, 26, 26, 0.1);
+            border: 1px solid rgba(26, 26, 26, 0.2);
+            color: #1a1a1a;
+            padding: 12px 24px;
+            text-decoration: none;
+            border-radius: 4px;
+            font-size: 14px;
+            font-weight: 300;
+            letter-spacing: 1px;
+            z-index: 1000;
+            transition: all 0.3s ease;
+            opacity: 0;
+            animation: fadeIn 3s ease-in-out 1s forwards;
+        }
+        .back-btn:hover {
+            background: rgba(26, 26, 26, 0.2);
+            transform: translateY(-1px);
+        }
+        .title {
+            position: absolute;
+            top: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: #333;
+            font-size: 24px;
+            font-weight: 300;
+            z-index: 100;
+            opacity: 0;
+            animation: fadeIn 3s ease-in-out 1s forwards;
+        }
+        .subtitle {
+            position: absolute;
+            bottom: 30px;
+            right: 30px;
+            color: #666;
+            font-size: 14px;
+            z-index: 100;
+            opacity: 0;
+            animation: fadeIn 3s ease-in-out 2s forwards;
+        }
+        @keyframes fadeIn {
+            to { opacity: 1; }
+        }
+    </style>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+</head>
+<body>
+    <a href="gallery.html" class="back-btn">← GALLERY</a>
+    <div class="title">Orbit Beings</div>
+    <div class="subtitle">Souls following celestial paths</div>
+    
+    <script>
+        let scene, camera, renderer;
+        let orbitSystems = [];
+        let time = 0;
+        
+        function init() {
+            scene = new THREE.Scene();
+            scene.fog = new THREE.Fog(0xf8f8f8, 15, 50);
+            
+            camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+            camera.position.set(0, 10, 25);
+            
+            renderer = new THREE.WebGLRenderer({ antialias: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.setClearColor(0xf8f8f8);
+            renderer.shadowMap.enabled = true;
+            renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+            document.body.appendChild(renderer.domElement);
+            
+            // Ambient light
+            const ambientLight = new THREE.AmbientLight(0x404040, 0.5);
+            scene.add(ambientLight);
+            
+            // Main directional light
+            const mainLight = new THREE.DirectionalLight(0xffffff, 0.7);
+            mainLight.position.set(-12, 20, 8);
+            mainLight.castShadow = true;
+            mainLight.shadow.mapSize.width = 2048;
+            mainLight.shadow.mapSize.height = 2048;
+            scene.add(mainLight);
+            
+            // Secondary light for depth
+            const rimLight = new THREE.DirectionalLight(0xffffff, 0.3);
+            rimLight.position.set(12, 10, -10);
+            scene.add(rimLight);
+            
+            createOrbitSystems();
+            
+            animate();
+        }
+        
+        function createOrbitSystems() {
+            const systemConfigs = [
+                { radius: 4, speed: 1.0, height: 0, beings: 3, tilt: 0 },
+                { radius: 7, speed: 0.7, height: 2, beings: 5, tilt: Math.PI * 0.3 },
+                { radius: 10, speed: 0.5, height: -1, beings: 4, tilt: Math.PI * 0.6 },
+                { radius: 6, speed: 1.2, height: 3, beings: 6, tilt: Math.PI * 0.9 },
+                { radius: 12, speed: 0.4, height: 1, beings: 7, tilt: Math.PI * 1.2 }
+            ];
+            
+            systemConfigs.forEach((config, systemIndex) => {
+                const systemGroup = new THREE.Group();
+                const orbitSystem = {
+                    group: systemGroup,
+                    config: config,
+                    beings: []
+                };
+                
+                // Create orbit path visualization
+                const pathGeometry = new THREE.RingGeometry(config.radius - 0.05, config.radius + 0.05, 64);
+                const pathMaterial = new THREE.MeshLambertMaterial({ 
+                    color: 0xcccccc,
+                    transparent: true,
+                    opacity: 0.3,
+                    side: THREE.DoubleSide
+                });
+                const orbitPath = new THREE.Mesh(pathGeometry, pathMaterial);
+                orbitPath.rotation.x = -Math.PI / 2;
+                orbitPath.position.y = config.height;
+                systemGroup.add(orbitPath);
+                
+                // Create beings in orbit
+                for (let i = 0; i < config.beings; i++) {
+                    const being = createOrbitBeing();
+                    const angle = (i / config.beings) * Math.PI * 2;
+                    
+                    const beingData = {
+                        mesh: being,
+                        angle: angle,
+                        originalAngle: angle,
+                        bobPhase: Math.random() * Math.PI * 2
+                    };
+                    
+                    being.castShadow = true;
+                    systemGroup.add(being);
+                    orbitSystem.beings.push(beingData);
+                }
+                
+                // Apply system tilt
+                systemGroup.rotation.x = config.tilt;
+                systemGroup.position.y = config.height;
+                
+                scene.add(systemGroup);
+                orbitSystems.push(orbitSystem);
+            });
+        }
+        
+        function createOrbitBeing() {
+            const group = new THREE.Group();
+            const material = new THREE.MeshLambertMaterial({ 
+                color: 0x1a1a1a,
+                transparent: true,
+                opacity: 0.85
+            });
+            
+            // Head
+            const headGeometry = new THREE.SphereGeometry(0.08, 10, 8);
+            const head = new THREE.Mesh(headGeometry, material);
+            head.position.y = 0.45;
+            group.add(head);
+            
+            // Torso
+            const torsoGeometry = new THREE.CylinderGeometry(0.06, 0.09, 0.35, 10);
+            const torso = new THREE.Mesh(torsoGeometry, material);
+            torso.position.y = 0.175;
+            group.add(torso);
+            
+            // Arms in flowing motion
+            const armGeometry = new THREE.CylinderGeometry(0.025, 0.04, 0.25, 8);
+            const leftArm = new THREE.Mesh(armGeometry, material);
+            const rightArm = new THREE.Mesh(armGeometry, material);
+            leftArm.position.set(-0.1, 0.25, 0);
+            rightArm.position.set(0.1, 0.25, 0);
+            leftArm.rotation.z = 0.4;
+            rightArm.rotation.z = -0.4;
+            group.add(leftArm);
+            group.add(rightArm);
+            
+            // Forearms
+            const forearmGeometry = new THREE.CylinderGeometry(0.02, 0.025, 0.2, 8);
+            const leftForearm = new THREE.Mesh(forearmGeometry, material);
+            const rightForearm = new THREE.Mesh(forearmGeometry, material);
+            leftForearm.position.set(-0.15, 0.15, 0);
+            rightForearm.position.set(0.15, 0.15, 0);
+            leftForearm.rotation.z = 0.8;
+            rightForearm.rotation.z = -0.8;
+            group.add(leftForearm);
+            group.add(rightForearm);
+            
+            // Legs
+            const legGeometry = new THREE.CylinderGeometry(0.035, 0.05, 0.3, 8);
+            const leftLeg = new THREE.Mesh(legGeometry, material);
+            const rightLeg = new THREE.Mesh(legGeometry, material);
+            leftLeg.position.set(-0.06, -0.1, 0);
+            rightLeg.position.set(0.06, -0.1, 0);
+            group.add(leftLeg);
+            group.add(rightLeg);
+            
+            // Lower legs
+            const calfGeometry = new THREE.CylinderGeometry(0.03, 0.035, 0.25, 8);
+            const leftCalf = new THREE.Mesh(calfGeometry, material);
+            const rightCalf = new THREE.Mesh(calfGeometry, material);
+            leftCalf.position.set(-0.06, -0.35, 0);
+            rightCalf.position.set(0.06, -0.35, 0);
+            group.add(leftCalf);
+            group.add(rightCalf);
+            
+            return group;
+        }
+        
+        function animate() {
+            requestAnimationFrame(animate);
+            
+            time += 0.016;
+            
+            // Update orbit systems
+            orbitSystems.forEach((system, systemIndex) => {
+                const config = system.config;
+                
+                system.beings.forEach((beingData, beingIndex) => {
+                    // Update orbital position
+                    beingData.angle = beingData.originalAngle + time * config.speed;
+                    
+                    const x = Math.cos(beingData.angle) * config.radius;
+                    const z = Math.sin(beingData.angle) * config.radius;
+                    const y = Math.sin(time * 2 + beingData.bobPhase) * 0.3; // Gentle bobbing
+                    
+                    beingData.mesh.position.set(x, y, z);
+                    
+                    // Face the direction of movement
+                    const nextAngle = beingData.angle + 0.1;
+                    const nextX = Math.cos(nextAngle) * config.radius;
+                    const nextZ = Math.sin(nextAngle) * config.radius;
+                    beingData.mesh.lookAt(nextX, y, nextZ);
+                    
+                    // Add orbital motion to body parts
+                    const being = beingData.mesh;
+                    const orbitIntensity = Math.abs(Math.sin(beingData.angle));
+                    
+                    // Arms responding to orbital motion
+                    const armSway = Math.sin(time * 3 + beingData.angle) * 0.3;
+                    being.children[2].rotation.z = 0.4 + armSway; // Left arm
+                    being.children[3].rotation.z = -0.4 - armSway; // Right arm
+                    being.children[2].rotation.x = Math.sin(beingData.angle) * 0.2;
+                    being.children[3].rotation.x = -Math.sin(beingData.angle) * 0.2;
+                    
+                    // Forearms follow
+                    being.children[4].rotation.z = 0.8 + armSway * 0.5;
+                    being.children[5].rotation.z = -0.8 - armSway * 0.5;
+                    
+                    // Legs adjusting to orbital motion
+                    const legAdjust = Math.sin(time * 4 + beingData.angle) * 0.2;
+                    being.children[6].rotation.x = legAdjust; // Left leg
+                    being.children[7].rotation.x = -legAdjust; // Right leg
+                    
+                    // Lower legs follow
+                    being.children[8].rotation.x = legAdjust * 0.5;
+                    being.children[9].rotation.x = -legAdjust * 0.5;
+                    
+                    // Torso lean into the orbit
+                    const centrifugalForce = config.speed * config.speed / config.radius;
+                    being.children[1].rotation.z = Math.sin(beingData.angle + Math.PI/2) * centrifugalForce * 0.1;
+                    
+                    // Head tracking orbital path
+                    being.children[0].rotation.y = Math.sin(time + beingData.angle) * 0.1;
+                    
+                    // Breathing motion
+                    const breathScale = 1 + Math.sin(time * 4 + beingData.bobPhase) * 0.03;
+                    being.children[1].scale.y = breathScale;
+                });
+                
+                // Gentle system rotation
+                system.group.rotation.y += 0.001 * (systemIndex % 2 === 0 ? 1 : -1);
+            });
+            
+            // Dynamic camera movement
+            camera.position.x = Math.sin(time * 0.15) * 12;
+            camera.position.y = 10 + Math.sin(time * 0.2) * 4;
+            camera.position.z = 25 + Math.cos(time * 0.18) * 8;
+            
+            // Look at the center of the orbital systems
+            camera.lookAt(0, 2, 0);
+            
+            renderer.render(scene, camera);
+        }
+        
+        function onWindowResize() {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        }
+        
+        window.addEventListener('resize', onWindowResize, false);
+        
+        init();
+    </script>
+</body>
+</html>

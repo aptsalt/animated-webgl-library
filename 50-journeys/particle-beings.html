@@ -1,0 +1,393 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Particle Beings - Dissolving Into Elements</title>
+    <style>
+        body {
+            margin: 0;
+            background: #f8f8f8;
+            overflow: hidden;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        }
+        canvas { display: block; }
+        .back-btn {
+            position: absolute;
+            top: 30px;
+            left: 30px;
+            background: rgba(26, 26, 26, 0.1);
+            border: 1px solid rgba(26, 26, 26, 0.2);
+            color: #1a1a1a;
+            padding: 12px 24px;
+            text-decoration: none;
+            border-radius: 4px;
+            font-size: 14px;
+            font-weight: 300;
+            letter-spacing: 1px;
+            z-index: 1000;
+            transition: all 0.3s ease;
+            opacity: 0;
+            animation: fadeIn 3s ease-in-out 1s forwards;
+        }
+        .back-btn:hover {
+            background: rgba(26, 26, 26, 0.2);
+            transform: translateY(-1px);
+        }
+        .title {
+            position: absolute;
+            top: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: #333;
+            font-size: 24px;
+            font-weight: 300;
+            z-index: 100;
+            opacity: 0;
+            animation: fadeIn 3s ease-in-out 1s forwards;
+        }
+        .subtitle {
+            position: absolute;
+            bottom: 30px;
+            right: 30px;
+            color: #666;
+            font-size: 14px;
+            z-index: 100;
+            opacity: 0;
+            animation: fadeIn 3s ease-in-out 2s forwards;
+        }
+        @keyframes fadeIn {
+            to { opacity: 1; }
+        }
+    </style>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+</head>
+<body>
+    <a href="gallery.html" class="back-btn">← GALLERY</a>
+    <div class="title">Particle Beings</div>
+    <div class="subtitle">Forms dissolving into essence</div>
+    
+    <script>
+        let scene, camera, renderer;
+        let beings = [];
+        let time = 0;
+        
+        function init() {
+            scene = new THREE.Scene();
+            scene.fog = new THREE.Fog(0xf8f8f8, 8, 25);
+            
+            camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+            camera.position.set(0, 5, 12);
+            
+            renderer = new THREE.WebGLRenderer({ antialias: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.setClearColor(0xf8f8f8);
+            renderer.shadowMap.enabled = true;
+            renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+            document.body.appendChild(renderer.domElement);
+            
+            // Ambient light
+            const ambientLight = new THREE.AmbientLight(0x404040, 0.4);
+            scene.add(ambientLight);
+            
+            // Main directional light
+            const mainLight = new THREE.DirectionalLight(0xffffff, 0.6);
+            mainLight.position.set(-8, 10, 5);
+            mainLight.castShadow = true;
+            mainLight.shadow.mapSize.width = 2048;
+            mainLight.shadow.mapSize.height = 2048;
+            scene.add(mainLight);
+            
+            // Rim light
+            const rimLight = new THREE.DirectionalLight(0xffffff, 0.3);
+            rimLight.position.set(8, 5, -5);
+            scene.add(rimLight);
+            
+            // Removed ground plane for cleaner aesthetic
+            
+            createBeings();
+            
+            animate();
+        }
+        
+        function createBeings() {
+            for (let i = 0; i < 4; i++) {
+                const being = createParticleBeing();
+                being.position.set(
+                    (Math.random() - 0.5) * 15,
+                    1,
+                    (Math.random() - 0.5) * 15
+                );
+                scene.add(being);
+                
+                beings.push({
+                    container: being,
+                    solidParts: being.solidGroup,
+                    particles: being.particleSystem,
+                    dissolutionPhase: Math.random() * Math.PI * 2,
+                    reformPhase: Math.random() * 20 + 10, // When to reform
+                    basePosition: being.position.clone(),
+                    individualPhases: []
+                });
+                
+                // Initialize individual particle phases
+                const lastBeing = beings[beings.length - 1];
+                for (let j = 0; j < being.particleSystem.geometry.attributes.position.count; j++) {
+                    lastBeing.individualPhases.push(Math.random() * Math.PI * 2);
+                }
+            }
+        }
+        
+        function createParticleBeing() {
+            const container = new THREE.Group();
+            
+            // Solid human form
+            const solidGroup = new THREE.Group();
+            const solidMaterial = new THREE.MeshLambertMaterial({ 
+                color: 0x1a1a1a,
+                transparent: true,
+                opacity: 1.0
+            });
+            
+            // Head
+            const headGeometry = new THREE.SphereGeometry(0.1, 12, 8);
+            const head = new THREE.Mesh(headGeometry, solidMaterial);
+            head.position.y = 0.6;
+            solidGroup.add(head);
+            
+            // Torso
+            const torsoGeometry = new THREE.CylinderGeometry(0.08, 0.1, 0.4, 12);
+            const torso = new THREE.Mesh(torsoGeometry, solidMaterial);
+            torso.position.y = 0.25;
+            solidGroup.add(torso);
+            
+            // Arms
+            const armGeometry = new THREE.CylinderGeometry(0.03, 0.04, 0.3, 8);
+            const leftArm = new THREE.Mesh(armGeometry, solidMaterial);
+            const rightArm = new THREE.Mesh(armGeometry, solidMaterial);
+            leftArm.position.set(-0.15, 0.3, 0);
+            rightArm.position.set(0.15, 0.3, 0);
+            leftArm.rotation.z = 0.3;
+            rightArm.rotation.z = -0.3;
+            solidGroup.add(leftArm);
+            solidGroup.add(rightArm);
+            
+            // Legs
+            const legGeometry = new THREE.CylinderGeometry(0.05, 0.06, 0.4, 8);
+            const leftLeg = new THREE.Mesh(legGeometry, solidMaterial);
+            const rightLeg = new THREE.Mesh(legGeometry, solidMaterial);
+            leftLeg.position.set(-0.06, -0.15, 0);
+            rightLeg.position.set(0.06, -0.15, 0);
+            solidGroup.add(leftLeg);
+            solidGroup.add(rightLeg);
+            
+            solidGroup.castShadow = true;
+            container.add(solidGroup);
+            
+            // Particle system
+            const particleCount = 800;
+            const particleGeometry = new THREE.BufferGeometry();
+            const positions = new Float32Array(particleCount * 3);
+            const originalPositions = new Float32Array(particleCount * 3);
+            const velocities = new Float32Array(particleCount * 3);
+            const opacities = new Float32Array(particleCount);
+            
+            // Generate particles around the human form
+            for (let i = 0; i < particleCount; i++) {
+                const bodyPart = Math.floor(Math.random() * 6); // 6 body parts
+                let x, y, z;
+                
+                switch(bodyPart) {
+                    case 0: // Head
+                        const headAngle = Math.random() * Math.PI * 2;
+                        const headRadius = Math.random() * 0.12;
+                        x = Math.cos(headAngle) * headRadius;
+                        y = 0.6 + (Math.random() - 0.5) * 0.2;
+                        z = Math.sin(headAngle) * headRadius;
+                        break;
+                    case 1: // Torso
+                        x = (Math.random() - 0.5) * 0.2;
+                        y = 0.05 + Math.random() * 0.4;
+                        z = (Math.random() - 0.5) * 0.2;
+                        break;
+                    case 2: // Left arm
+                        x = -0.15 + (Math.random() - 0.5) * 0.08;
+                        y = 0.15 + Math.random() * 0.3;
+                        z = (Math.random() - 0.5) * 0.08;
+                        break;
+                    case 3: // Right arm
+                        x = 0.15 + (Math.random() - 0.5) * 0.08;
+                        y = 0.15 + Math.random() * 0.3;
+                        z = (Math.random() - 0.5) * 0.08;
+                        break;
+                    case 4: // Left leg
+                        x = -0.06 + (Math.random() - 0.5) * 0.1;
+                        y = -0.35 + Math.random() * 0.4;
+                        z = (Math.random() - 0.5) * 0.1;
+                        break;
+                    case 5: // Right leg
+                        x = 0.06 + (Math.random() - 0.5) * 0.1;
+                        y = -0.35 + Math.random() * 0.4;
+                        z = (Math.random() - 0.5) * 0.1;
+                        break;
+                }
+                
+                positions[i * 3] = x;
+                positions[i * 3 + 1] = y;
+                positions[i * 3 + 2] = z;
+                
+                originalPositions[i * 3] = x;
+                originalPositions[i * 3 + 1] = y;
+                originalPositions[i * 3 + 2] = z;
+                
+                velocities[i * 3] = (Math.random() - 0.5) * 0.002;
+                velocities[i * 3 + 1] = Math.random() * 0.003;
+                velocities[i * 3 + 2] = (Math.random() - 0.5) * 0.002;
+                
+                opacities[i] = 0.0; // Start invisible
+            }
+            
+            particleGeometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+            particleGeometry.setAttribute('originalPosition', new THREE.BufferAttribute(originalPositions, 3));
+            particleGeometry.setAttribute('velocity', new THREE.BufferAttribute(velocities, 3));
+            particleGeometry.setAttribute('opacity', new THREE.BufferAttribute(opacities, 1));
+            
+            const particleMaterial = new THREE.PointsMaterial({
+                color: 0x2a2a2a,
+                size: 0.02,
+                transparent: true,
+                opacity: 0.8,
+                blending: THREE.NormalBlending
+            });
+            
+            const particleSystem = new THREE.Points(particleGeometry, particleMaterial);
+            container.add(particleSystem);
+            
+            container.solidGroup = solidGroup;
+            container.particleSystem = particleSystem;
+            
+            return container;
+        }
+        
+        function animate() {
+            requestAnimationFrame(animate);
+            
+            time += 0.016;
+            
+            beings.forEach((being, beingIndex) => {
+                const dissolutionCycle = Math.sin(time * 0.3 + being.dissolutionPhase);
+                const isDissolving = dissolutionCycle > 0;
+                const intensity = Math.abs(dissolutionCycle);
+                
+                // Update solid form opacity
+                being.solidParts.children.forEach(part => {
+                    part.material.opacity = Math.max(0, 1 - intensity * 1.5);
+                });
+                
+                // Update particles
+                const positions = being.particles.geometry.attributes.position.array;
+                const originalPositions = being.particles.geometry.attributes.originalPosition.array;
+                const velocities = being.particles.geometry.attributes.velocity.array;
+                const opacities = being.particles.geometry.attributes.opacity.array;
+                
+                for (let i = 0; i < positions.length; i += 3) {
+                    const particleIndex = i / 3;
+                    const individualPhase = being.individualPhases[particleIndex];
+                    const particleCycle = Math.sin(time * 0.5 + individualPhase);
+                    
+                    if (isDissolving) {
+                        // Particles emerge and float away
+                        velocities[i] += (Math.random() - 0.5) * 0.0001;
+                        velocities[i + 1] += Math.random() * 0.0002;
+                        velocities[i + 2] += (Math.random() - 0.5) * 0.0001;
+                        
+                        positions[i] += velocities[i] * intensity * 20;
+                        positions[i + 1] += velocities[i + 1] * intensity * 20;
+                        positions[i + 2] += velocities[i + 2] * intensity * 20;
+                        
+                        // Fade in particles as body dissolves
+                        opacities[particleIndex] = Math.min(1, intensity * 2);
+                        
+                        // Add swirling motion
+                        const swirl = time * 2 + individualPhase;
+                        positions[i] += Math.sin(swirl) * 0.01 * intensity;
+                        positions[i + 2] += Math.cos(swirl) * 0.01 * intensity;
+                        
+                    } else {
+                        // Particles return to body
+                        const returnSpeed = 0.05;
+                        positions[i] += (originalPositions[i] - positions[i]) * returnSpeed;
+                        positions[i + 1] += (originalPositions[i + 1] - positions[i + 1]) * returnSpeed;
+                        positions[i + 2] += (originalPositions[i + 2] - positions[i + 2]) * returnSpeed;
+                        
+                        // Reset velocities
+                        velocities[i] *= 0.95;
+                        velocities[i + 1] *= 0.95;
+                        velocities[i + 2] *= 0.95;
+                        
+                        // Fade out particles as body reforms
+                        opacities[particleIndex] = Math.max(0, intensity);
+                    }
+                    
+                    // Add breathing/pulsing motion to particles near body
+                    const distanceToOrigin = Math.sqrt(
+                        Math.pow(positions[i] - originalPositions[i], 2) +
+                        Math.pow(positions[i + 1] - originalPositions[i + 1], 2) +
+                        Math.pow(positions[i + 2] - originalPositions[i + 2], 2)
+                    );
+                    
+                    if (distanceToOrigin < 0.3) {
+                        const breathing = Math.sin(time * 4 + individualPhase) * 0.005;
+                        positions[i] += breathing;
+                        positions[i + 2] += breathing;
+                    }
+                }
+                
+                being.particles.geometry.attributes.position.needsUpdate = true;
+                being.particles.geometry.attributes.opacity.needsUpdate = true;
+                
+                // Subtle movement of the being
+                being.container.position.x = being.basePosition.x + Math.sin(time * 0.4 + being.dissolutionPhase) * 2;
+                being.container.position.z = being.basePosition.z + Math.cos(time * 0.3 + being.dissolutionPhase) * 2;
+                being.container.position.y = 1 + Math.sin(time * 2 + being.dissolutionPhase) * 0.1;
+                
+                // Rotate the being slowly
+                being.container.rotation.y = time * 0.2 + being.dissolutionPhase;
+                
+                // Body movements during dissolution
+                if (being.solidParts.children.length > 0) {
+                    // Breathing
+                    const breathe = Math.sin(time * 3 + being.dissolutionPhase) * 0.02;
+                    being.solidParts.children[1].scale.y = 1 + breathe; // Torso
+                    
+                    // Subtle arm movement
+                    const armSway = Math.sin(time * 1.5 + being.dissolutionPhase) * 0.1;
+                    being.solidParts.children[2].rotation.z = 0.3 + armSway; // Left arm
+                    being.solidParts.children[3].rotation.z = -0.3 - armSway; // Right arm
+                    
+                    // Head turn
+                    being.solidParts.children[0].rotation.y = Math.sin(time + being.dissolutionPhase) * 0.2;
+                }
+            });
+            
+            // Camera movement
+            camera.position.x = Math.sin(time * 0.2) * 8;
+            camera.position.y = 5 + Math.sin(time * 0.3) * 2;
+            camera.position.z = 12 + Math.cos(time * 0.25) * 4;
+            camera.lookAt(0, 2, 0);
+            
+            renderer.render(scene, camera);
+        }
+        
+        function onWindowResize() {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        }
+        
+        window.addEventListener('resize', onWindowResize, false);
+        
+        init();
+    </script>
+</body>
+</html>

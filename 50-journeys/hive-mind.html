@@ -1,0 +1,444 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hive Mind - Connected Consciousness</title>
+    <style>
+        body {
+            margin: 0;
+            background: #f8f8f8;
+            overflow: hidden;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        }
+        canvas { display: block; }
+        .title {
+            position: absolute;
+            top: 30px;
+            left: 30px;
+            color: #1a1a1a;
+            font-size: 24px;
+            font-weight: 300;
+            z-index: 100;
+            opacity: 0;
+            animation: fadeIn 3s ease-in-out 1s forwards;
+        }
+        .subtitle {
+            position: absolute;
+            bottom: 30px;
+            right: 30px;
+            color: #1a1a1a;
+            font-size: 14px;
+            z-index: 100;
+            opacity: 0;
+            animation: fadeIn 3s ease-in-out 2s forwards;
+        }
+        .back-button {
+            position: absolute;
+            top: 30px;
+            right: 30px;
+            background: none;
+            border: 2px solid #1a1a1a;
+            color: #1a1a1a;
+            padding: 10px 20px;
+            font-size: 14px;
+            cursor: pointer;
+            border-radius: 25px;
+            text-decoration: none;
+            transition: all 0.3s ease;
+            z-index: 1000;
+        }
+        .back-button:hover {
+            background: #1a1a1a;
+            color: #f8f8f8;
+        }
+        @keyframes fadeIn {
+            to { opacity: 1; }
+        }
+    </style>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+</head>
+<body>
+    <div class="title">Hive Mind</div>
+    <div class="subtitle">Interconnected streams of consciousness</div>
+    <a href="gallery.html" class="back-button">← Gallery</a>
+    
+    <script>
+        let scene, camera, renderer;
+        let nodes = [];
+        let connections = [];
+        let pulses = [];
+        let time = 0;
+        
+        function init() {
+            scene = new THREE.Scene();
+            scene.fog = new THREE.Fog(0xf8f8f8, 10, 30);
+            
+            camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+            camera.position.set(0, 8, 15);
+            
+            renderer = new THREE.WebGLRenderer({ antialias: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.setClearColor(0xf8f8f8);
+            renderer.shadowMap.enabled = true;
+            renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+            document.body.appendChild(renderer.domElement);
+            
+            // Ambient light
+            const ambientLight = new THREE.AmbientLight(0x404040, 0.4);
+            scene.add(ambientLight);
+            
+            // Main directional light
+            const mainLight = new THREE.DirectionalLight(0xffffff, 0.6);
+            mainLight.position.set(-8, 12, 5);
+            mainLight.castShadow = true;
+            mainLight.shadow.mapSize.width = 2048;
+            mainLight.shadow.mapSize.height = 2048;
+            scene.add(mainLight);
+            
+            // Rim light
+            const rimLight = new THREE.DirectionalLight(0xffffff, 0.3);
+            rimLight.position.set(8, 5, -8);
+            scene.add(rimLight);
+            
+            // No ground plane for minimalist aesthetic
+            
+            createHiveMind();
+            
+            animate();
+        }
+        
+        function createHiveMind() {
+            // Create network of consciousness nodes (human figures)
+            const nodeCount = 12;
+            const arrangements = [
+                // Inner circle
+                { radius: 3, count: 4, height: 1 },
+                // Middle circle
+                { radius: 6, count: 5, height: 1.5 },
+                // Outer circle
+                { radius: 9, count: 3, height: 0.5 }
+            ];
+            
+            let nodeIndex = 0;
+            arrangements.forEach(arrangement => {
+                for (let i = 0; i < arrangement.count && nodeIndex < nodeCount; i++) {
+                    const angle = (i / arrangement.count) * Math.PI * 2;
+                    const node = createConsciousnessNode();
+                    
+                    node.position.x = Math.cos(angle) * arrangement.radius;
+                    node.position.z = Math.sin(angle) * arrangement.radius;
+                    node.position.y = arrangement.height;
+                    
+                    // Face towards center with slight randomness
+                    node.rotation.y = angle + Math.PI + (Math.random() - 0.5) * 0.3;
+                    
+                    node.castShadow = true;
+                    scene.add(node);
+                    
+                    nodes.push({
+                        mesh: node,
+                        position: node.position.clone(),
+                        id: nodeIndex,
+                        activity: Math.random(),
+                        connections: [],
+                        thoughtPhase: Math.random() * Math.PI * 2,
+                        arrangement: arrangement
+                    });
+                    
+                    nodeIndex++;
+                }
+            });
+            
+            createConnections();
+            createThoughtParticles();
+        }
+        
+        function createConsciousnessNode() {
+            const group = new THREE.Group();
+            const material = new THREE.MeshLambertMaterial({ 
+                color: 0x1a1a1a,
+                transparent: true,
+                opacity: 0.8
+            });
+            
+            // Head (consciousness center)
+            const headGeometry = new THREE.SphereGeometry(0.08, 12, 8);
+            const head = new THREE.Mesh(headGeometry, material);
+            head.position.y = 0.5;
+            group.add(head);
+            
+            // Mind aura (glowing sphere around head)
+            const auraGeometry = new THREE.SphereGeometry(0.12, 16, 12);
+            const auraMaterial = new THREE.MeshBasicMaterial({ 
+                color: 0x1a1a1a,
+                transparent: true,
+                opacity: 0.2,
+                wireframe: true
+            });
+            const aura = new THREE.Mesh(auraGeometry, auraMaterial);
+            aura.position.y = 0.5;
+            group.add(aura);
+            
+            // Simplified body
+            const bodyGeometry = new THREE.CylinderGeometry(0.06, 0.08, 0.35, 8);
+            const body = new THREE.Mesh(bodyGeometry, material);
+            body.position.y = 0.2;
+            group.add(body);
+            
+            // Arms in meditative/receptive position
+            const armGeometry = new THREE.CylinderGeometry(0.025, 0.03, 0.25, 6);
+            const leftArm = new THREE.Mesh(armGeometry, material);
+            const rightArm = new THREE.Mesh(armGeometry, material);
+            leftArm.position.set(-0.12, 0.25, 0);
+            rightArm.position.set(0.12, 0.25, 0);
+            leftArm.rotation.z = 0.6;
+            rightArm.rotation.z = -0.6;
+            group.add(leftArm);
+            group.add(rightArm);
+            
+            // Legs in seated/standing position
+            const legGeometry = new THREE.CylinderGeometry(0.04, 0.05, 0.3, 6);
+            const leftLeg = new THREE.Mesh(legGeometry, material);
+            const rightLeg = new THREE.Mesh(legGeometry, material);
+            leftLeg.position.set(-0.05, -0.1, 0);
+            rightLeg.position.set(0.05, -0.1, 0);
+            group.add(leftLeg);
+            group.add(rightLeg);
+            
+            return group;
+        }
+        
+        function createConnections() {
+            // Create connections between nearby nodes
+            nodes.forEach((node, i) => {
+                nodes.forEach((otherNode, j) => {
+                    if (i !== j) {
+                        const distance = node.position.distanceTo(otherNode.position);
+                        
+                        // Connect nodes within certain distance
+                        if (distance < 8) {
+                            const connectionGeometry = new THREE.BufferGeometry();
+                            const points = [node.position, otherNode.position];
+                            connectionGeometry.setFromPoints(points);
+                            
+                            const connectionMaterial = new THREE.LineBasicMaterial({
+                                color: 0x1a1a1a,
+                                transparent: true,
+                                opacity: 0.0 // Start invisible
+                            });
+                            
+                            const connection = new THREE.Line(connectionGeometry, connectionMaterial);
+                            scene.add(connection);
+                            
+                            connections.push({
+                                mesh: connection,
+                                nodeA: node,
+                                nodeB: otherNode,
+                                baseOpacity: Math.max(0.1, 0.5 - distance * 0.05),
+                                active: false,
+                                pulsePhase: Math.random() * Math.PI * 2
+                            });
+                            
+                            node.connections.push(connections[connections.length - 1]);
+                        }
+                    }
+                });
+            });
+        }
+        
+        function createThoughtParticles() {
+            // Create flowing thought particles
+            const particleCount = 50;
+            const geometry = new THREE.BufferGeometry();
+            const positions = new Float32Array(particleCount * 3);
+            const velocities = new Float32Array(particleCount * 3);
+            const targetNodes = new Float32Array(particleCount);
+            
+            for (let i = 0; i < particleCount; i++) {
+                // Start particles at random nodes
+                const startNode = nodes[Math.floor(Math.random() * nodes.length)];
+                positions[i * 3] = startNode.position.x;
+                positions[i * 3 + 1] = startNode.position.y + 0.5;
+                positions[i * 3 + 2] = startNode.position.z;
+                
+                velocities[i * 3] = 0;
+                velocities[i * 3 + 1] = 0;
+                velocities[i * 3 + 2] = 0;
+                
+                targetNodes[i] = Math.floor(Math.random() * nodes.length);
+            }
+            
+            geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+            geometry.setAttribute('velocity', new THREE.BufferAttribute(velocities, 3));
+            geometry.setAttribute('targetNode', new THREE.BufferAttribute(targetNodes, 1));
+            
+            const material = new THREE.PointsMaterial({
+                color: 0x1a1a1a,
+                size: 0.02,
+                transparent: true,
+                opacity: 0.8,
+                blending: THREE.NormalBlending
+            });
+            
+            const thoughtParticles = new THREE.Points(geometry, material);
+            scene.add(thoughtParticles);
+            
+            pulses.push({
+                mesh: thoughtParticles,
+                type: 'thoughts'
+            });
+        }
+        
+        function activateThoughtFlow(sourceNode, targetNode) {
+            // Activate connection and increase activity
+            sourceNode.activity = Math.min(1, sourceNode.activity + 0.3);
+            targetNode.activity = Math.min(1, targetNode.activity + 0.2);
+            
+            // Find and activate connection
+            const connection = connections.find(conn => 
+                (conn.nodeA === sourceNode && conn.nodeB === targetNode) ||
+                (conn.nodeA === targetNode && conn.nodeB === sourceNode)
+            );
+            
+            if (connection) {
+                connection.active = true;
+            }
+        }
+        
+        function animate() {
+            requestAnimationFrame(animate);
+            
+            time += 0.016;
+            
+            // Global consciousness pulse
+            const globalPulse = Math.sin(time * 0.8) * 0.5 + 0.5;
+            
+            // Animate nodes
+            nodes.forEach((node, index) => {
+                // Thought activity pulse
+                node.activity *= 0.995; // Gradual decay
+                
+                // Random thought activation
+                if (Math.random() < 0.005) {
+                    const targetIndex = Math.floor(Math.random() * nodes.length);
+                    if (targetIndex !== index) {
+                        activateThoughtFlow(node, nodes[targetIndex]);
+                    }
+                }
+                
+                // Visual activity representation
+                const activityGlow = node.activity * 0.5 + 0.3;
+                
+                // Head glow (consciousness intensity)
+                node.mesh.children[0].material.opacity = activityGlow;
+                
+                // Aura pulsing
+                const auraPulse = globalPulse + node.activity * 0.5;
+                node.mesh.children[1].material.opacity = auraPulse * 0.3;
+                node.mesh.children[1].scale.setScalar(1 + auraPulse * 0.2);
+                node.mesh.children[1].rotation.y += 0.01;
+                
+                // Subtle body movements
+                const thought = Math.sin(time * 2 + node.thoughtPhase) * node.activity;
+                node.mesh.position.y = node.position.y + thought * 0.05;
+                
+                // Head slight movements (thinking)
+                node.mesh.children[0].rotation.y = Math.sin(time * 3 + node.thoughtPhase) * 0.1 * node.activity;
+                node.mesh.children[0].rotation.x = Math.sin(time * 2.5 + node.thoughtPhase) * 0.05 * node.activity;
+                
+                // Arm subtle movement
+                const armSway = Math.sin(time * 1.5 + node.thoughtPhase) * node.activity * 0.1;
+                node.mesh.children[3].rotation.z = 0.6 + armSway;
+                node.mesh.children[4].rotation.z = -0.6 - armSway;
+            });
+            
+            // Animate connections
+            connections.forEach(connection => {
+                const avgActivity = (connection.nodeA.activity + connection.nodeB.activity) / 2;
+                
+                if (connection.active) {
+                    // Pulse along connection
+                    const pulse = Math.sin(time * 5 + connection.pulsePhase);
+                    connection.mesh.material.opacity = connection.baseOpacity * (1 + pulse * 0.5) * avgActivity;
+                    
+                    // Gradually deactivate
+                    if (Math.random() < 0.02) {
+                        connection.active = false;
+                    }
+                } else {
+                    // Subtle ambient connection
+                    connection.mesh.material.opacity = connection.baseOpacity * 0.2 * globalPulse;
+                }
+            });
+            
+            // Animate thought particles
+            pulses.forEach(pulse => {
+                if (pulse.type === 'thoughts') {
+                    const positions = pulse.mesh.geometry.attributes.position.array;
+                    const velocities = pulse.mesh.geometry.attributes.velocity.array;
+                    const targetNodes = pulse.mesh.geometry.attributes.targetNode.array;
+                    
+                    for (let i = 0; i < positions.length; i += 3) {
+                        const particleIndex = i / 3;
+                        const targetNode = nodes[Math.floor(targetNodes[particleIndex])];
+                        
+                        // Move towards target node
+                        const dx = targetNode.position.x - positions[i];
+                        const dy = (targetNode.position.y + 0.5) - positions[i + 1];
+                        const dz = targetNode.position.z - positions[i + 2];
+                        
+                        const distance = Math.sqrt(dx * dx + dy * dy + dz * dz);
+                        
+                        if (distance < 0.2) {
+                            // Reached target, pick new target
+                            const newTarget = Math.floor(Math.random() * nodes.length);
+                            targetNodes[particleIndex] = newTarget;
+                            
+                            // Activate connection
+                            if (Math.random() < 0.3) {
+                                activateThoughtFlow(targetNode, nodes[newTarget]);
+                            }
+                        } else {
+                            // Move towards target
+                            const speed = 0.02;
+                            velocities[i] = dx / distance * speed;
+                            velocities[i + 1] = dy / distance * speed;
+                            velocities[i + 2] = dz / distance * speed;
+                            
+                            positions[i] += velocities[i];
+                            positions[i + 1] += velocities[i + 1];
+                            positions[i + 2] += velocities[i + 2];
+                        }
+                        
+                        // Add slight random movement
+                        positions[i] += (Math.random() - 0.5) * 0.01;
+                        positions[i + 1] += (Math.random() - 0.5) * 0.01;
+                        positions[i + 2] += (Math.random() - 0.5) * 0.01;
+                    }
+                    
+                    pulse.mesh.geometry.attributes.position.needsUpdate = true;
+                }
+            });
+            
+            // Camera movement
+            camera.position.x = Math.sin(time * 0.1) * 12;
+            camera.position.y = 8 + Math.sin(time * 0.15) * 3;
+            camera.position.z = 15 + Math.cos(time * 0.12) * 5;
+            camera.lookAt(0, 2, 0);
+            
+            renderer.render(scene, camera);
+        }
+        
+        function onWindowResize() {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        }
+        
+        window.addEventListener('resize', onWindowResize, false);
+        
+        init();
+    </script>
+</body>
+</html>

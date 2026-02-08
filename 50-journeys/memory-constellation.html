@@ -1,0 +1,1500 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Memory Constellation - Revolutionary Digital Healing</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: radial-gradient(ellipse at center, #0d0d2b 0%, #000000 100%);
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            overflow: hidden;
+            color: white;
+        }
+
+        #canvas {
+            display: block;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            cursor: grab;
+        }
+
+        #canvas:active {
+            cursor: grabbing;
+        }
+
+        .constellation-ui {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 10;
+        }
+
+        .memory-guide {
+            position: absolute;
+            top: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: rgba(255, 255, 255, 0.9);
+            font-size: 18px;
+            font-weight: 300;
+            text-align: center;
+            text-shadow: 0 0 20px rgba(147, 112, 219, 0.8);
+            max-width: 600px;
+            line-height: 1.6;
+        }
+
+        .timeline-panel {
+            position: absolute;
+            left: 20px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: rgba(20, 20, 60, 0.85);
+            backdrop-filter: blur(15px);
+            border-radius: 20px;
+            padding: 25px;
+            min-width: 280px;
+            border: 1px solid rgba(147, 112, 219, 0.3);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+            pointer-events: auto;
+        }
+
+        .timeline-title {
+            color: #9370db;
+            font-size: 16px;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .timeline-slider {
+            width: 100%;
+            height: 200px;
+            margin: 20px 0;
+            position: relative;
+            background: linear-gradient(to bottom,
+                rgba(255, 215, 0, 0.3) 0%,    /* Childhood - Gold */
+                rgba(50, 205, 50, 0.3) 25%,   /* Youth - Green */
+                rgba(30, 144, 255, 0.3) 50%,  /* Adulthood - Blue */
+                rgba(147, 112, 219, 0.3) 75%, /* Maturity - Purple */
+                rgba(255, 255, 255, 0.3) 100% /* Wisdom - White */
+            );
+            border-radius: 10px;
+            border: 1px solid rgba(147, 112, 219, 0.4);
+        }
+
+        .timeline-marker {
+            position: absolute;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 20px;
+            height: 20px;
+            background: #64ffda;
+            border-radius: 50%;
+            box-shadow: 0 0 20px rgba(100, 255, 218, 0.8);
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .timeline-marker:hover {
+            transform: translateX(-50%) scale(1.3);
+            box-shadow: 0 0 30px rgba(100, 255, 218, 1);
+        }
+
+        .memory-info {
+            position: absolute;
+            right: 20px;
+            top: 20px;
+            background: rgba(20, 20, 60, 0.85);
+            backdrop-filter: blur(15px);
+            border-radius: 15px;
+            padding: 20px;
+            max-width: 320px;
+            border: 1px solid rgba(147, 112, 219, 0.3);
+            pointer-events: auto;
+            transition: all 0.3s ease;
+            opacity: 0;
+            transform: translateX(20px);
+        }
+
+        .memory-info.visible {
+            opacity: 1;
+            transform: translateX(0);
+        }
+
+        .memory-title {
+            color: #64ffda;
+            font-size: 18px;
+            margin-bottom: 10px;
+            font-weight: 500;
+        }
+
+        .memory-date {
+            color: rgba(255, 255, 255, 0.7);
+            font-size: 12px;
+            margin-bottom: 15px;
+        }
+
+        .memory-description {
+            color: rgba(255, 255, 255, 0.9);
+            font-size: 14px;
+            line-height: 1.5;
+            margin-bottom: 15px;
+        }
+
+        .memory-emotions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-bottom: 15px;
+        }
+
+        .emotion-tag {
+            background: rgba(147, 112, 219, 0.3);
+            border: 1px solid rgba(147, 112, 219, 0.6);
+            padding: 4px 12px;
+            border-radius: 15px;
+            font-size: 12px;
+            color: #9370db;
+        }
+
+        .memory-connections {
+            font-size: 12px;
+            color: rgba(255, 255, 255, 0.6);
+        }
+
+        .navigation-controls {
+            position: absolute;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 15px;
+            pointer-events: auto;
+        }
+
+        .nav-btn {
+            background: rgba(147, 112, 219, 0.15);
+            border: 1px solid rgba(147, 112, 219, 0.4);
+            color: white;
+            padding: 14px 24px;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.4s ease;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        .nav-btn:hover {
+            background: rgba(147, 112, 219, 0.25);
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(147, 112, 219, 0.3);
+        }
+
+        .nav-btn.active {
+            background: rgba(100, 255, 218, 0.3);
+            border-color: #64ffda;
+            color: #64ffda;
+            box-shadow: 0 0 30px rgba(100, 255, 218, 0.4);
+        }
+
+        .view-controls {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            pointer-events: auto;
+        }
+
+        .view-btn {
+            background: rgba(20, 20, 60, 0.7);
+            border: 1px solid rgba(147, 112, 219, 0.3);
+            color: white;
+            padding: 10px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 18px;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(5px);
+            width: 50px;
+            height: 50px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .view-btn:hover {
+            background: rgba(147, 112, 219, 0.3);
+            transform: scale(1.1);
+        }
+
+        .constellation-stats {
+            position: absolute;
+            bottom: 30px;
+            right: 30px;
+            background: rgba(20, 20, 60, 0.7);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            padding: 15px;
+            font-size: 12px;
+            border: 1px solid rgba(147, 112, 219, 0.3);
+            pointer-events: auto;
+        }
+
+        .stat-item {
+            display: flex;
+            justify-content: space-between;
+            margin: 8px 0;
+            min-width: 150px;
+        }
+
+        .stat-value {
+            color: #64ffda;
+            font-weight: 500;
+        }
+
+        .memory-search {
+            position: absolute;
+            top: 80px;
+            left: 50%;
+            transform: translateX(-50%);
+            pointer-events: auto;
+        }
+
+        .search-input {
+            background: rgba(20, 20, 60, 0.8);
+            border: 1px solid rgba(147, 112, 219, 0.4);
+            color: white;
+            padding: 12px 20px;
+            border-radius: 25px;
+            font-size: 14px;
+            width: 300px;
+            backdrop-filter: blur(10px);
+            outline: none;
+            transition: all 0.3s ease;
+        }
+
+        .search-input:focus {
+            border-color: #64ffda;
+            box-shadow: 0 0 20px rgba(100, 255, 218, 0.3);
+        }
+
+        .search-input::placeholder {
+            color: rgba(255, 255, 255, 0.5);
+        }
+
+        .connection-lines {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 5;
+        }
+
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, #0d0d2b, #000000);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            transition: opacity 0.5s ease;
+        }
+
+        .loading-content {
+            text-align: center;
+            color: white;
+        }
+
+        .loading-title {
+            font-size: 32px;
+            margin-bottom: 20px;
+            color: #9370db;
+            font-weight: 300;
+        }
+
+        .loading-subtitle {
+            font-size: 16px;
+            opacity: 0.8;
+            margin-bottom: 30px;
+        }
+
+        .constellation-loader {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            width: 100px;
+            height: 100px;
+            position: relative;
+            margin: 0 auto;
+        }
+
+        .star-loader {
+            position: absolute;
+            width: 6px;
+            height: 6px;
+            background: #64ffda;
+            border-radius: 50%;
+            animation: starOrbit 3s linear infinite;
+        }
+
+        .star-loader:nth-child(1) { animation-delay: 0s; }
+        .star-loader:nth-child(2) { animation-delay: 0.5s; }
+        .star-loader:nth-child(3) { animation-delay: 1s; }
+        .star-loader:nth-child(4) { animation-delay: 1.5s; }
+        .star-loader:nth-child(5) { animation-delay: 2s; }
+
+        @keyframes starOrbit {
+            0% {
+                transform: rotate(0deg) translateX(40px) rotate(0deg);
+                opacity: 1;
+            }
+            100% {
+                transform: rotate(360deg) translateX(40px) rotate(-360deg);
+                opacity: 0.3;
+            }
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        /* Responsive design */
+        @media (max-width: 768px) {
+            .timeline-panel {
+                position: absolute;
+                bottom: 100px;
+                left: 50%;
+                transform: translateX(-50%);
+                top: auto;
+                width: calc(100% - 40px);
+                min-width: auto;
+            }
+
+            .memory-info {
+                right: 20px;
+                left: 20px;
+                top: 80px;
+                max-width: none;
+            }
+
+            .search-input {
+                width: 250px;
+            }
+
+            .navigation-controls {
+                bottom: 20px;
+                flex-wrap: wrap;
+                justify-content: center;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Loading Screen -->
+    <div id="loadingOverlay" class="loading-overlay">
+        <div class="loading-content">
+            <h2 class="loading-title">✨ Memory Constellation</h2>
+            <p class="loading-subtitle">Mapping the cosmos of your experiences...</p>
+            <div class="constellation-loader">
+                <div class="star-loader"></div>
+                <div class="star-loader"></div>
+                <div class="star-loader"></div>
+                <div class="star-loader"></div>
+                <div class="star-loader"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Canvas -->
+    <canvas id="canvas"></canvas>
+
+    <!-- Constellation UI -->
+    <div class="constellation-ui">
+        <!-- Memory Guide -->
+        <div class="memory-guide">
+            Navigate through the constellation of your memories. Each star represents a moment, 
+            connected by invisible threads of meaning and emotion.
+        </div>
+
+        <!-- Memory Search -->
+        <div class="memory-search">
+            <input type="text" id="searchInput" class="search-input" 
+                   placeholder="Search memories, emotions, or themes...">
+        </div>
+
+        <!-- Timeline Panel -->
+        <div class="timeline-panel">
+            <div class="timeline-title">
+                ⏳ Life Timeline
+            </div>
+            <div class="timeline-slider" id="timelineSlider">
+                <div class="timeline-marker" id="timelineMarker" style="top: 80%;"></div>
+            </div>
+            <div style="display: flex; justify-content: space-between; font-size: 11px; color: rgba(255,255,255,0.6); margin-top: 10px;">
+                <span>Childhood</span>
+                <span>Present</span>
+            </div>
+            <div style="margin-top: 15px; font-size: 12px; color: rgba(255,255,255,0.8);">
+                <div>Current Period: <span id="currentPeriod" style="color: #64ffda;">Present Day</span></div>
+                <div>Active Memories: <span id="activeMemories" style="color: #64ffda;">247</span></div>
+            </div>
+        </div>
+
+        <!-- Memory Information Panel -->
+        <div class="memory-info" id="memoryInfo">
+            <div class="memory-title" id="memoryTitle">Select a memory star</div>
+            <div class="memory-date" id="memoryDate"></div>
+            <div class="memory-description" id="memoryDescription">
+                Navigate through your constellation to discover the stories written in the stars.
+            </div>
+            <div class="memory-emotions" id="memoryEmotions">
+                <!-- Emotion tags will be added dynamically -->
+            </div>
+            <div class="memory-connections" id="memoryConnections">
+                <!-- Connection information will be added dynamically -->
+            </div>
+        </div>
+
+        <!-- View Controls -->
+        <div class="view-controls">
+            <button class="view-btn" id="zoomInBtn" title="Zoom In">🔍</button>
+            <button class="view-btn" id="zoomOutBtn" title="Zoom Out">🔎</button>
+            <button class="view-btn" id="centerBtn" title="Center View">🎯</button>
+            <button class="view-btn" id="connectionsBtn" title="Show Connections">🕸️</button>
+        </div>
+
+        <!-- Navigation Controls -->
+        <div class="navigation-controls">
+            <button class="nav-btn active" id="exploreBtn">🌌 Free Explore</button>
+            <button class="nav-btn" id="timelineBtn">📅 Timeline</button>
+            <button class="nav-btn" id="emotionBtn">💫 Emotions</button>
+            <button class="nav-btn" id="audioBtn">🎵 Soundscape</button>
+            <button class="nav-btn" id="resetBtn">🔄 Reset</button>
+        </div>
+
+        <!-- Constellation Stats -->
+        <div class="constellation-stats">
+            <div style="color: #9370db; font-weight: 500; margin-bottom: 10px;">✨ Constellation Stats</div>
+            <div class="stat-item">
+                <span>Total Memories</span>
+                <span class="stat-value" id="totalMemories">1,247</span>
+            </div>
+            <div class="stat-item">
+                <span>Connections</span>
+                <span class="stat-value" id="totalConnections">3,891</span>
+            </div>
+            <div class="stat-item">
+                <span>Themes</span>
+                <span class="stat-value" id="totalThemes">42</span>
+            </div>
+            <div class="stat-item">
+                <span>Clusters</span>
+                <span class="stat-value" id="memoryClusters">18</span>
+            </div>
+            <div class="stat-item">
+                <span>Brightness</span>
+                <span class="stat-value" id="avgBrightness">78%</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Connection Lines Canvas -->
+    <canvas id="connectionsCanvas" class="connection-lines"></canvas>
+
+    <!-- Three.js and Libraries -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script type="module">
+        import { TherapeuticShaders } from './lib/shaders.js';
+        import { audioEngine } from './lib/audio-engine.js';
+        import { biometricMonitor } from './lib/biometric.js';
+
+        class MemoryConstellation {
+            constructor() {
+                this.scene = null;
+                this.camera = null;
+                this.renderer = null;
+                this.canvas = null;
+                this.connectionsCanvas = null;
+                this.connectionsCtx = null;
+                
+                // Memory system
+                this.memories = [];
+                this.memoryStars = [];
+                this.memoryConnections = [];
+                this.focusedMemory = null;
+                
+                // Navigation
+                this.controls = {
+                    mouseDown: false,
+                    mousePos: { x: 0, y: 0 },
+                    lastMousePos: { x: 0, y: 0 },
+                    cameraTarget: new THREE.Vector3(0, 0, 0),
+                    cameraDistance: 50,
+                    cameraTheta: 0,
+                    cameraPhi: Math.PI / 2
+                };
+                
+                // Timeline
+                this.currentTimePeriod = 1.0; // 0 = childhood, 1 = present
+                this.timelineActive = false;
+                
+                // Visual state
+                this.showConnections = false;
+                this.currentMode = 'explore';
+                this.time = 0;
+                this.isInitialized = false;
+                this.isAudioEnabled = false;
+                
+                // Raycasting for memory selection
+                this.raycaster = new THREE.Raycaster();
+                this.mouse = new THREE.Vector2();
+                
+                // Memory themes and categories
+                this.memoryThemes = [
+                    'childhood', 'family', 'friendship', 'love', 'achievement', 
+                    'adventure', 'learning', 'challenge', 'creativity', 'nature',
+                    'celebration', 'reflection', 'growth', 'discovery', 'connection'
+                ];
+                
+                // Emotional memory mapping
+                this.emotionalColors = {
+                    joy: { color: 0xFFD700, intensity: 1.0 },      // Gold
+                    love: { color: 0xFF69B4, intensity: 0.9 },     // Hot Pink
+                    peace: { color: 0x64FFDA, intensity: 0.7 },    // Aqua
+                    excitement: { color: 0xFF4500, intensity: 1.2 }, // Orange Red
+                    sadness: { color: 0x4682B4, intensity: 0.5 },  // Steel Blue
+                    fear: { color: 0x800080, intensity: 0.4 },     // Purple
+                    anger: { color: 0xFF0000, intensity: 0.8 },    // Red
+                    surprise: { color: 0xFFFF00, intensity: 1.1 }, // Yellow
+                    nostalgia: { color: 0xDDA0DD, intensity: 0.6 }, // Plum
+                    gratitude: { color: 0x32CD32, intensity: 0.8 }, // Lime Green
+                    wonder: { color: 0x9370DB, intensity: 0.9 },   // Medium Purple
+                    calm: { color: 0x87CEEB, intensity: 0.6 }      // Sky Blue
+                };
+            }
+
+            async initialize() {
+                this.canvas = document.getElementById('canvas');
+                this.connectionsCanvas = document.getElementById('connectionsCanvas');
+                this.connectionsCtx = this.connectionsCanvas.getContext('2d');
+                
+                this.setupRenderer();
+                this.setupScene();
+                this.setupCamera();
+                this.setupLighting();
+                
+                // Generate memory constellation
+                await this.generateMemories();
+                await this.createMemoryStars();
+                await this.createConnections();
+                
+                // Setup interactions
+                this.setupControls();
+                this.setupUI();
+                
+                // Initialize audio
+                await audioEngine.initialize();
+                
+                // Setup biometric integration
+                this.setupBiometricIntegration();
+                
+                this.animate();
+                
+                // Hide loading screen
+                document.getElementById('loadingOverlay').classList.add('hidden');
+                
+                this.isInitialized = true;
+                console.log('✨ Memory Constellation initialized');
+            }
+
+            setupRenderer() {
+                this.renderer = new THREE.WebGLRenderer({
+                    canvas: this.canvas,
+                    antialias: true,
+                    alpha: true,
+                    powerPreference: "high-performance"
+                });
+                
+                this.renderer.setSize(window.innerWidth, window.innerHeight);
+                this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+                this.renderer.setClearColor(0x000000, 0);
+                
+                // Setup connections canvas
+                this.connectionsCanvas.width = window.innerWidth;
+                this.connectionsCanvas.height = window.innerHeight;
+            }
+
+            setupScene() {
+                this.scene = new THREE.Scene();
+                this.scene.fog = new THREE.FogExp2(0x000011, 0.0005);
+            }
+
+            setupCamera() {
+                this.camera = new THREE.PerspectiveCamera(
+                    60,
+                    window.innerWidth / window.innerHeight,
+                    0.1,
+                    2000
+                );
+                this.updateCameraPosition();
+            }
+
+            setupLighting() {
+                // Ambient starlight
+                const ambientLight = new THREE.AmbientLight(0x221144, 0.3);
+                this.scene.add(ambientLight);
+                
+                // Central cosmic light
+                const centerLight = new THREE.PointLight(0x9370DB, 2, 200);
+                centerLight.position.set(0, 0, 0);
+                this.scene.add(centerLight);
+                
+                // Distant galaxy lights
+                for (let i = 0; i < 5; i++) {
+                    const light = new THREE.PointLight(0x64FFDA, 0.5, 100);
+                    const angle = (i / 5) * Math.PI * 2;
+                    const radius = 80 + Math.random() * 40;
+                    light.position.set(
+                        Math.cos(angle) * radius,
+                        (Math.random() - 0.5) * 60,
+                        Math.sin(angle) * radius
+                    );
+                    this.scene.add(light);
+                }
+            }
+
+            async generateMemories() {
+                // Generate procedural memory data
+                const memoryCount = 1247; // As shown in stats
+                const currentYear = new Date().getFullYear();
+                const birthYear = currentYear - 30; // Assume 30 years old
+                
+                for (let i = 0; i < memoryCount; i++) {
+                    const age = Math.random() * 30;
+                    const year = birthYear + age;
+                    
+                    const memory = {
+                        id: i,
+                        title: this.generateMemoryTitle(),
+                        description: this.generateMemoryDescription(),
+                        date: new Date(year, Math.floor(Math.random() * 12), Math.floor(Math.random() * 28)),
+                        age: age,
+                        timePeriod: age / 30, // 0 to 1
+                        emotions: this.generateEmotions(),
+                        theme: this.memoryThemes[Math.floor(Math.random() * this.memoryThemes.length)],
+                        importance: Math.random(),
+                        vividness: Math.random(),
+                        connections: [], // Will be populated later
+                        position: this.generateMemoryPosition(age / 30),
+                        color: 0xFFFFFF,
+                        size: 0.5 + Math.random() * 1.5
+                    };
+                    
+                    // Set color based on primary emotion
+                    if (memory.emotions.length > 0) {
+                        const primaryEmotion = memory.emotions[0];
+                        const emotionData = this.emotionalColors[primaryEmotion];
+                        if (emotionData) {
+                            memory.color = emotionData.color;
+                            memory.intensity = emotionData.intensity;
+                        }
+                    }
+                    
+                    this.memories.push(memory);
+                }
+                
+                // Generate connections between memories
+                this.generateMemoryConnections();
+                
+                console.log(`Generated ${this.memories.length} memories with connections`);
+            }
+
+            generateMemoryTitle() {
+                const titles = [
+                    "First Day at School", "Summer Vacation", "Birthday Celebration", "Family Gathering",
+                    "Learning to Ride a Bike", "Best Friend's Wedding", "College Graduation", "First Job",
+                    "Moving to New City", "Meeting Someone Special", "Mountain Hiking Trip", "Concert Night",
+                    "Cooking Disaster", "Surprise Party", "Beach Sunset", "Rainy Afternoon", "Book Discovery",
+                    "Art Gallery Visit", "Coffee Shop Conversation", "Late Night Walk", "Holiday Traditions",
+                    "Pet Adoption", "Garden Planting", "Star Gazing", "Dance Lessons", "Music Festival",
+                    "Road Trip Adventure", "Camping Experience", "City Exploration", "Museum Visit"
+                ];
+                
+                return titles[Math.floor(Math.random() * titles.length)];
+            }
+
+            generateMemoryDescription() {
+                const descriptions = [
+                    "A moment that changed everything, filled with anticipation and wonder.",
+                    "The warmth of connection and the joy of shared experiences.",
+                    "A time of growth, learning, and self-discovery.",
+                    "Laughter echoing through the air, creating lasting bonds.",
+                    "The quiet beauty of simple moments, deeply felt.",
+                    "An adventure that opened new perspectives and possibilities.",
+                    "The comfort of familiar places and beloved faces.",
+                    "A challenge that revealed hidden strengths and resilience.",
+                    "The magic of creativity and artistic expression.",
+                    "Nature's embrace providing peace and restoration."
+                ];
+                
+                return descriptions[Math.floor(Math.random() * descriptions.length)];
+            }
+
+            generateEmotions() {
+                const allEmotions = Object.keys(this.emotionalColors);
+                const emotionCount = 1 + Math.floor(Math.random() * 3); // 1-3 emotions per memory
+                const selectedEmotions = [];
+                
+                for (let i = 0; i < emotionCount; i++) {
+                    const emotion = allEmotions[Math.floor(Math.random() * allEmotions.length)];
+                    if (!selectedEmotions.includes(emotion)) {
+                        selectedEmotions.push(emotion);
+                    }
+                }
+                
+                return selectedEmotions;
+            }
+
+            generateMemoryPosition(timePeriod) {
+                // Create spiral galaxy-like distribution
+                const radius = 20 + timePeriod * 60; // Outer memories are more recent
+                const angle = timePeriod * Math.PI * 8 + Math.random() * 0.5; // Spiral pattern
+                const height = (Math.random() - 0.5) * 40;
+                
+                return new THREE.Vector3(
+                    Math.cos(angle) * radius + (Math.random() - 0.5) * 10,
+                    height,
+                    Math.sin(angle) * radius + (Math.random() - 0.5) * 10
+                );
+            }
+
+            generateMemoryConnections() {
+                // Create connections between related memories
+                for (let i = 0; i < this.memories.length; i++) {
+                    const memory = this.memories[i];
+                    const connections = [];
+                    
+                    // Find memories with similar themes, emotions, or time periods
+                    for (let j = 0; j < this.memories.length; j++) {
+                        if (i !== j) {
+                            const otherMemory = this.memories[j];
+                            let connectionStrength = 0;
+                            
+                            // Theme similarity
+                            if (memory.theme === otherMemory.theme) {
+                                connectionStrength += 0.4;
+                            }
+                            
+                            // Emotional similarity
+                            const sharedEmotions = memory.emotions.filter(e => otherMemory.emotions.includes(e));
+                            connectionStrength += sharedEmotions.length * 0.2;
+                            
+                            // Time proximity
+                            const timeDiff = Math.abs(memory.timePeriod - otherMemory.timePeriod);
+                            if (timeDiff < 0.1) connectionStrength += 0.3;
+                            
+                            // Importance correlation
+                            const importanceDiff = Math.abs(memory.importance - otherMemory.importance);
+                            if (importanceDiff < 0.3) connectionStrength += 0.1;
+                            
+                            // Add random factor for serendipitous connections
+                            connectionStrength += Math.random() * 0.1;
+                            
+                            if (connectionStrength > 0.3) {
+                                connections.push({
+                                    memoryId: j,
+                                    strength: connectionStrength,
+                                    type: this.getConnectionType(memory, otherMemory)
+                                });
+                            }
+                        }
+                    }
+                    
+                    // Sort by strength and keep top connections
+                    connections.sort((a, b) => b.strength - a.strength);
+                    memory.connections = connections.slice(0, Math.min(8, connections.length));
+                }
+            }
+
+            getConnectionType(memory1, memory2) {
+                const types = ['thematic', 'emotional', 'temporal', 'causal', 'symbolic'];
+                
+                if (memory1.theme === memory2.theme) return 'thematic';
+                
+                const sharedEmotions = memory1.emotions.filter(e => memory2.emotions.includes(e));
+                if (sharedEmotions.length > 0) return 'emotional';
+                
+                const timeDiff = Math.abs(memory1.timePeriod - memory2.timePeriod);
+                if (timeDiff < 0.05) return 'temporal';
+                
+                return types[Math.floor(Math.random() * types.length)];
+            }
+
+            async createMemoryStars() {
+                // Create instanced geometry for performance with many stars
+                const starGeometry = new THREE.SphereGeometry(1, 16, 16);
+                const instancedGeometry = new THREE.InstancedBufferGeometry();
+                instancedGeometry.copy(starGeometry);
+                
+                const count = this.memories.length;
+                instancedGeometry.instanceCount = count;
+                
+                // Instance attributes
+                const positions = new Float32Array(count * 3);
+                const colors = new Float32Array(count * 3);
+                const sizes = new Float32Array(count);
+                const intensities = new Float32Array(count);
+                const phases = new Float32Array(count);
+                
+                for (let i = 0; i < count; i++) {
+                    const memory = this.memories[i];
+                    
+                    positions[i * 3] = memory.position.x;
+                    positions[i * 3 + 1] = memory.position.y;
+                    positions[i * 3 + 2] = memory.position.z;
+                    
+                    const color = new THREE.Color(memory.color);
+                    colors[i * 3] = color.r;
+                    colors[i * 3 + 1] = color.g;
+                    colors[i * 3 + 2] = color.b;
+                    
+                    sizes[i] = memory.size * (0.5 + memory.importance * 0.5);
+                    intensities[i] = memory.intensity || 1.0;
+                    phases[i] = Math.random() * Math.PI * 2;
+                }
+                
+                instancedGeometry.setAttribute('instancePosition', new THREE.InstancedBufferAttribute(positions, 3));
+                instancedGeometry.setAttribute('instanceColor', new THREE.InstancedBufferAttribute(colors, 3));
+                instancedGeometry.setAttribute('instanceSize', new THREE.InstancedBufferAttribute(sizes, 1));
+                instancedGeometry.setAttribute('instanceIntensity', new THREE.InstancedBufferAttribute(intensities, 1));
+                instancedGeometry.setAttribute('instancePhase', new THREE.InstancedBufferAttribute(phases, 1));
+                
+                // Custom shader material for memory stars
+                const starMaterial = new THREE.ShaderMaterial({
+                    vertexShader: TherapeuticShaders.memoryVertex,
+                    fragmentShader: TherapeuticShaders.memoryFragment,
+                    uniforms: {
+                        time: { value: 0 },
+                        focusRadius: { value: 10 },
+                        cameraPosition: { value: this.camera.position }
+                    },
+                    transparent: true,
+                    blending: THREE.AdditiveBlending
+                });
+                
+                this.memoryStars = new THREE.InstancedMesh(instancedGeometry, starMaterial, count);
+                this.scene.add(this.memoryStars);
+                
+                // Create individual meshes for raycasting (simplified)
+                this.memoryMeshes = [];
+                for (let i = 0; i < this.memories.length; i++) {
+                    const memory = this.memories[i];
+                    const mesh = new THREE.Mesh(
+                        new THREE.SphereGeometry(memory.size, 8, 8),
+                        new THREE.MeshBasicMaterial({ visible: false })
+                    );
+                    mesh.position.copy(memory.position);
+                    mesh.userData.memoryIndex = i;
+                    this.memoryMeshes.push(mesh);
+                    this.scene.add(mesh);
+                }
+            }
+
+            async createConnections() {
+                // Connections will be drawn on 2D canvas overlay for performance
+                this.memoryConnections = [];
+                
+                for (let i = 0; i < this.memories.length; i++) {
+                    const memory = this.memories[i];
+                    
+                    for (const connection of memory.connections) {
+                        const targetMemory = this.memories[connection.memoryId];
+                        
+                        if (targetMemory && connection.strength > 0.5) {
+                            this.memoryConnections.push({
+                                start: memory.position,
+                                end: targetMemory.position,
+                                strength: connection.strength,
+                                type: connection.type,
+                                sourceIndex: i,
+                                targetIndex: connection.memoryId
+                            });
+                        }
+                    }
+                }
+                
+                console.log(`Created ${this.memoryConnections.length} memory connections`);
+            }
+
+            setupControls() {
+                // Mouse controls for 3D navigation
+                this.canvas.addEventListener('mousedown', (event) => {
+                    this.controls.mouseDown = true;
+                    this.controls.lastMousePos = { x: event.clientX, y: event.clientY };
+                });
+                
+                this.canvas.addEventListener('mousemove', (event) => {
+                    if (this.controls.mouseDown) {
+                        const deltaX = event.clientX - this.controls.lastMousePos.x;
+                        const deltaY = event.clientY - this.controls.lastMousePos.y;
+                        
+                        this.controls.cameraTheta -= deltaX * 0.01;
+                        this.controls.cameraPhi = Math.max(0.1, Math.min(Math.PI - 0.1, this.controls.cameraPhi - deltaY * 0.01));
+                        
+                        this.updateCameraPosition();
+                    }
+                    
+                    this.controls.lastMousePos = { x: event.clientX, y: event.clientY };
+                    
+                    // Update mouse for raycasting
+                    this.mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+                    this.mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+                });
+                
+                this.canvas.addEventListener('mouseup', () => {
+                    this.controls.mouseDown = false;
+                });
+                
+                // Mouse wheel for zoom
+                this.canvas.addEventListener('wheel', (event) => {
+                    event.preventDefault();
+                    this.controls.cameraDistance = Math.max(10, Math.min(200, 
+                        this.controls.cameraDistance + event.deltaY * 0.1));
+                    this.updateCameraPosition();
+                });
+                
+                // Click to select memories
+                this.canvas.addEventListener('click', (event) => {
+                    if (!this.controls.mouseDown) {
+                        this.selectMemory();
+                    }
+                });
+                
+                // Touch controls for mobile
+                this.setupTouchControls();
+                
+                // Window resize
+                window.addEventListener('resize', () => {
+                    this.camera.aspect = window.innerWidth / window.innerHeight;
+                    this.camera.updateProjectionMatrix();
+                    this.renderer.setSize(window.innerWidth, window.innerHeight);
+                    
+                    this.connectionsCanvas.width = window.innerWidth;
+                    this.connectionsCanvas.height = window.innerHeight;
+                });
+            }
+
+            setupTouchControls() {
+                let lastTouchDistance = 0;
+                
+                this.canvas.addEventListener('touchstart', (event) => {
+                    event.preventDefault();
+                    if (event.touches.length === 1) {
+                        this.controls.mouseDown = true;
+                        this.controls.lastMousePos = { 
+                            x: event.touches[0].clientX, 
+                            y: event.touches[0].clientY 
+                        };
+                    } else if (event.touches.length === 2) {
+                        const dx = event.touches[0].clientX - event.touches[1].clientX;
+                        const dy = event.touches[0].clientY - event.touches[1].clientY;
+                        lastTouchDistance = Math.sqrt(dx * dx + dy * dy);
+                    }
+                });
+                
+                this.canvas.addEventListener('touchmove', (event) => {
+                    event.preventDefault();
+                    if (event.touches.length === 1 && this.controls.mouseDown) {
+                        const deltaX = event.touches[0].clientX - this.controls.lastMousePos.x;
+                        const deltaY = event.touches[0].clientY - this.controls.lastMousePos.y;
+                        
+                        this.controls.cameraTheta -= deltaX * 0.02;
+                        this.controls.cameraPhi = Math.max(0.1, Math.min(Math.PI - 0.1, 
+                            this.controls.cameraPhi - deltaY * 0.02));
+                        
+                        this.updateCameraPosition();
+                        
+                        this.controls.lastMousePos = { 
+                            x: event.touches[0].clientX, 
+                            y: event.touches[0].clientY 
+                        };
+                    } else if (event.touches.length === 2) {
+                        const dx = event.touches[0].clientX - event.touches[1].clientX;
+                        const dy = event.touches[0].clientY - event.touches[1].clientY;
+                        const distance = Math.sqrt(dx * dx + dy * dy);
+                        
+                        if (lastTouchDistance > 0) {
+                            const scale = distance / lastTouchDistance;
+                            this.controls.cameraDistance = Math.max(10, Math.min(200, 
+                                this.controls.cameraDistance / scale));
+                            this.updateCameraPosition();
+                        }
+                        
+                        lastTouchDistance = distance;
+                    }
+                });
+                
+                this.canvas.addEventListener('touchend', () => {
+                    this.controls.mouseDown = false;
+                    lastTouchDistance = 0;
+                });
+            }
+
+            setupUI() {
+                // Navigation mode buttons
+                document.getElementById('exploreBtn').addEventListener('click', () => {
+                    this.setMode('explore');
+                });
+                
+                document.getElementById('timelineBtn').addEventListener('click', () => {
+                    this.setMode('timeline');
+                });
+                
+                document.getElementById('emotionBtn').addEventListener('click', () => {
+                    this.setMode('emotion');
+                });
+                
+                document.getElementById('audioBtn').addEventListener('click', () => {
+                    this.toggleAudio();
+                });
+                
+                document.getElementById('resetBtn').addEventListener('click', () => {
+                    this.resetView();
+                });
+                
+                // View control buttons
+                document.getElementById('zoomInBtn').addEventListener('click', () => {
+                    this.controls.cameraDistance = Math.max(10, this.controls.cameraDistance - 10);
+                    this.updateCameraPosition();
+                });
+                
+                document.getElementById('zoomOutBtn').addEventListener('click', () => {
+                    this.controls.cameraDistance = Math.min(200, this.controls.cameraDistance + 10);
+                    this.updateCameraPosition();
+                });
+                
+                document.getElementById('centerBtn').addEventListener('click', () => {
+                    this.centerView();
+                });
+                
+                document.getElementById('connectionsBtn').addEventListener('click', () => {
+                    this.toggleConnections();
+                });
+                
+                // Timeline slider
+                this.setupTimelineControls();
+                
+                // Search functionality
+                document.getElementById('searchInput').addEventListener('input', (event) => {
+                    this.searchMemories(event.target.value);
+                });
+            }
+
+            setupTimelineControls() {
+                const timelineSlider = document.getElementById('timelineSlider');
+                const timelineMarker = document.getElementById('timelineMarker');
+                
+                let isDragging = false;
+                
+                const startDrag = (event) => {
+                    isDragging = true;
+                    event.preventDefault();
+                };
+                
+                const updateTimeline = (event) => {
+                    if (isDragging) {
+                        const rect = timelineSlider.getBoundingClientRect();
+                        const y = event.type.includes('touch') ? 
+                            event.touches[0].clientY : event.clientY;
+                        
+                        const relativeY = (y - rect.top) / rect.height;
+                        const timePeriod = 1 - Math.max(0, Math.min(1, relativeY));
+                        
+                        this.setTimePeriod(timePeriod);
+                        
+                        timelineMarker.style.top = `${(1 - timePeriod) * 100}%`;
+                    }
+                };
+                
+                const endDrag = () => {
+                    isDragging = false;
+                };
+                
+                timelineMarker.addEventListener('mousedown', startDrag);
+                timelineSlider.addEventListener('mousedown', (event) => {
+                    if (event.target === timelineSlider) {
+                        startDrag(event);
+                        updateTimeline(event);
+                    }
+                });
+                
+                document.addEventListener('mousemove', updateTimeline);
+                document.addEventListener('mouseup', endDrag);
+                
+                // Touch events
+                timelineMarker.addEventListener('touchstart', startDrag);
+                timelineSlider.addEventListener('touchstart', (event) => {
+                    if (event.target === timelineSlider) {
+                        startDrag(event);
+                        updateTimeline(event);
+                    }
+                });
+                
+                document.addEventListener('touchmove', updateTimeline);
+                document.addEventListener('touchend', endDrag);
+            }
+
+            setupBiometricIntegration() {
+                // Initialize with simulated data
+                biometricMonitor.initialize().catch(() => {
+                    console.log('Using simulated biometric data for constellation');
+                });
+                
+                // Adapt constellation based on emotional state
+                biometricMonitor.onEmotionUpdate((emotion) => {
+                    this.adaptToEmotion(emotion);
+                });
+            }
+
+            adaptToEmotion(emotion) {
+                // Highlight memories that match current emotional state
+                const matchingMemories = this.memories.filter(memory => 
+                    memory.emotions.includes(emotion.primary));
+                
+                // Animate to show emotional resonance
+                if (this.memoryStars && this.memoryStars.material.uniforms) {
+                    this.memoryStars.material.uniforms.emotionalResonance = { 
+                        value: emotion.intensity 
+                    };
+                }
+                
+                // Adjust lighting to match emotion
+                const emotionColor = this.emotionalColors[emotion.primary];
+                if (emotionColor && this.scene.children.length > 2) {
+                    const centerLight = this.scene.children[1]; // Assuming index 1 is center light
+                    if (centerLight instanceof THREE.PointLight) {
+                        centerLight.color.setHex(emotionColor.color);
+                        centerLight.intensity = 1 + emotion.intensity * emotionColor.intensity;
+                    }
+                }
+            }
+
+            updateCameraPosition() {
+                const x = this.controls.cameraDistance * Math.sin(this.controls.cameraPhi) * Math.cos(this.controls.cameraTheta);
+                const y = this.controls.cameraDistance * Math.cos(this.controls.cameraPhi);
+                const z = this.controls.cameraDistance * Math.sin(this.controls.cameraPhi) * Math.sin(this.controls.cameraTheta);
+                
+                this.camera.position.set(x, y, z);
+                this.camera.lookAt(this.controls.cameraTarget);
+            }
+
+            selectMemory() {
+                this.raycaster.setFromCamera(this.mouse, this.camera);
+                const intersects = this.raycaster.intersectObjects(this.memoryMeshes);
+                
+                if (intersects.length > 0) {
+                    const memoryIndex = intersects[0].object.userData.memoryIndex;
+                    const memory = this.memories[memoryIndex];
+                    
+                    this.focusedMemory = memory;
+                    this.displayMemoryInfo(memory);
+                    
+                    // Animate camera to memory
+                    this.focusOnMemory(memory);
+                    
+                    // Play memory-related audio
+                    if (this.isAudioEnabled) {
+                        this.playMemorySound(memory);
+                    }
+                    
+                    console.log('Selected memory:', memory.title);
+                }
+            }
+
+            displayMemoryInfo(memory) {
+                const memoryInfo = document.getElementById('memoryInfo');
+                const title = document.getElementById('memoryTitle');
+                const date = document.getElementById('memoryDate');
+                const description = document.getElementById('memoryDescription');
+                const emotions = document.getElementById('memoryEmotions');
+                const connections = document.getElementById('memoryConnections');
+                
+                title.textContent = memory.title;
+                date.textContent = memory.date.toLocaleDateString('en-US', {
+                    year: 'numeric',
+                    month: 'long',
+                    day: 'numeric'
+                });
+                description.textContent = memory.description;
+                
+                // Display emotion tags
+                emotions.innerHTML = '';
+                memory.emotions.forEach(emotion => {
+                    const tag = document.createElement('div');
+                    tag.className = 'emotion-tag';
+                    tag.textContent = emotion;
+                    tag.style.borderColor = `#${this.emotionalColors[emotion].color.toString(16).padStart(6, '0')}`;
+                    emotions.appendChild(tag);
+                });
+                
+                // Display connections
+                connections.textContent = `Connected to ${memory.connections.length} other memories`;
+                
+                memoryInfo.classList.add('visible');
+            }
+
+            focusOnMemory(memory) {
+                // Smooth camera transition to memory location
+                const targetDistance = 15;
+                const direction = memory.position.clone().normalize();
+                const targetPosition = memory.position.clone().sub(direction.multiplyScalar(targetDistance));
+                
+                // Animate camera
+                const startPos = this.camera.position.clone();
+                const startTarget = this.controls.cameraTarget.clone();
+                
+                let animationProgress = 0;
+                const animateCamera = () => {
+                    animationProgress += 0.02;
+                    
+                    if (animationProgress < 1) {
+                        this.camera.position.lerpVectors(startPos, targetPosition, animationProgress);
+                        this.controls.cameraTarget.lerpVectors(startTarget, memory.position, animationProgress);
+                        this.camera.lookAt(this.controls.cameraTarget);
+                        
+                        requestAnimationFrame(animateCamera);
+                    }
+                };
+                
+                animateCamera();
+            }
+
+            setMode(mode) {
+                this.currentMode = mode;
+                
+                // Update button states
+                document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.remove('active'));
+                document.getElementById(`${mode}Btn`).classList.add('active');
+                
+                switch (mode) {
+                    case 'timeline':
+                        this.timelineActive = true;
+                        this.organizeByTimeline();
+                        break;
+                    case 'emotion':
+                        this.organizeByEmotion();
+                        break;
+                    default:
+                        this.timelineActive = false;
+                        this.resetOrganization();
+                }
+            }
+
+            setTimePeriod(period) {
+                this.currentTimePeriod = period;
+                
+                // Update UI
+                const periods = ['Early Childhood', 'Childhood', 'Adolescence', 'Young Adult', 'Present Day'];
+                const periodIndex = Math.floor(period * (periods.length - 1));
+                document.getElementById('currentPeriod').textContent = periods[periodIndex];
+                
+                // Filter active memories by time period
+                const tolerance = 0.1;
+                const activeMemories = this.memories.filter(memory => 
+                    Math.abs(memory.timePeriod - period) < tolerance
+                );
+                
+                document.getElementById('activeMemories').textContent = activeMemories.length;
+                
+                // Highlight relevant memories
+                if (this.timelineActive) {
+                    this.highlightMemoriesByTime(period, tolerance);
+                }
+            }
+
+            highlightMemoriesByTime(targetPeriod, tolerance) {
+                // This would update the shader uniforms to highlight specific memories
+                // Implementation would involve updating instance attributes
+                console.log(`Highlighting memories around period ${targetPeriod}`);
+            }
+
+            organizeByTimeline() {
+                // Reorganize memories in a temporal flow
+                console.log('Organizing memories by timeline');
+            }
+
+            organizeByEmotion() {
+                // Group memories by emotional content
+                console.log('Organizing memories by emotion');
+            }
+
+            resetOrganization() {
+                // Return to default spiral organization
+                console.log('Resetting to default organization');
+            }
+
+            searchMemories(query) {
+                if (!query.trim()) return;
+                
+                query = query.toLowerCase();
+                const matchingMemories = this.memories.filter(memory =>
+                    memory.title.toLowerCase().includes(query) ||
+                    memory.description.toLowerCase().includes(query) ||
+                    memory.theme.toLowerCase().includes(query) ||
+                    memory.emotions.some(emotion => emotion.toLowerCase().includes(query))
+                );
+                
+                console.log(`Found ${matchingMemories.length} memories matching "${query}"`);
+                
+                // Highlight matching memories
+                this.highlightMemories(matchingMemories);
+            }
+
+            highlightMemories(memories) {
+                // Implementation would update visual highlighting
+                console.log(`Highlighting ${memories.length} memories`);
+            }
+
+            toggleConnections() {
+                this.showConnections = !this.showConnections;
+                
+                const btn = document.getElementById('connectionsBtn');
+                if (this.showConnections) {
+                    btn.style.background = 'rgba(100, 255, 218, 0.3)';
+                    btn.style.borderColor = '#64ffda';
+                } else {
+                    btn.style.background = 'rgba(20, 20, 60, 0.7)';
+                    btn.style.borderColor = 'rgba(147, 112, 219, 0.3)';
+                }
+            }
+
+            async toggleAudio() {
+                const btn = document.getElementById('audioBtn');
+                
+                if (!this.isAudioEnabled) {
+                    // Start ambient constellation sounds
+                    audioEngine.generateNatureSounds('wind', { x: 0, y: 0, z: 0 }, 0.3);
+                    
+                    // Add meditation frequencies
+                    audioEngine.generateBinauralBeats(432, 8, 300000); // 432 Hz base with 8 Hz alpha
+                    
+                    btn.classList.add('active');
+                    this.isAudioEnabled = true;
+                } else {
+                    audioEngine.stopAllAudio();
+                    btn.classList.remove('active');
+                    this.isAudioEnabled = false;
+                }
+            }
+
+            playMemorySound(memory) {
+                // Generate audio based on memory characteristics
+                const emotion = memory.emotions[0];
+                if (emotion && this.emotionalColors[emotion]) {
+                    audioEngine.generateEmotionalSoundscape(emotion, memory.intensity, 5000);
+                }
+            }
+
+            centerView() {
+                this.controls.cameraTarget.set(0, 0, 0);
+                this.controls.cameraDistance = 50;
+                this.controls.cameraTheta = 0;
+                this.controls.cameraPhi = Math.PI / 2;
+                this.updateCameraPosition();
+            }
+
+            resetView() {
+                this.centerView();
+                this.focusedMemory = null;
+                document.getElementById('memoryInfo').classList.remove('visible');
+                this.currentTimePeriod = 1.0;
+                document.getElementById('timelineMarker').style.top = '20%';
+                this.setTimePeriod(1.0);
+            }
+
+            drawConnections() {
+                if (!this.showConnections) return;
+                
+                this.connectionsCtx.clearRect(0, 0, this.connectionsCanvas.width, this.connectionsCanvas.height);
+                
+                for (const connection of this.memoryConnections) {
+                    // Project 3D positions to 2D screen coordinates
+                    const startScreen = this.worldToScreen(connection.start);
+                    const endScreen = this.worldToScreen(connection.end);
+                    
+                    if (startScreen && endScreen) {
+                        this.connectionsCtx.beginPath();
+                        this.connectionsCtx.moveTo(startScreen.x, startScreen.y);
+                        this.connectionsCtx.lineTo(endScreen.x, endScreen.y);
+                        
+                        const alpha = connection.strength * 0.3;
+                        this.connectionsCtx.strokeStyle = `rgba(100, 255, 218, ${alpha})`;
+                        this.connectionsCtx.lineWidth = connection.strength * 2;
+                        this.connectionsCtx.stroke();
+                    }
+                }
+            }
+
+            worldToScreen(worldPosition) {
+                const vector = worldPosition.clone();
+                vector.project(this.camera);
+                
+                if (vector.z > 1) return null; // Behind camera
+                
+                const x = (vector.x * 0.5 + 0.5) * this.connectionsCanvas.width;
+                const y = (vector.y * -0.5 + 0.5) * this.connectionsCanvas.height;
+                
+                return { x, y };
+            }
+
+            animate() {
+                if (!this.isInitialized) return;
+                
+                requestAnimationFrame(() => this.animate());
+                
+                this.time += 0.016;
+                
+                // Update memory stars
+                if (this.memoryStars && this.memoryStars.material.uniforms) {
+                    this.memoryStars.material.uniforms.time.value = this.time;
+                    this.memoryStars.material.uniforms.cameraPosition.value.copy(this.camera.position);
+                }
+                
+                // Draw connection lines
+                this.drawConnections();
+                
+                this.renderer.render(this.scene, this.camera);
+            }
+        }
+
+        // Initialize Memory Constellation
+        window.addEventListener('load', async () => {
+            const constellation = new MemoryConstellation();
+            await constellation.initialize();
+        });
+    </script>
+</body>
+</html>

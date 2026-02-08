@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cosmic Alignment - Therapeutic Journey</title>
+    <style>
+        body {
+            margin: 0;
+            background: #0a0a0a;
+            overflow: hidden;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        }
+        canvas { display: block; }
+        .back-btn {
+            position: absolute;
+            top: 30px;
+            left: 30px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: #ffffff;
+            padding: 12px 24px;
+            text-decoration: none;
+            border-radius: 4px;
+            font-size: 14px;
+            font-weight: 300;
+            letter-spacing: 1px;
+            z-index: 1000;
+            transition: all 0.3s ease;
+            opacity: 0;
+            animation: fadeIn 3s ease-in-out 1s forwards;
+        }
+        .back-btn:hover {
+            background: rgba(255, 255, 255, 0.2);
+            transform: translateY(-1px);
+        }
+        .title {
+            position: absolute;
+            top: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: #ffffff;
+            font-size: 24px;
+            font-weight: 300;
+            z-index: 100;
+            opacity: 0;
+            animation: fadeIn 3s ease-in-out 1s forwards;
+        }
+        .instruction {
+            position: absolute;
+            bottom: 40px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: rgba(255, 255, 255, 0.6);
+            font-size: 14px;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            pointer-events: none;
+            opacity: 0;
+            animation: fadeIn 3s ease-in-out 2s forwards;
+        }
+        @keyframes fadeIn {
+            to { opacity: 1; }
+        }
+    </style>
+</head>
+<body>
+    <a href="../index.html" class="back-btn">← Back</a>
+    <div class="title">Cosmic Alignment</div>
+    <div class="instruction">Breathe with the cosmos</div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script>
+        let scene, camera, renderer;
+        let humanFigure, planets = [], starField = [];
+        let time = 0;
+
+        function init() {
+            scene = new THREE.Scene();
+            scene.background = new THREE.Color(0x0a0a0a);
+
+            camera = new THREE.PerspectiveCamera(
+                60, window.innerWidth / window.innerHeight, 0.1, 2000
+            );
+            camera.position.set(0, 0, 50);
+
+            renderer = new THREE.WebGLRenderer({ antialias: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            document.body.appendChild(renderer.domElement);
+
+            createStarField();
+            createHumanFigure();
+            createPlanets();
+            animate();
+        }
+
+        function createStarField() {
+            for (let i = 0; i < 1000; i++) {
+                const starGeometry = new THREE.SphereGeometry(Math.random() * 0.3 + 0.1, 4, 4);
+                const starMaterial = new THREE.MeshBasicMaterial({
+                    color: new THREE.Color().setHSL(Math.random() * 0.1 + 0.5, 0.3, Math.random() * 0.5 + 0.5),
+                    transparent: true,
+                    opacity: Math.random() * 0.8 + 0.2
+                });
+                
+                const star = new THREE.Mesh(starGeometry, starMaterial);
+                star.position.set(
+                    (Math.random() - 0.5) * 400,
+                    (Math.random() - 0.5) * 400,
+                    (Math.random() - 0.5) * 400
+                );
+                
+                star.userData = {
+                    twinkleSpeed: Math.random() * 0.02 + 0.01,
+                    baseOpacity: starMaterial.opacity
+                };
+                
+                starField.push(star);
+                scene.add(star);
+            }
+        }
+
+        function createHumanFigure() {
+            const figureGroup = new THREE.Group();
+            
+            // Head
+            const headGeometry = new THREE.SphereGeometry(1.5, 16, 12);
+            const figureMaterial = new THREE.MeshBasicMaterial({
+                color: 0x4a9eff,
+                transparent: true,
+                opacity: 0.7,
+                wireframe: true
+            });
+            const head = new THREE.Mesh(headGeometry, figureMaterial);
+            head.position.y = 7;
+            figureGroup.add(head);
+
+            // Body
+            const bodyGeometry = new THREE.CylinderGeometry(1.5, 2, 6, 12);
+            const body = new THREE.Mesh(bodyGeometry, figureMaterial);
+            body.position.y = 2;
+            figureGroup.add(body);
+
+            // Arms (meditation pose)
+            const armGeometry = new THREE.CylinderGeometry(0.4, 0.5, 4, 8);
+            
+            const leftArm = new THREE.Mesh(armGeometry, figureMaterial);
+            leftArm.position.set(-2.5, 3, 0);
+            leftArm.rotation.z = Math.PI / 3;
+            figureGroup.add(leftArm);
+            
+            const rightArm = new THREE.Mesh(armGeometry, figureMaterial);
+            rightArm.position.set(2.5, 3, 0);
+            rightArm.rotation.z = -Math.PI / 3;
+            figureGroup.add(rightArm);
+
+            // Legs (lotus position)
+            const legGeometry = new THREE.CylinderGeometry(0.5, 0.6, 3, 8);
+            
+            const leftLeg = new THREE.Mesh(legGeometry, figureMaterial);
+            leftLeg.position.set(-1.5, -2, 1);
+            leftLeg.rotation.x = Math.PI / 2;
+            leftLeg.rotation.z = Math.PI / 6;
+            figureGroup.add(leftLeg);
+            
+            const rightLeg = new THREE.Mesh(legGeometry, figureMaterial);
+            rightLeg.position.set(1.5, -2, 1);
+            rightLeg.rotation.x = Math.PI / 2;
+            rightLeg.rotation.z = -Math.PI / 6;
+            figureGroup.add(rightLeg);
+
+            // Energy aura
+            const auraGeometry = new THREE.SphereGeometry(8, 16, 12);
+            const auraMaterial = new THREE.MeshBasicMaterial({
+                color: 0x4a9eff,
+                transparent: true,
+                opacity: 0.05,
+                side: THREE.BackSide
+            });
+            const aura = new THREE.Mesh(auraGeometry, auraMaterial);
+            figureGroup.add(aura);
+
+            humanFigure = figureGroup;
+            scene.add(humanFigure);
+        }
+
+        function createPlanets() {
+            const planetData = [
+                { distance: 20, size: 1, color: 0xff6b6b, speed: 0.02 },
+                { distance: 30, size: 1.5, color: 0x4ecdc4, speed: 0.015 },
+                { distance: 45, size: 2, color: 0x45b7d1, speed: 0.01 },
+                { distance: 65, size: 1.2, color: 0xf9ca24, speed: 0.008 },
+                { distance: 85, size: 2.5, color: 0x6c5ce7, speed: 0.005 }
+            ];
+
+            planetData.forEach((data, index) => {
+                const planetGroup = new THREE.Group();
+                
+                // Planet
+                const planetGeometry = new THREE.SphereGeometry(data.size, 16, 12);
+                const planetMaterial = new THREE.MeshBasicMaterial({
+                    color: data.color,
+                    transparent: true,
+                    opacity: 0.8
+                });
+                const planet = new THREE.Mesh(planetGeometry, planetMaterial);
+                planetGroup.add(planet);
+
+                // Planet glow
+                const glowGeometry = new THREE.SphereGeometry(data.size * 1.5, 16, 12);
+                const glowMaterial = new THREE.MeshBasicMaterial({
+                    color: data.color,
+                    transparent: true,
+                    opacity: 0.2
+                });
+                const glow = new THREE.Mesh(glowGeometry, glowMaterial);
+                planetGroup.add(glow);
+
+                // Orbit line
+                const orbitPoints = [];
+                for (let i = 0; i <= 64; i++) {
+                    const angle = (i / 64) * Math.PI * 2;
+                    orbitPoints.push(new THREE.Vector3(
+                        Math.cos(angle) * data.distance,
+                        0,
+                        Math.sin(angle) * data.distance
+                    ));
+                }
+                
+                const orbitGeometry = new THREE.BufferGeometry().setFromPoints(orbitPoints);
+                const orbitMaterial = new THREE.LineBasicMaterial({
+                    color: data.color,
+                    transparent: true,
+                    opacity: 0.3
+                });
+                const orbit = new THREE.Line(orbitGeometry, orbitMaterial);
+                scene.add(orbit);
+
+                planetGroup.userData = {
+                    distance: data.distance,
+                    speed: data.speed,
+                    angle: Math.random() * Math.PI * 2
+                };
+                
+                planets.push(planetGroup);
+                scene.add(planetGroup);
+            });
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+            time += 0.01;
+
+            // Breathing animation for human figure
+            const breathScale = 1 + Math.sin(time * 0.5) * 0.1;
+            humanFigure.scale.set(breathScale, breathScale, breathScale);
+            
+            // Aura pulsing
+            const aura = humanFigure.children[humanFigure.children.length - 1];
+            aura.material.opacity = 0.05 + Math.sin(time * 0.8) * 0.03;
+            aura.rotation.y += 0.005;
+
+            // Planet orbits
+            planets.forEach((planet, index) => {
+                planet.userData.angle += planet.userData.speed;
+                const x = Math.cos(planet.userData.angle) * planet.userData.distance;
+                const z = Math.sin(planet.userData.angle) * planet.userData.distance;
+                const y = Math.sin(planet.userData.angle * 2) * 5;
+                
+                planet.position.set(x, y, z);
+                planet.rotation.y += 0.02;
+                
+                // Planet breathing with human
+                const planetBreath = 1 + Math.sin(time * 0.5 + index) * 0.05;
+                planet.scale.set(planetBreath, planetBreath, planetBreath);
+            });
+
+            // Star twinkling
+            starField.forEach((star, index) => {
+                star.material.opacity = star.userData.baseOpacity + 
+                    Math.sin(time * star.userData.twinkleSpeed + index) * 0.3;
+            });
+
+            // Camera gentle movement
+            camera.position.x = Math.sin(time * 0.1) * 5;
+            camera.position.y = Math.cos(time * 0.08) * 3;
+            camera.lookAt(0, 0, 0);
+
+            renderer.render(scene, camera);
+        }
+
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+
+        init();
+    </script>
+</body>
+</html>

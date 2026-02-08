@@ -1,0 +1,1732 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Shadow Work Cave - Revolutionary Digital Healing</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: radial-gradient(ellipse at center, #1a1a2e 0%, #000000 100%);
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            overflow: hidden;
+            color: white;
+            cursor: none;
+        }
+
+        #canvas {
+            display: block;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+        }
+
+        .cave-ui {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 10;
+        }
+
+        .shadow-guide {
+            position: absolute;
+            top: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: rgba(255, 255, 255, 0.9);
+            font-size: 18px;
+            font-weight: 300;
+            text-align: center;
+            text-shadow: 0 0 20px rgba(138, 43, 226, 0.8);
+            max-width: 700px;
+            line-height: 1.8;
+            animation: gentleGlow 4s ease-in-out infinite;
+        }
+
+        @keyframes gentleGlow {
+            0%, 100% { text-shadow: 0 0 20px rgba(138, 43, 226, 0.6); }
+            50% { text-shadow: 0 0 30px rgba(138, 43, 226, 1.0); }
+        }
+
+        .depth-panel {
+            position: absolute;
+            left: 20px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: rgba(30, 20, 50, 0.9);
+            backdrop-filter: blur(15px);
+            border-radius: 20px;
+            padding: 25px;
+            min-width: 300px;
+            border: 1px solid rgba(138, 43, 226, 0.4);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6);
+            pointer-events: auto;
+        }
+
+        .depth-title {
+            color: #8a2be2;
+            font-size: 16px;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .depth-meter {
+            width: 100%;
+            height: 150px;
+            margin: 20px 0;
+            position: relative;
+            background: linear-gradient(to bottom,
+                rgba(255, 255, 255, 0.1) 0%,     /* Surface */
+                rgba(138, 43, 226, 0.2) 20%,     /* Conscious */
+                rgba(75, 0, 130, 0.3) 40%,       /* Preconscious */
+                rgba(25, 25, 112, 0.4) 70%,      /* Unconscious */
+                rgba(0, 0, 0, 0.8) 100%          /* Deep Shadow */
+            );
+            border-radius: 10px;
+            border: 1px solid rgba(138, 43, 226, 0.5);
+            overflow: hidden;
+        }
+
+        .depth-indicator {
+            position: absolute;
+            left: 5px;
+            right: 5px;
+            height: 4px;
+            background: linear-gradient(90deg, #8a2be2, #9932cc);
+            border-radius: 2px;
+            box-shadow: 0 0 15px rgba(138, 43, 226, 0.8);
+            transition: top 0.5s ease;
+        }
+
+        .depth-labels {
+            position: absolute;
+            right: -60px;
+            top: 0;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            font-size: 11px;
+            color: rgba(255, 255, 255, 0.7);
+        }
+
+        .shadow-insights {
+            position: absolute;
+            right: 20px;
+            top: 80px;
+            background: rgba(30, 20, 50, 0.85);
+            backdrop-filter: blur(15px);
+            border-radius: 15px;
+            padding: 20px;
+            max-width: 350px;
+            border: 1px solid rgba(138, 43, 226, 0.4);
+            pointer-events: auto;
+            opacity: 0;
+            transform: translateX(20px);
+            transition: all 0.4s ease;
+        }
+
+        .shadow-insights.visible {
+            opacity: 1;
+            transform: translateX(0);
+        }
+
+        .insight-title {
+            color: #9932cc;
+            font-size: 16px;
+            margin-bottom: 15px;
+            font-weight: 500;
+        }
+
+        .insight-content {
+            color: rgba(255, 255, 255, 0.9);
+            font-size: 14px;
+            line-height: 1.6;
+            margin-bottom: 15px;
+        }
+
+        .shadow-aspects {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin: 15px 0;
+        }
+
+        .aspect-tag {
+            background: rgba(138, 43, 226, 0.2);
+            border: 1px solid rgba(138, 43, 226, 0.6);
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 12px;
+            color: #da70d6;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .aspect-tag:hover {
+            background: rgba(138, 43, 226, 0.4);
+            transform: scale(1.05);
+            box-shadow: 0 0 10px rgba(138, 43, 226, 0.6);
+        }
+
+        .integration-progress {
+            margin-top: 15px;
+            font-size: 12px;
+            color: rgba(255, 255, 255, 0.7);
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 6px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 3px;
+            overflow: hidden;
+            margin-top: 8px;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #8a2be2, #da70d6);
+            border-radius: 3px;
+            transition: width 0.5s ease;
+        }
+
+        .cave-controls {
+            position: absolute;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 15px;
+            pointer-events: auto;
+        }
+
+        .cave-btn {
+            background: rgba(138, 43, 226, 0.15);
+            border: 1px solid rgba(138, 43, 226, 0.5);
+            color: white;
+            padding: 14px 24px;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.4s ease;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+        }
+
+        .cave-btn:hover {
+            background: rgba(138, 43, 226, 0.3);
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(138, 43, 226, 0.4);
+        }
+
+        .cave-btn.active {
+            background: rgba(218, 112, 214, 0.3);
+            border-color: #da70d6;
+            color: #da70d6;
+            box-shadow: 0 0 30px rgba(218, 112, 214, 0.5);
+        }
+
+        .thought-visualizer {
+            position: absolute;
+            bottom: 130px;
+            right: 30px;
+            background: rgba(30, 20, 50, 0.8);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            padding: 20px;
+            border: 1px solid rgba(138, 43, 226, 0.4);
+            pointer-events: auto;
+            min-width: 250px;
+        }
+
+        .thought-title {
+            color: #8a2be2;
+            font-size: 14px;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .thought-pattern {
+            display: flex;
+            justify-content: space-between;
+            margin: 10px 0;
+            font-size: 12px;
+            align-items: center;
+        }
+
+        .pattern-indicator {
+            width: 80px;
+            height: 4px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 2px;
+            overflow: hidden;
+        }
+
+        .pattern-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #8a2be2, #da70d6);
+            border-radius: 2px;
+            transition: width 0.3s ease;
+        }
+
+        .exploration-compass {
+            position: absolute;
+            top: 100px;
+            right: 30px;
+            width: 120px;
+            height: 120px;
+            border: 2px solid rgba(138, 43, 226, 0.4);
+            border-radius: 50%;
+            background: rgba(30, 20, 50, 0.7);
+            backdrop-filter: blur(10px);
+            pointer-events: auto;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            color: rgba(255, 255, 255, 0.8);
+            position: relative;
+        }
+
+        .compass-needle {
+            position: absolute;
+            width: 2px;
+            height: 40px;
+            background: linear-gradient(to bottom, #da70d6, #8a2be2);
+            transform-origin: bottom center;
+            transition: transform 0.5s ease;
+        }
+
+        .compass-directions {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+        }
+
+        .compass-direction {
+            position: absolute;
+            font-size: 10px;
+            color: rgba(255, 255, 255, 0.6);
+        }
+
+        .compass-direction.north { top: 5px; left: 50%; transform: translateX(-50%); }
+        .compass-direction.south { bottom: 5px; left: 50%; transform: translateX(-50%); }
+        .compass-direction.east { right: 5px; top: 50%; transform: translateY(-50%); }
+        .compass-direction.west { left: 5px; top: 50%; transform: translateY(-50%); }
+
+        .shadow-journal {
+            position: absolute;
+            bottom: 200px;
+            left: 30px;
+            background: rgba(30, 20, 50, 0.85);
+            backdrop-filter: blur(15px);
+            border-radius: 15px;
+            padding: 20px;
+            max-width: 300px;
+            border: 1px solid rgba(138, 43, 226, 0.4);
+            pointer-events: auto;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+
+        .journal-title {
+            color: #da70d6;
+            font-size: 14px;
+            margin-bottom: 15px;
+        }
+
+        .journal-entry {
+            font-size: 12px;
+            color: rgba(255, 255, 255, 0.8);
+            margin-bottom: 12px;
+            padding: 8px;
+            background: rgba(138, 43, 226, 0.1);
+            border-radius: 8px;
+            border-left: 3px solid rgba(138, 43, 226, 0.5);
+        }
+
+        .entry-timestamp {
+            font-size: 10px;
+            color: rgba(255, 255, 255, 0.5);
+            margin-bottom: 5px;
+        }
+
+        .loading-cavern {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, #1a1a2e, #000000);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            transition: opacity 0.8s ease;
+        }
+
+        .cavern-content {
+            text-align: center;
+            color: white;
+        }
+
+        .cavern-title {
+            font-size: 32px;
+            margin-bottom: 20px;
+            color: #8a2be2;
+            font-weight: 300;
+        }
+
+        .cavern-subtitle {
+            font-size: 16px;
+            opacity: 0.9;
+            margin-bottom: 30px;
+            max-width: 500px;
+            line-height: 1.6;
+        }
+
+        .cave-loader {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 8px;
+            margin: 0 auto;
+        }
+
+        .shadow-orb {
+            width: 12px;
+            height: 12px;
+            background: radial-gradient(circle, #da70d6, #8a2be2);
+            border-radius: 50%;
+            animation: shadowPulse 2s ease-in-out infinite;
+        }
+
+        .shadow-orb:nth-child(2) { animation-delay: 0.3s; }
+        .shadow-orb:nth-child(3) { animation-delay: 0.6s; }
+        .shadow-orb:nth-child(4) { animation-delay: 0.9s; }
+        .shadow-orb:nth-child(5) { animation-delay: 1.2s; }
+
+        @keyframes shadowPulse {
+            0%, 100% { 
+                transform: scale(0.8); 
+                opacity: 0.4;
+            }
+            50% { 
+                transform: scale(1.2); 
+                opacity: 1;
+                box-shadow: 0 0 20px rgba(138, 43, 226, 0.8);
+            }
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        /* Mobile responsiveness */
+        @media (max-width: 768px) {
+            .depth-panel {
+                position: absolute;
+                bottom: 180px;
+                left: 50%;
+                transform: translateX(-50%);
+                top: auto;
+                width: calc(100% - 40px);
+                min-width: auto;
+            }
+
+            .shadow-insights {
+                right: 20px;
+                left: 20px;
+                top: 60px;
+                max-width: none;
+            }
+
+            .exploration-compass {
+                top: 20px;
+                right: 20px;
+                width: 80px;
+                height: 80px;
+            }
+
+            .compass-needle {
+                height: 30px;
+            }
+
+            .cave-controls {
+                bottom: 20px;
+                flex-wrap: wrap;
+                justify-content: center;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Loading Screen -->
+    <div id="loadingCavern" class="loading-cavern">
+        <div class="cavern-content">
+            <h2 class="cavern-title">🕳️ Shadow Work Cave</h2>
+            <p class="cavern-subtitle">
+                Descending into the depths of the unconscious mind... 
+                Prepare to meet the hidden aspects of your psyche.
+            </p>
+            <div class="cave-loader">
+                <div class="shadow-orb"></div>
+                <div class="shadow-orb"></div>
+                <div class="shadow-orb"></div>
+                <div class="shadow-orb"></div>
+                <div class="shadow-orb"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Canvas -->
+    <canvas id="canvas"></canvas>
+
+    <!-- Cave UI -->
+    <div class="cave-ui">
+        <!-- Shadow Guide -->
+        <div class="shadow-guide">
+            Welcome to the shadow realm, where light and darkness dance together. 
+            Here, you will encounter the hidden aspects of yourself waiting to be integrated.
+        </div>
+
+        <!-- Depth Panel -->
+        <div class="depth-panel">
+            <div class="depth-title">
+                🌑 Psychic Depth
+            </div>
+            <div class="depth-meter">
+                <div class="depth-indicator" id="depthIndicator" style="top: 20%;"></div>
+                <div class="depth-labels">
+                    <span>Surface</span>
+                    <span>Conscious</span>
+                    <span>Personal</span>
+                    <span>Collective</span>
+                    <span>Shadow</span>
+                </div>
+            </div>
+            <div style="margin-top: 15px; font-size: 12px; color: rgba(255,255,255,0.8);">
+                <div>Current Layer: <span id="currentLayer" style="color: #da70d6;">Conscious Mind</span></div>
+                <div>Shadow Density: <span id="shadowDensity" style="color: #da70d6;">23%</span></div>
+                <div>Integration: <span id="integrationLevel" style="color: #da70d6;">42%</span></div>
+            </div>
+        </div>
+
+        <!-- Exploration Compass -->
+        <div class="exploration-compass" id="explorationCompass">
+            <div class="compass-needle" id="compassNeedle"></div>
+            <div class="compass-directions">
+                <div class="compass-direction north">Fear</div>
+                <div class="compass-direction south">Desire</div>
+                <div class="compass-direction east">Anger</div>
+                <div class="compass-direction west">Shame</div>
+            </div>
+        </div>
+
+        <!-- Shadow Insights Panel -->
+        <div class="shadow-insights" id="shadowInsights">
+            <div class="insight-title">Shadow Encounter</div>
+            <div class="insight-content" id="insightContent">
+                Move deeper into the cave to discover what lies beneath the surface of consciousness...
+            </div>
+            <div class="shadow-aspects" id="shadowAspects">
+                <!-- Aspect tags will be populated dynamically -->
+            </div>
+            <div class="integration-progress">
+                Integration Progress: <span id="progressPercent">0%</span>
+                <div class="progress-bar">
+                    <div class="progress-fill" id="progressFill" style="width: 0%;"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Thought Pattern Visualizer -->
+        <div class="thought-visualizer">
+            <div class="thought-title">🧠 Unconscious Patterns</div>
+            <div class="thought-pattern">
+                <span>Repressed Memories</span>
+                <div class="pattern-indicator">
+                    <div class="pattern-fill" id="repressedPattern" style="width: 34%;"></div>
+                </div>
+            </div>
+            <div class="thought-pattern">
+                <span>Denied Emotions</span>
+                <div class="pattern-indicator">
+                    <div class="pattern-fill" id="emotionPattern" style="width: 67%;"></div>
+                </div>
+            </div>
+            <div class="thought-pattern">
+                <span>Hidden Fears</span>
+                <div class="pattern-indicator">
+                    <div class="pattern-fill" id="fearPattern" style="width: 45%;"></div>
+                </div>
+            </div>
+            <div class="thought-pattern">
+                <span>Suppressed Desires</span>
+                <div class="pattern-indicator">
+                    <div class="pattern-fill" id="desirePattern" style="width: 78%;"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Shadow Journal -->
+        <div class="shadow-journal">
+            <div class="journal-title">📖 Shadow Discoveries</div>
+            <div id="journalEntries">
+                <div class="journal-entry">
+                    <div class="entry-timestamp">Session Start</div>
+                    Beginning descent into the unconscious realms...
+                </div>
+            </div>
+        </div>
+
+        <!-- Cave Controls -->
+        <div class="cave-controls">
+            <button class="cave-btn active" id="exploreBtn">🔍 Explore</button>
+            <button class="cave-btn" id="integrateBtn">🔗 Integrate</button>
+            <button class="cave-btn" id="illuminateBtn">💡 Illuminate</button>
+            <button class="cave-btn" id="audioBtn">🎵 Cave Sounds</button>
+            <button class="cave-btn" id="ascendBtn">↗️ Ascend</button>
+        </div>
+    </div>
+
+    <!-- Three.js and Libraries -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script type="module">
+        import { TherapeuticShaders } from './lib/shaders.js';
+        import { audioEngine } from './lib/audio-engine.js';
+        import { biometricMonitor } from './lib/biometric.js';
+
+        class ShadowWorkCave {
+            constructor() {
+                this.scene = null;
+                this.camera = null;
+                this.renderer = null;
+                this.canvas = null;
+                
+                // Cave environment
+                this.caveWalls = [];
+                this.shadowParticles = null;
+                this.thoughtPatterns = [];
+                this.shadowProjections = [];
+                
+                // Lighting system
+                this.torchLight = null;
+                this.shadowLights = [];
+                this.ambientShadow = null;
+                
+                // Shadow work state
+                this.psychicDepth = 0.2; // 0 = surface, 1 = deep shadow
+                this.integrationLevel = 0.0;
+                this.currentShadowAspect = null;
+                this.encounteredAspects = [];
+                
+                // User exploration
+                this.playerPosition = new THREE.Vector3(0, 0, 10);
+                this.movementDirection = new THREE.Vector3();
+                this.isMoving = false;
+                this.movementKeys = { w: false, a: false, s: false, d: false };
+                
+                // Shadow aspects to encounter
+                this.shadowAspects = [
+                    {
+                        name: 'The Critic',
+                        description: 'The harsh inner voice that judges and condemns. This aspect holds perfectionism and self-attack.',
+                        emotions: ['shame', 'inadequacy', 'perfectionism'],
+                        insights: 'Your inner critic once protected you from external judgment, but now it limits your growth.',
+                        integrationTask: 'Transform criticism into constructive self-awareness.',
+                        position: new THREE.Vector3(-15, -5, -20),
+                        color: 0x8B0000,
+                        encountered: false
+                    },
+                    {
+                        name: 'The Wounded Child',
+                        description: 'The part that holds early pain and abandonment. Seeks love but fears intimacy.',
+                        emotions: ['abandonment', 'loneliness', 'neediness'],
+                        insights: 'This wounded part needs compassion and reparenting from your adult self.',
+                        integrationTask: 'Offer love and safety to your inner child.',
+                        position: new THREE.Vector3(12, -8, -25),
+                        color: 0x4B0082,
+                        encountered: false
+                    },
+                    {
+                        name: 'The Rebel',
+                        description: 'The part that resists authority and structure. Holds your power but also destructive impulses.',
+                        emotions: ['anger', 'defiance', 'rebellion'],
+                        insights: 'Your rebel energy is life force that needs healthy channels for expression.',
+                        integrationTask: 'Channel rebellious energy into creative and constructive change.',
+                        position: new THREE.Vector3(8, -12, -35),
+                        color: 0xFF4500,
+                        encountered: false
+                    },
+                    {
+                        name: 'The Seeker',
+                        description: 'The part that feels incomplete and searches for meaning outside itself.',
+                        emotions: ['emptiness', 'searching', 'spiritual hunger'],
+                        insights: 'The wholeness you seek already exists within you.',
+                        integrationTask: 'Recognize your inherent completeness and worth.',
+                        position: new THREE.Vector3(-10, -15, -40),
+                        color: 0x9932CC,
+                        encountered: false
+                    },
+                    {
+                        name: 'The Controller',
+                        description: 'The part that fears chaos and tries to control everything. Holds anxiety and hypervigilance.',
+                        emotions: ['anxiety', 'control', 'hypervigilance'],
+                        insights: 'Control is an illusion born from fear. True power comes from acceptance.',
+                        integrationTask: 'Practice surrender and trust in the flow of life.',
+                        position: new THREE.Vector3(0, -20, -50),
+                        color: 0x2F4F4F,
+                        encountered: false
+                    }
+                ];
+                
+                // Animation state
+                this.time = 0;
+                this.isInitialized = false;
+                this.isAudioEnabled = false;
+                this.explorationMode = 'explore';
+                
+                // Procedural cave generation
+                this.caveDepth = 60;
+                this.caveWidth = 40;
+                this.tunnelComplexity = 5;
+                
+                // Raycasting for interaction
+                this.raycaster = new THREE.Raycaster();
+                this.mouse = new THREE.Vector2();
+            }
+
+            async initialize() {
+                this.canvas = document.getElementById('canvas');
+                
+                this.setupRenderer();
+                this.setupScene();
+                this.setupCamera();
+                this.setupLighting();
+                
+                // Generate procedural cave
+                await this.generateCaveSystem();
+                
+                // Create shadow elements
+                await this.createShadowParticles();
+                await this.createThoughtPatterns();
+                await this.createShadowProjections();
+                
+                // Place shadow aspects
+                this.placeShadowAspects();
+                
+                // Setup controls and interactions
+                this.setupControls();
+                this.setupUI();
+                
+                // Initialize audio
+                await audioEngine.initialize();
+                
+                // Setup biometric integration
+                this.setupBiometricIntegration();
+                
+                this.animate();
+                
+                // Hide loading screen
+                document.getElementById('loadingCavern').classList.add('hidden');
+                
+                this.isInitialized = true;
+                this.addJournalEntry('Entered the shadow cave. The descent begins...');
+                
+                console.log('🕳️ Shadow Work Cave initialized');
+            }
+
+            setupRenderer() {
+                this.renderer = new THREE.WebGLRenderer({
+                    canvas: this.canvas,
+                    antialias: true,
+                    alpha: false,
+                    powerPreference: "high-performance"
+                });
+                
+                this.renderer.setSize(window.innerWidth, window.innerHeight);
+                this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+                this.renderer.setClearColor(0x000000, 1.0);
+                
+                // Enable shadows
+                this.renderer.shadowMap.enabled = true;
+                this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+                this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
+                this.renderer.toneMappingExposure = 0.4;
+            }
+
+            setupScene() {
+                this.scene = new THREE.Scene();
+                this.scene.fog = new THREE.FogExp2(0x000000, 0.01);
+            }
+
+            setupCamera() {
+                this.camera = new THREE.PerspectiveCamera(
+                    75,
+                    window.innerWidth / window.innerHeight,
+                    0.1,
+                    200
+                );
+                this.camera.position.copy(this.playerPosition);
+            }
+
+            setupLighting() {
+                // Minimal ambient light for deep shadow work
+                this.ambientShadow = new THREE.AmbientLight(0x1a0d26, 0.1);
+                this.scene.add(this.ambientShadow);
+                
+                // Torch light following the player
+                this.torchLight = new THREE.PointLight(0x8a2be2, 2, 20, 2);
+                this.torchLight.position.copy(this.playerPosition);
+                this.torchLight.castShadow = true;
+                this.torchLight.shadow.mapSize.width = 1024;
+                this.torchLight.shadow.mapSize.height = 1024;
+                this.scene.add(this.torchLight);
+                
+                // Flickering effect for torch
+                this.torchFlicker = {
+                    baseIntensity: 2,
+                    flickerSpeed: 3,
+                    flickerAmount: 0.3
+                };
+                
+                // Shadow aspect lights (initially off)
+                for (const aspect of this.shadowAspects) {
+                    const aspectLight = new THREE.PointLight(aspect.color, 0, 15, 1.5);
+                    aspectLight.position.copy(aspect.position);
+                    aspectLight.userData.aspect = aspect;
+                    this.shadowLights.push(aspectLight);
+                    this.scene.add(aspectLight);
+                }
+            }
+
+            async generateCaveSystem() {
+                // Generate main cave chamber
+                await this.generateMainChamber();
+                
+                // Generate tunnels to shadow aspects
+                for (const aspect of this.shadowAspects) {
+                    await this.generateTunnel(this.playerPosition, aspect.position);
+                }
+                
+                // Add cave details
+                await this.addCaveDetails();
+                
+                console.log('Generated procedural cave system');
+            }
+
+            async generateMainChamber() {
+                // Create main cave geometry
+                const chamberGeometry = new THREE.SphereGeometry(25, 32, 16);
+                
+                // Deform geometry to create organic cave shape
+                const vertices = chamberGeometry.attributes.position.array;
+                for (let i = 0; i < vertices.length; i += 3) {
+                    const x = vertices[i];
+                    const y = vertices[i + 1];
+                    const z = vertices[i + 2];
+                    
+                    // Apply noise for organic variation
+                    const noise = this.noise3D(x * 0.1, y * 0.1, z * 0.1);
+                    const scale = 0.8 + noise * 0.4;
+                    
+                    vertices[i] *= scale;
+                    vertices[i + 1] *= scale;
+                    vertices[i + 2] *= scale;
+                }
+                
+                chamberGeometry.attributes.position.needsUpdate = true;
+                chamberGeometry.computeVertexNormals();
+                
+                // Cave wall material with shadow shader
+                const caveMaterial = new THREE.ShaderMaterial({
+                    vertexShader: TherapeuticShaders.shadowVertex,
+                    fragmentShader: TherapeuticShaders.shadowFragment,
+                    uniforms: {
+                        time: { value: 0 },
+                        lightPosition: { value: this.playerPosition },
+                        shadowIntensity: { value: 1.0 },
+                        ambientColor: { value: new THREE.Vector3(0.05, 0.05, 0.1) },
+                        shadowColor: { value: new THREE.Vector3(0.02, 0.02, 0.08) },
+                        shadowStrength: { value: 0.8 },
+                        thoughtTexture: { value: null } // Will be set later
+                    },
+                    side: THREE.BackSide
+                });
+                
+                const mainChamber = new THREE.Mesh(chamberGeometry, caveMaterial);
+                mainChamber.receiveShadow = true;
+                this.caveWalls.push(mainChamber);
+                this.scene.add(mainChamber);
+            }
+
+            async generateTunnel(start, end) {
+                const direction = end.clone().sub(start).normalize();
+                const distance = start.distanceTo(end);
+                const segments = Math.ceil(distance / 3);
+                
+                for (let i = 0; i < segments; i++) {
+                    const t = i / segments;
+                    const position = start.clone().lerp(end, t);
+                    
+                    // Add some curvature to tunnels
+                    position.y += Math.sin(t * Math.PI) * 2;
+                    position.x += Math.sin(t * Math.PI * 2) * 1;
+                    
+                    const tunnelGeometry = new THREE.CylinderGeometry(2, 2, 3, 8);
+                    const tunnelMaterial = new THREE.MeshLambertMaterial({
+                        color: 0x1a0d26,
+                        transparent: true,
+                        opacity: 0.8
+                    });
+                    
+                    const tunnelSegment = new THREE.Mesh(tunnelGeometry, tunnelMaterial);
+                    tunnelSegment.position.copy(position);
+                    tunnelSegment.lookAt(end);
+                    tunnelSegment.receiveShadow = true;
+                    
+                    this.caveWalls.push(tunnelSegment);
+                    this.scene.add(tunnelSegment);
+                }
+            }
+
+            async addCaveDetails() {
+                // Add stalactites and stalagmites
+                for (let i = 0; i < 20; i++) {
+                    const stalactite = this.createStalactite();
+                    stalactite.position.set(
+                        (Math.random() - 0.5) * 40,
+                        15 + Math.random() * 8,
+                        (Math.random() - 0.5) * 40
+                    );
+                    this.scene.add(stalactite);
+                    
+                    const stalagmite = this.createStalagmite();
+                    stalagmite.position.set(
+                        (Math.random() - 0.5) * 40,
+                        -20 - Math.random() * 5,
+                        (Math.random() - 0.5) * 40
+                    );
+                    this.scene.add(stalagmite);
+                }
+                
+                // Add rocky debris
+                for (let i = 0; i < 30; i++) {
+                    const rock = this.createRock();
+                    rock.position.set(
+                        (Math.random() - 0.5) * 45,
+                        -18 + Math.random() * 4,
+                        (Math.random() - 0.5) * 45
+                    );
+                    this.scene.add(rock);
+                }
+            }
+
+            createStalactite() {
+                const geometry = new THREE.ConeGeometry(0.5 + Math.random(), 3 + Math.random() * 4, 8);
+                const material = new THREE.MeshLambertMaterial({
+                    color: 0x2a2a2a,
+                    transparent: true,
+                    opacity: 0.8
+                });
+                const stalactite = new THREE.Mesh(geometry, material);
+                stalactite.castShadow = true;
+                return stalactite;
+            }
+
+            createStalagmite() {
+                const geometry = new THREE.ConeGeometry(0.8 + Math.random() * 0.5, 2 + Math.random() * 3, 8);
+                const material = new THREE.MeshLambertMaterial({
+                    color: 0x1a1a1a,
+                    transparent: true,
+                    opacity: 0.9
+                });
+                const stalagmite = new THREE.Mesh(geometry, material);
+                stalagmite.castShadow = true;
+                return stalagmite;
+            }
+
+            createRock() {
+                const geometry = new THREE.DodecahedronGeometry(0.3 + Math.random() * 0.7, 0);
+                const material = new THREE.MeshLambertMaterial({
+                    color: 0x333333,
+                    transparent: true,
+                    opacity: 0.7
+                });
+                const rock = new THREE.Mesh(geometry, material);
+                rock.castShadow = true;
+                rock.receiveShadow = true;
+                return rock;
+            }
+
+            async createShadowParticles() {
+                const particleCount = 5000;
+                const geometry = new THREE.BufferGeometry();
+                
+                const positions = new Float32Array(particleCount * 3);
+                const colors = new Float32Array(particleCount * 3);
+                const sizes = new Float32Array(particleCount);
+                const phases = new Float32Array(particleCount);
+                
+                for (let i = 0; i < particleCount; i++) {
+                    // Distribute particles throughout cave system
+                    positions[i * 3] = (Math.random() - 0.5) * 80;
+                    positions[i * 3 + 1] = (Math.random() - 0.5) * 60 - 10;
+                    positions[i * 3 + 2] = (Math.random() - 0.5) * 100 - 25;
+                    
+                    // Shadow particle colors (dark purples and blues)
+                    const hue = 0.7 + Math.random() * 0.2;
+                    const color = new THREE.Color().setHSL(hue, 0.8, 0.2 + Math.random() * 0.3);
+                    
+                    colors[i * 3] = color.r;
+                    colors[i * 3 + 1] = color.g;
+                    colors[i * 3 + 2] = color.b;
+                    
+                    sizes[i] = Math.random() * 2 + 0.5;
+                    phases[i] = Math.random() * Math.PI * 2;
+                }
+                
+                geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+                geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+                geometry.setAttribute('size', new THREE.BufferAttribute(sizes, 1));
+                
+                // Store phases for animation
+                geometry.userData.phases = phases;
+                geometry.userData.originalPositions = [...positions];
+                
+                const material = new THREE.PointsMaterial({
+                    size: 1,
+                    vertexColors: true,
+                    transparent: true,
+                    opacity: 0.6,
+                    blending: THREE.AdditiveBlending,
+                    sizeAttenuation: true
+                });
+                
+                this.shadowParticles = new THREE.Points(geometry, material);
+                this.scene.add(this.shadowParticles);
+            }
+
+            async createThoughtPatterns() {
+                // Create flowing thought streams
+                for (let i = 0; i < 8; i++) {
+                    const points = [];
+                    const segments = 30;
+                    
+                    for (let j = 0; j < segments; j++) {
+                        const t = j / segments;
+                        const angle = i * Math.PI * 2 / 8 + t * Math.PI;
+                        const radius = 15 + Math.sin(t * Math.PI * 2) * 5;
+                        const height = t * -20 - 10;
+                        
+                        points.push(new THREE.Vector3(
+                            Math.cos(angle) * radius,
+                            height,
+                            Math.sin(angle) * radius
+                        ));
+                    }
+                    
+                    const curve = new THREE.CatmullRomCurve3(points);
+                    const geometry = new THREE.TubeGeometry(curve, segments * 2, 0.1, 6, false);
+                    
+                    const hue = 0.75 + (i / 8) * 0.2;
+                    const color = new THREE.Color().setHSL(hue, 0.7, 0.4);
+                    
+                    const material = new THREE.MeshBasicMaterial({
+                        color: color,
+                        transparent: true,
+                        opacity: 0.3,
+                        emissive: color,
+                        emissiveIntensity: 0.2
+                    });
+                    
+                    const thoughtStream = new THREE.Mesh(geometry, material);
+                    thoughtStream.userData = { 
+                        originalPoints: points,
+                        phase: i * 0.5,
+                        streamIndex: i
+                    };
+                    
+                    this.thoughtPatterns.push(thoughtStream);
+                    this.scene.add(thoughtStream);
+                }
+            }
+
+            async createShadowProjections() {
+                // Create shadow projections on cave walls
+                for (let i = 0; i < 12; i++) {
+                    const projectionGeometry = new THREE.PlaneGeometry(4, 6);
+                    
+                    // Shadow projection shader (simplified)
+                    const projectionMaterial = new THREE.ShaderMaterial({
+                        vertexShader: `
+                            varying vec2 vUv;
+                            void main() {
+                                vUv = uv;
+                                gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+                            }
+                        `,
+                        fragmentShader: `
+                            uniform float time;
+                            uniform float opacity;
+                            varying vec2 vUv;
+                            
+                            void main() {
+                                vec2 center = vec2(0.5, 0.5);
+                                float dist = length(vUv - center);
+                                
+                                float shadow = sin(dist * 10.0 + time) * 0.5 + 0.5;
+                                shadow *= smoothstep(0.8, 0.2, dist);
+                                
+                                gl_FragColor = vec4(0.3, 0.1, 0.5, shadow * opacity);
+                            }
+                        `,
+                        uniforms: {
+                            time: { value: 0 },
+                            opacity: { value: 0.4 }
+                        },
+                        transparent: true,
+                        blending: THREE.AdditiveBlending
+                    });
+                    
+                    const projection = new THREE.Mesh(projectionGeometry, projectionMaterial);
+                    
+                    // Position projections on cave walls
+                    const angle = (i / 12) * Math.PI * 2;
+                    const radius = 22;
+                    projection.position.set(
+                        Math.cos(angle) * radius,
+                        (Math.random() - 0.5) * 20,
+                        Math.sin(angle) * radius
+                    );
+                    projection.lookAt(0, 0, 0);
+                    
+                    this.shadowProjections.push(projection);
+                    this.scene.add(projection);
+                }
+            }
+
+            placeShadowAspects() {
+                for (const aspect of this.shadowAspects) {
+                    // Create visual representation of shadow aspect
+                    const aspectGeometry = new THREE.IcosahedronGeometry(2, 2);
+                    const aspectMaterial = new THREE.MeshBasicMaterial({
+                        color: aspect.color,
+                        transparent: true,
+                        opacity: 0.7,
+                        wireframe: true,
+                        emissive: new THREE.Color(aspect.color),
+                        emissiveIntensity: 0.3
+                    });
+                    
+                    const aspectMesh = new THREE.Mesh(aspectGeometry, aspectMaterial);
+                    aspectMesh.position.copy(aspect.position);
+                    aspectMesh.userData.aspect = aspect;
+                    
+                    this.scene.add(aspectMesh);
+                    
+                    // Add floating particles around aspect
+                    this.createAspectParticles(aspect);
+                }
+            }
+
+            createAspectParticles(aspect) {
+                const particleCount = 100;
+                const geometry = new THREE.BufferGeometry();
+                
+                const positions = new Float32Array(particleCount * 3);
+                const colors = new Float32Array(particleCount * 3);
+                
+                const color = new THREE.Color(aspect.color);
+                
+                for (let i = 0; i < particleCount; i++) {
+                    const radius = 3 + Math.random() * 4;
+                    const theta = Math.random() * Math.PI * 2;
+                    const phi = Math.random() * Math.PI;
+                    
+                    positions[i * 3] = aspect.position.x + radius * Math.sin(phi) * Math.cos(theta);
+                    positions[i * 3 + 1] = aspect.position.y + radius * Math.sin(phi) * Math.sin(theta);
+                    positions[i * 3 + 2] = aspect.position.z + radius * Math.cos(phi);
+                    
+                    colors[i * 3] = color.r;
+                    colors[i * 3 + 1] = color.g;
+                    colors[i * 3 + 2] = color.b;
+                }
+                
+                geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+                geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+                
+                const material = new THREE.PointsMaterial({
+                    size: 0.5,
+                    vertexColors: true,
+                    transparent: true,
+                    opacity: 0.8,
+                    blending: THREE.AdditiveBlending
+                });
+                
+                const aspectParticles = new THREE.Points(geometry, material);
+                aspectParticles.userData.aspect = aspect;
+                aspectParticles.userData.originalPositions = [...positions];
+                this.scene.add(aspectParticles);
+            }
+
+            setupControls() {
+                // WASD movement controls
+                document.addEventListener('keydown', (event) => {
+                    switch(event.code) {
+                        case 'KeyW':
+                            this.movementKeys.w = true;
+                            break;
+                        case 'KeyA':
+                            this.movementKeys.a = true;
+                            break;
+                        case 'KeyS':
+                            this.movementKeys.s = true;
+                            break;
+                        case 'KeyD':
+                            this.movementKeys.d = true;
+                            break;
+                        case 'Space':
+                            event.preventDefault();
+                            this.interactWithNearbyAspect();
+                            break;
+                    }
+                });
+                
+                document.addEventListener('keyup', (event) => {
+                    switch(event.code) {
+                        case 'KeyW':
+                            this.movementKeys.w = false;
+                            break;
+                        case 'KeyA':
+                            this.movementKeys.a = false;
+                            break;
+                        case 'KeyS':
+                            this.movementKeys.s = false;
+                            break;
+                        case 'KeyD':
+                            this.movementKeys.d = false;
+                            break;
+                    }
+                });
+                
+                // Mouse look controls
+                document.addEventListener('mousemove', (event) => {
+                    this.mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+                    this.mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+                    
+                    // Update camera rotation based on mouse
+                    const sensitivity = 0.002;
+                    this.camera.rotation.y -= event.movementX * sensitivity;
+                    this.camera.rotation.x -= event.movementY * sensitivity;
+                    this.camera.rotation.x = Math.max(-Math.PI/2, Math.min(Math.PI/2, this.camera.rotation.x));
+                });
+                
+                // Click to interact
+                this.canvas.addEventListener('click', (event) => {
+                    this.interactWithNearbyAspect();
+                });
+                
+                // Window resize
+                window.addEventListener('resize', () => {
+                    this.camera.aspect = window.innerWidth / window.innerHeight;
+                    this.camera.updateProjectionMatrix();
+                    this.renderer.setSize(window.innerWidth, window.innerHeight);
+                });
+            }
+
+            setupUI() {
+                // Control button handlers
+                document.getElementById('exploreBtn').addEventListener('click', () => {
+                    this.setMode('explore');
+                });
+                
+                document.getElementById('integrateBtn').addEventListener('click', () => {
+                    this.setMode('integrate');
+                });
+                
+                document.getElementById('illuminateBtn').addEventListener('click', () => {
+                    this.illuminateCave();
+                });
+                
+                document.getElementById('audioBtn').addEventListener('click', () => {
+                    this.toggleAudio();
+                });
+                
+                document.getElementById('ascendBtn').addEventListener('click', () => {
+                    this.ascendToSurface();
+                });
+                
+                // Compass interaction
+                document.getElementById('explorationCompass').addEventListener('click', () => {
+                    this.followCompassDirection();
+                });
+            }
+
+            setupBiometricIntegration() {
+                // Initialize with simulated data
+                biometricMonitor.initialize().catch(() => {
+                    console.log('Using simulated biometric data for shadow work');
+                });
+                
+                // Respond to stress and emotional states
+                biometricMonitor.onStressUpdate((stress) => {
+                    // Higher stress reveals more shadow content
+                    this.psychicDepth = 0.2 + stress.level * 0.6;
+                    this.updateDepthDisplay();
+                });
+                
+                biometricMonitor.onEmotionUpdate((emotion) => {
+                    this.adaptToEmotion(emotion);
+                });
+            }
+
+            updateMovement() {
+                this.movementDirection.set(0, 0, 0);
+                this.isMoving = false;
+                
+                if (this.movementKeys.w) {
+                    this.movementDirection.z -= 1;
+                    this.isMoving = true;
+                }
+                if (this.movementKeys.s) {
+                    this.movementDirection.z += 1;
+                    this.isMoving = true;
+                }
+                if (this.movementKeys.a) {
+                    this.movementDirection.x -= 1;
+                    this.isMoving = true;
+                }
+                if (this.movementKeys.d) {
+                    this.movementDirection.x += 1;
+                    this.isMoving = true;
+                }
+                
+                if (this.isMoving) {
+                    this.movementDirection.normalize();
+                    this.movementDirection.multiplyScalar(0.2);
+                    
+                    // Apply movement relative to camera direction
+                    const direction = this.movementDirection.clone();
+                    direction.applyEuler(new THREE.Euler(0, this.camera.rotation.y, 0));
+                    
+                    this.playerPosition.add(direction);
+                    this.camera.position.copy(this.playerPosition);
+                    this.torchLight.position.copy(this.playerPosition);
+                    
+                    // Update depth based on Y position
+                    const normalizedDepth = Math.max(0, Math.min(1, (-this.playerPosition.y + 10) / 30));
+                    this.psychicDepth = normalizedDepth;
+                    
+                    this.updateDepthDisplay();
+                    this.checkForNearbyAspects();
+                }
+            }
+
+            updateDepthDisplay() {
+                const depthIndicator = document.getElementById('depthIndicator');
+                depthIndicator.style.top = `${this.psychicDepth * 130 + 10}px`;
+                
+                const layers = ['Surface', 'Conscious Mind', 'Personal Unconscious', 'Collective Unconscious', 'Deep Shadow'];
+                const layerIndex = Math.floor(this.psychicDepth * (layers.length - 1));
+                document.getElementById('currentLayer').textContent = layers[layerIndex];
+                
+                const shadowDensity = Math.round(this.psychicDepth * 100);
+                document.getElementById('shadowDensity').textContent = `${shadowDensity}%`;
+                
+                const integration = Math.round(this.integrationLevel * 100);
+                document.getElementById('integrationLevel').textContent = `${integration}%`;
+                
+                // Update thought patterns based on depth
+                this.updateThoughtPatterns();
+            }
+
+            updateThoughtPatterns() {
+                const patterns = [
+                    { id: 'repressedPattern', base: 0.3, depth: 0.4 },
+                    { id: 'emotionPattern', base: 0.2, depth: 0.6 },
+                    { id: 'fearPattern', base: 0.4, depth: 0.3 },
+                    { id: 'desirePattern', base: 0.6, depth: 0.5 }
+                ];
+                
+                patterns.forEach(pattern => {
+                    const intensity = pattern.base + this.psychicDepth * pattern.depth;
+                    const width = Math.min(100, intensity * 100);
+                    document.getElementById(pattern.id).style.width = `${width}%`;
+                });
+            }
+
+            checkForNearbyAspects() {
+                for (const aspect of this.shadowAspects) {
+                    const distance = this.playerPosition.distanceTo(aspect.position);
+                    
+                    if (distance < 8 && !aspect.encountered) {
+                        this.encounterShadowAspect(aspect);
+                    }
+                    
+                    // Update aspect light based on proximity
+                    const aspectLight = this.shadowLights.find(light => 
+                        light.userData.aspect === aspect);
+                    if (aspectLight) {
+                        const intensity = Math.max(0, (10 - distance) / 10);
+                        aspectLight.intensity = intensity * 0.5;
+                    }
+                }
+                
+                // Update compass direction to nearest unencountered aspect
+                this.updateCompass();
+            }
+
+            encounterShadowAspect(aspect) {
+                aspect.encountered = true;
+                this.currentShadowAspect = aspect;
+                this.encounteredAspects.push(aspect);
+                
+                // Display shadow insights
+                this.displayShadowInsights(aspect);
+                
+                // Add to journal
+                this.addJournalEntry(`Encountered "${aspect.name}": ${aspect.description}`);
+                
+                // Play aspect-specific audio
+                if (this.isAudioEnabled) {
+                    this.playAspectSound(aspect);
+                }
+                
+                // Increase integration level
+                this.integrationLevel = Math.min(1.0, this.integrationLevel + 0.2);
+                
+                console.log(`Encountered shadow aspect: ${aspect.name}`);
+            }
+
+            displayShadowInsights(aspect) {
+                const insights = document.getElementById('shadowInsights');
+                const insightContent = document.getElementById('insightContent');
+                const shadowAspects = document.getElementById('shadowAspects');
+                const progressFill = document.getElementById('progressFill');
+                const progressPercent = document.getElementById('progressPercent');
+                
+                insightContent.textContent = aspect.insights;
+                
+                // Update aspect tags
+                shadowAspects.innerHTML = '';
+                aspect.emotions.forEach(emotion => {
+                    const tag = document.createElement('div');
+                    tag.className = 'aspect-tag';
+                    tag.textContent = emotion;
+                    tag.addEventListener('click', () => {
+                        this.exploreEmotion(emotion);
+                    });
+                    shadowAspects.appendChild(tag);
+                });
+                
+                // Update progress
+                const progress = Math.round(this.integrationLevel * 100);
+                progressFill.style.width = `${progress}%`;
+                progressPercent.textContent = `${progress}%`;
+                
+                insights.classList.add('visible');
+            }
+
+            updateCompass() {
+                const nearestAspect = this.findNearestUnencounteredAspect();
+                if (nearestAspect) {
+                    const direction = nearestAspect.position.clone().sub(this.playerPosition);
+                    const angle = Math.atan2(direction.x, direction.z) * 180 / Math.PI;
+                    
+                    const needle = document.getElementById('compassNeedle');
+                    needle.style.transform = `rotate(${angle}deg)`;
+                }
+            }
+
+            findNearestUnencounteredAspect() {
+                let nearest = null;
+                let minDistance = Infinity;
+                
+                for (const aspect of this.shadowAspects) {
+                    if (!aspect.encountered) {
+                        const distance = this.playerPosition.distanceTo(aspect.position);
+                        if (distance < minDistance) {
+                            minDistance = distance;
+                            nearest = aspect;
+                        }
+                    }
+                }
+                
+                return nearest;
+            }
+
+            interactWithNearbyAspect() {
+                if (this.currentShadowAspect && !this.currentShadowAspect.integrated) {
+                    this.integrateShadowAspect(this.currentShadowAspect);
+                }
+            }
+
+            integrateShadowAspect(aspect) {
+                aspect.integrated = true;
+                
+                // Visual integration effect
+                const aspectLight = this.shadowLights.find(light => 
+                    light.userData.aspect === aspect);
+                if (aspectLight) {
+                    aspectLight.intensity = 1.0;
+                    aspectLight.color.setHex(0xDAA520); // Golden integration light
+                }
+                
+                this.addJournalEntry(`Integrated "${aspect.name}": ${aspect.integrationTask}`);
+                
+                // Check if all aspects integrated
+                const integratedCount = this.shadowAspects.filter(a => a.integrated).length;
+                if (integratedCount === this.shadowAspects.length) {
+                    this.completeIntegration();
+                }
+                
+                console.log(`Integrated shadow aspect: ${aspect.name}`);
+            }
+
+            completeIntegration() {
+                this.addJournalEntry('🌟 Shadow integration complete! The darkness and light are unified.');
+                
+                // Transform cave lighting
+                this.ambientShadow.intensity = 0.3;
+                this.torchLight.intensity = 3;
+                this.torchLight.color.setHex(0xFFD700);
+                
+                // Play completion audio
+                if (this.isAudioEnabled) {
+                    audioEngine.generateEmotionalSoundscape('joyful', 1.0, 10000);
+                }
+            }
+
+            setMode(mode) {
+                this.explorationMode = mode;
+                
+                // Update button states
+                document.querySelectorAll('.cave-btn').forEach(btn => btn.classList.remove('active'));
+                document.getElementById(`${mode}Btn`).classList.add('active');
+                
+                switch (mode) {
+                    case 'integrate':
+                        this.focusOnIntegration();
+                        break;
+                    default:
+                        // Default explore mode
+                        break;
+                }
+            }
+
+            focusOnIntegration() {
+                // Highlight encountered but unintegrated aspects
+                for (const aspect of this.encounteredAspects) {
+                    if (!aspect.integrated) {
+                        const aspectLight = this.shadowLights.find(light => 
+                            light.userData.aspect === aspect);
+                        if (aspectLight) {
+                            aspectLight.intensity = 0.8;
+                        }
+                    }
+                }
+            }
+
+            illuminateCave() {
+                // Temporarily increase all lighting
+                this.ambientShadow.intensity = Math.min(0.5, this.ambientShadow.intensity + 0.1);
+                this.torchLight.intensity = Math.min(4, this.torchLight.intensity + 0.5);
+                
+                this.shadowLights.forEach(light => {
+                    light.intensity = Math.min(1, light.intensity + 0.2);
+                });
+                
+                this.addJournalEntry('Illuminated the shadows with conscious awareness.');
+            }
+
+            async toggleAudio() {
+                const btn = document.getElementById('audioBtn');
+                
+                if (!this.isAudioEnabled) {
+                    // Start cave ambient sounds
+                    audioEngine.generateNatureSounds('wind', { x: 0, y: 0, z: 0 }, 0.2);
+                    
+                    // Add deep meditation frequencies
+                    audioEngine.generateBinauralBeats(110, 4, 600000); // 4 Hz theta waves for deep work
+                    
+                    btn.classList.add('active');
+                    this.isAudioEnabled = true;
+                } else {
+                    audioEngine.stopAllAudio();
+                    btn.classList.remove('active');
+                    this.isAudioEnabled = false;
+                }
+            }
+
+            playAspectSound(aspect) {
+                // Generate sound based on aspect characteristics
+                const emotion = aspect.emotions[0];
+                audioEngine.generateEmotionalSoundscape(emotion, 0.7, 8000);
+            }
+
+            ascendToSurface() {
+                // Animate return to surface
+                const targetPosition = new THREE.Vector3(0, 10, 10);
+                const currentPos = this.playerPosition.clone();
+                
+                let animationProgress = 0;
+                const animateAscent = () => {
+                    animationProgress += 0.02;
+                    
+                    if (animationProgress < 1) {
+                        this.playerPosition.lerpVectors(currentPos, targetPosition, animationProgress);
+                        this.camera.position.copy(this.playerPosition);
+                        this.torchLight.position.copy(this.playerPosition);
+                        
+                        // Gradually increase lighting
+                        this.ambientShadow.intensity = 0.1 + animationProgress * 0.4;
+                        
+                        requestAnimationFrame(animateAscent);
+                    } else {
+                        this.addJournalEntry('Ascended to the surface, carrying shadow wisdom into the light.');
+                    }
+                };
+                
+                animateAscent();
+            }
+
+            exploreEmotion(emotion) {
+                this.addJournalEntry(`Exploring the emotion: ${emotion}. What does this feeling teach me?`);
+                
+                // Temporarily highlight particles with related colors
+                const emotionColors = {
+                    shame: 0x8B0000,
+                    fear: 0x4B0082,
+                    anger: 0xFF4500,
+                    sadness: 0x191970
+                };
+                
+                if (emotionColors[emotion] && this.shadowParticles) {
+                    // Animate particle colors (simplified implementation)
+                    console.log(`Highlighting ${emotion} patterns in particle system`);
+                }
+            }
+
+            addJournalEntry(text) {
+                const entries = document.getElementById('journalEntries');
+                const entry = document.createElement('div');
+                entry.className = 'journal-entry';
+                
+                const timestamp = document.createElement('div');
+                timestamp.className = 'entry-timestamp';
+                timestamp.textContent = new Date().toLocaleTimeString();
+                
+                entry.appendChild(timestamp);
+                entry.appendChild(document.createTextNode(text));
+                
+                entries.appendChild(entry);
+                
+                // Scroll to bottom
+                entries.scrollTop = entries.scrollHeight;
+            }
+
+            adaptToEmotion(emotion) {
+                // Adapt cave atmosphere to current emotion
+                if (emotion.primary === 'anxious' || emotion.primary === 'fearful') {
+                    this.torchFlicker.flickerAmount = 0.5 + emotion.intensity * 0.3;
+                } else if (emotion.primary === 'calm' || emotion.primary === 'peaceful') {
+                    this.torchFlicker.flickerAmount = 0.1;
+                    this.torchLight.intensity = 2.5;
+                }
+            }
+
+            // Simple 3D noise function
+            noise3D(x, y, z) {
+                return Math.sin(x * 1.1) * Math.cos(y * 1.3) * Math.sin(z * 1.7) * 0.5;
+            }
+
+            animate() {
+                if (!this.isInitialized) return;
+                
+                requestAnimationFrame(() => this.animate());
+                
+                this.time += 0.016;
+                
+                this.updateMovement();
+                this.updateEffects();
+                
+                this.renderer.render(this.scene, this.camera);
+            }
+
+            updateEffects() {
+                // Update torch flicker
+                const flicker = Math.sin(this.time * this.torchFlicker.flickerSpeed) * this.torchFlicker.flickerAmount;
+                this.torchLight.intensity = this.torchFlicker.baseIntensity + flicker;
+                
+                // Animate shadow particles
+                if (this.shadowParticles) {
+                    const positions = this.shadowParticles.geometry.attributes.position;
+                    const originalPositions = this.shadowParticles.geometry.userData.originalPositions;
+                    const phases = this.shadowParticles.geometry.userData.phases;
+                    
+                    for (let i = 0; i < positions.count; i++) {
+                        const i3 = i * 3;
+                        const phase = phases[i];
+                        
+                        // Floating motion influenced by psychic depth
+                        const float = Math.sin(this.time + phase) * (0.5 + this.psychicDepth);
+                        positions.array[i3 + 1] = originalPositions[i3 + 1] + float;
+                        
+                        // Swirling motion
+                        const swirl = Math.cos(this.time * 0.5 + phase) * 0.3;
+                        positions.array[i3] = originalPositions[i3] + swirl;
+                        positions.array[i3 + 2] = originalPositions[i3 + 2] + swirl * 0.5;
+                    }
+                    
+                    positions.needsUpdate = true;
+                }
+                
+                // Animate thought patterns
+                this.thoughtPatterns.forEach((pattern, index) => {
+                    pattern.rotation.y = this.time * (0.1 + index * 0.02);
+                    pattern.position.y = Math.sin(this.time * 0.3 + pattern.userData.phase) * 2;
+                });
+                
+                // Animate shadow projections
+                this.shadowProjections.forEach(projection => {
+                    projection.material.uniforms.time.value = this.time;
+                    projection.material.uniforms.opacity.value = 
+                        0.2 + Math.sin(this.time + projection.position.x) * 0.2;
+                });
+                
+                // Update cave wall shaders
+                this.caveWalls.forEach(wall => {
+                    if (wall.material.uniforms) {
+                        wall.material.uniforms.time.value = this.time;
+                        wall.material.uniforms.lightPosition.value.copy(this.playerPosition);
+                        wall.material.uniforms.shadowIntensity.value = this.psychicDepth;
+                    }
+                });
+            }
+        }
+
+        // Initialize Shadow Work Cave
+        window.addEventListener('load', async () => {
+            const cave = new ShadowWorkCave();
+            await cave.initialize();
+        });
+    </script>
+</body>
+</html>

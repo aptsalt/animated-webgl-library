@@ -1,0 +1,688 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Life Journey - Tree Climber</title>
+    <style>
+        body { 
+            margin: 0; overflow: hidden; 
+            background: radial-gradient(ellipse at center, #98fb98 0%, #228b22 30%, #006400 60%, #2f4f4f 100%);
+            animation: forestBreathe 12s ease-in-out infinite;
+        }
+        canvas { display: block; }
+        .title { 
+            position: absolute; top: 25px; left: 50%; transform: translateX(-50%); 
+            color: #ffd700; font-family: 'Georgia', serif; font-size: 36px; 
+            letter-spacing: 3px; text-shadow: 3px 3px 8px rgba(0,0,0,0.8);
+            font-weight: bold;
+        }
+        .height-level {
+            position: absolute; top: 70px; left: 50%; transform: translateX(-50%);
+            color: #90ee90; font-family: 'Verdana', sans-serif; font-size: 18px; 
+            font-weight: bold; letter-spacing: 2px; text-shadow: 2px 2px 6px rgba(0,0,0,0.9);
+        }
+        .climbing-stats {
+            position: absolute; bottom: 25px; right: 25px;
+            color: #32cd32; font-family: 'Trebuchet MS', sans-serif; font-size: 14px;
+            background: rgba(0,50,0,0.8); padding: 12px; border-radius: 8px;
+            border: 2px solid #228b22;
+        }
+        @keyframes forestBreathe {
+            0%, 100% { filter: brightness(1) hue-rotate(0deg); }
+            50% { filter: brightness(1.1) hue-rotate(10deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="title">TREE CLIMBER</div>
+    <div class="height-level" id="heightLevel">GROUND ROOTS</div>
+    <div class="climbing-stats" id="climbingStats">
+        Height: 0m<br>
+        Technique: EXPLORING<br>
+        Balance: STABLE<br>
+        View: GROUND LEVEL
+    </div>
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="../particle-being-library.js"></script>
+    <script>
+        let scene, camera, renderer, particleSystem;
+        let time = 0;
+        let currentHeight = 0;
+        let heightTimer = 0;
+        let leaves = [];
+        let branches = [];
+        let wind = [];
+        let bark = [];
+        let tree = null;
+        
+        const heightLevels = [
+            'GROUND ROOTS', 'LOW BRANCHES', 'TRUNK SCALING', 'CANOPY ENTRY',
+            'HIGH BRANCHES', 'CROWN REACHING', 'TREE TOP MASTERY'
+        ];
+
+        const climbingData = [
+            { height: '0m', technique: 'EXPLORING', balance: 'STABLE', view: 'GROUND LEVEL' },
+            { height: '3m', technique: 'BASIC GRIP', balance: 'LEARNING', view: 'FOREST FLOOR' },
+            { height: '8m', technique: 'TRUNK HUGGING', balance: 'FOCUSED', view: 'UNDERSTORY' },
+            { height: '15m', technique: 'BRANCH WEAVING', balance: 'CAREFUL', view: 'CANOPY LAYER' },
+            { height: '25m', technique: 'PRECISION MOVES', balance: 'CRITICAL', view: 'TREE TOPS' },
+            { height: '35m', technique: 'WIND RIDING', balance: 'DYNAMIC', view: 'SKY LEVEL' },
+            { height: '40m', technique: 'TREE DANCING', balance: 'HARMONIOUS', view: 'BIRD\'S EYE' }
+        ];
+
+        function init() {
+            scene = new THREE.Scene();
+            camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+            camera.position.set(0, 5, 20);
+
+            renderer = new THREE.WebGLRenderer({ antialias: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            document.body.appendChild(renderer.domElement);
+
+            // Create agile tree climber particle system
+            particleSystem = new ParticleBeingSystem(scene, {
+                particleCount: 250,
+                particleSize: 0.07,
+                speedMultiplier: 2.5,
+                colorRange: { h: 0.1, s: 0.6, lMin: 0.5, lMax: 0.8 }
+            });
+
+            createTreeClimber();
+            createTreeEnvironment();
+            animate();
+        }
+
+        function createTreeClimber() {
+            const climber = particleSystem.convertToParticleBeing(
+                null,
+                { x: 0, y: -3, z: 0 },
+                {
+                    particleCount: 280,
+                    states: ['exploring', 'climbing', 'balancing', 'flowing'],
+                    stateTimings: { exploring: 3, climbing: 4, balancing: 5, flowing: 4 },
+                    attractionForces: { exploring: 0.03, climbing: 0.025, balancing: 0.02, flowing: 0.015 }
+                }
+            );
+
+            // 7 distinct climbing heights with growing mastery and perspective
+            const originalUpdate = particleSystem.updateBeing.bind(particleSystem);
+            particleSystem.updateBeing = function(being, deltaTime) {
+                originalUpdate(being, deltaTime);
+                
+                heightTimer += deltaTime;
+                if (heightTimer > 7) {
+                    currentHeight = (currentHeight + 1) % heightLevels.length;
+                    heightTimer = 0;
+                    document.getElementById('heightLevel').textContent = heightLevels[currentHeight];
+                    const data = climbingData[currentHeight];
+                    document.getElementById('climbingStats').innerHTML = 
+                        `Height: ${data.height}<br>Technique: ${data.technique}<br>Balance: ${data.balance}<br>View: ${data.view}`;
+                }
+                
+                switch(currentHeight) {
+                    case 0: // GROUND ROOTS - Small, exploring, finding the right tree
+                        being.particles.forEach((particle, i) => {
+                            particle.scale.setScalar(0.6); // Small, tentative
+                            
+                            // Exploring movements around tree base
+                            particle.userData.velocity.multiplyScalar(0.7);
+                            
+                            // Looking up and around
+                            if (i < 50) { // Head
+                                particle.userData.targetPosition.y += Math.sin(time * 2) * 0.3;
+                                particle.userData.targetPosition.x += Math.cos(time * 1.5) * 0.2;
+                            }
+                            
+                            // Hands touching tree/roots
+                            if (i > 100 && i < 140) { // Arms
+                                particle.userData.targetPosition.x += Math.sin(time * 3 + i * 0.1) * 0.4;
+                                particle.userData.targetPosition.z += 0.5; // Reaching toward tree
+                            }
+                            
+                            // Crouching to examine roots
+                            particle.userData.targetPosition.y *= 0.8;
+                            
+                            // Curious brown-green color
+                            particle.material.color.setHSL(0.12, 0.6, 0.7);
+                            particle.material.opacity = 0.9;
+                        });
+                        
+                        // Circling the tree base
+                        being.userData.basePosition.x = Math.sin(time * 0.5) * 2;
+                        being.userData.basePosition.z = Math.cos(time * 0.5) * 2;
+                        being.userData.basePosition.y = -3;
+                        
+                        // Ground level exploration camera
+                        camera.position.set(4, 0, 8);
+                        camera.lookAt(being.userData.basePosition);
+                        
+                        // Create exploring effects
+                        if (Math.random() < 0.02) {
+                            createBarkTouch(being.userData.basePosition);
+                        }
+                        break;
+                        
+                    case 1: // LOW BRANCHES - Easy climbing, building confidence, playful
+                        being.particles.forEach((particle, i) => {
+                            particle.scale.setScalar(0.8); // Growing confidence
+                            
+                            // Easy climbing motions
+                            const climbRhythm = time * 4;
+                            
+                            // Arms reaching for low branches
+                            if (i > 100 && i < 150) { // Arms
+                                particle.userData.targetPosition.y += Math.sin(climbRhythm + i * 0.1) * 1.2;
+                                particle.userData.targetPosition.x += Math.cos(climbRhythm + i * 0.1) * 0.6;
+                                particle.userData.targetPosition.z += 0.3;
+                            }
+                            
+                            // Legs finding foothold
+                            if (i > 200) { // Legs
+                                particle.userData.targetPosition.y += Math.abs(Math.sin(climbRhythm * 1.5)) * 0.8;
+                                particle.userData.targetPosition.x += Math.sin(climbRhythm * 2) * 0.4;
+                            }
+                            
+                            // Playful, confident movement
+                            particle.userData.velocity.y += 0.005;
+                            
+                            // Happy green color
+                            particle.material.color.setHSL(0.25, 0.7, 0.8);
+                        });
+                        
+                        being.userData.basePosition.y += 0.02; // Gradual ascent
+                        being.userData.basePosition.x = Math.sin(time * 1) * 0.5; // Slight swaying
+                        
+                        // Low branch following camera
+                        camera.position.set(-3, being.userData.basePosition.y + 2, 12);
+                        camera.lookAt(being.userData.basePosition);
+                        
+                        // Falling leaves from movement
+                        if (Math.random() < 0.05) {
+                            createFallingLeaf(being.userData.basePosition);
+                        }
+                        break;
+                        
+                    case 2: // TRUNK SCALING - Methodical climbing, using technique
+                        being.particles.forEach((particle, i) => {
+                            particle.scale.setScalar(1.0); // Full engagement
+                            
+                            // Methodical trunk climbing
+                            particle.userData.velocity.y += 0.008;
+                            
+                            // Hugging trunk technique
+                            if (i > 100 && i < 200) { // Arms and torso
+                                particle.userData.targetPosition.z += 0.8; // Close to trunk
+                                particle.userData.targetPosition.x *= 0.7; // Narrow grip
+                            }
+                            
+                            // Legs wrapping around trunk
+                            if (i > 200) {
+                                particle.userData.targetPosition.z += 0.6;
+                                particle.userData.targetPosition.x += Math.sin(i * 0.1) * 0.3;
+                            }
+                            
+                            // Focused climbing motion
+                            const focusedClimb = time * 6;
+                            if (i > 120 && i < 160) { // Primary climbing arms
+                                particle.userData.targetPosition.y += Math.sin(focusedClimb + i) * 0.8;
+                                particle.scale.setScalar(1.2); // Muscle engagement
+                            }
+                            
+                            // Determined brown color
+                            particle.material.color.setHSL(0.08, 0.8, 0.6);
+                        });
+                        
+                        being.userData.basePosition.y += 0.05; // Steady climbing
+                        being.userData.basePosition.x = 0; // Centered on trunk
+                        being.userData.basePosition.z = 0;
+                        
+                        // Trunk scaling camera
+                        camera.position.set(6, being.userData.basePosition.y, 15);
+                        camera.lookAt(being.userData.basePosition);
+                        
+                        // Bark particles from gripping
+                        if (Math.random() < 0.03) {
+                            createBarkParticle(being.userData.basePosition);
+                        }
+                        break;
+                        
+                    case 3: // CANOPY ENTRY - Dense foliage, navigation challenges
+                        being.particles.forEach((particle, i) => {
+                            particle.scale.setScalar(0.9); // More compact for navigation
+                            
+                            // Weaving through branches
+                            const weaveMotion = time * 3;
+                            particle.position.x += Math.sin(weaveMotion + i * 0.1) * 0.003;
+                            particle.position.z += Math.cos(weaveMotion * 1.3 + i * 0.05) * 0.002;
+                            
+                            // Ducking and weaving motions
+                            if (i < 80) { // Head and upper body
+                                particle.userData.targetPosition.y += Math.sin(weaveMotion * 2) * 0.3;
+                                particle.userData.targetPosition.x += Math.cos(weaveMotion * 1.8) * 0.4;
+                            }
+                            
+                            // Arms pushing through foliage
+                            if (i > 100 && i < 150) {
+                                particle.userData.targetPosition.x += Math.sin(weaveMotion * 3 + i) * 1.0;
+                                particle.userData.targetPosition.y += Math.cos(weaveMotion * 2.5 + i) * 0.6;
+                                particle.userData.targetPosition.z += Math.sin(weaveMotion + i) * 0.4;
+                            }
+                            
+                            // Hidden in foliage effect
+                            particle.material.opacity = 0.6 + Math.sin(time * 8 + i) * 0.4;
+                            
+                            // Dappled green color
+                            particle.material.color.setHSL(0.3, 0.6, 0.5 + Math.sin(time * 5 + i) * 0.2);
+                        });
+                        
+                        being.userData.basePosition.y += 0.03;
+                        being.userData.basePosition.x += Math.sin(time * 2) * 0.8; // Weaving motion
+                        being.userData.basePosition.z += Math.cos(time * 1.5) * 0.6;
+                        
+                        // Canopy navigation camera
+                        camera.position.set(
+                            being.userData.basePosition.x + 8,
+                            being.userData.basePosition.y + 4,
+                            being.userData.basePosition.z + 12
+                        );
+                        camera.lookAt(being.userData.basePosition);
+                        
+                        // Disturbed foliage
+                        if (Math.random() < 0.08) {
+                            createFoliageRustle(being.userData.basePosition);
+                        }
+                        break;
+                        
+                    case 4: // HIGH BRANCHES - Careful balance, thin branches
+                        being.particles.forEach((particle, i) => {
+                            particle.scale.setScalar(0.85); // Careful, controlled
+                            
+                            // Careful balancing motion
+                            particle.userData.velocity.multiplyScalar(0.6); // Slower, more deliberate
+                            
+                            // Balance adjustments
+                            const balanceWave = time * 1.5;
+                            particle.position.x += Math.sin(balanceWave + i * 0.01) * 0.002;
+                            particle.position.z += Math.cos(balanceWave * 1.3 + i * 0.01) * 0.001;
+                            
+                            // Arms out for balance
+                            if (i > 100 && i < 150) {
+                                particle.userData.targetPosition.x += Math.sign(particle.userData.targetPosition.x) * 1.5;
+                                particle.userData.targetPosition.y += Math.sin(balanceWave * 2) * 0.3;
+                            }
+                            
+                            // Careful foot placement
+                            if (i > 200) {
+                                particle.userData.targetPosition.x *= 0.5; // Narrow stance
+                                particle.userData.targetPosition.y += Math.sin(time * 4 + i) * 0.2;
+                            }
+                            
+                            // Concentrated focus
+                            if (i < 50) { // Head
+                                particle.userData.targetPosition.y -= 0.2; // Looking down at feet
+                            }
+                            
+                            // Cautious blue-green
+                            particle.material.color.setHSL(0.45, 0.7, 0.7);
+                        });
+                        
+                        being.userData.basePosition.y += 0.025;
+                        being.userData.basePosition.x += Math.sin(time * 0.8) * 1.5; // Branch swaying
+                        being.userData.basePosition.z += Math.cos(time * 0.6) * 1.0;
+                        
+                        // High branch precision camera
+                        camera.position.set(
+                            being.userData.basePosition.x + 12,
+                            being.userData.basePosition.y + 6,
+                            being.userData.basePosition.z + 18
+                        );
+                        camera.lookAt(being.userData.basePosition);
+                        break;
+                        
+                    case 5: // CROWN REACHING - Final push, swaying motion, wind
+                        being.particles.forEach((particle, i) => {
+                            particle.scale.setScalar(1.1); // Final effort expansion
+                            
+                            // Wind effects getting stronger
+                            const windForce = time * 2;
+                            particle.position.x += Math.sin(windForce + i * 0.02) * 0.01;
+                            particle.position.y += Math.cos(windForce * 1.4 + i * 0.02) * 0.005;
+                            particle.position.z += Math.sin(windForce * 0.7 + i * 0.02) * 0.008;
+                            
+                            // Reaching for crown
+                            if (i > 120 && i < 160) { // Arms
+                                particle.userData.targetPosition.y += 2 + Math.sin(windForce) * 0.5;
+                                particle.userData.targetPosition.x += Math.cos(windForce) * 0.8;
+                                particle.scale.setScalar(1.3); // Stretching reach
+                            }
+                            
+                            // Final climbing push
+                            particle.userData.velocity.y += 0.01;
+                            
+                            // Swaying with wind resistance
+                            particle.userData.velocity.x += Math.sin(windForce) * 0.002;
+                            
+                            // Wind-blown color
+                            particle.material.color.setHSL(0.15, 0.8, 0.8 + Math.sin(windForce * 3) * 0.2);
+                        });
+                        
+                        being.userData.basePosition.y += 0.04;
+                        being.userData.basePosition.x += Math.sin(time * 1.2) * 2.5; // Strong wind sway
+                        being.userData.basePosition.z += Math.cos(time * 0.9) * 1.8;
+                        
+                        // Crown approach camera
+                        camera.position.set(
+                            being.userData.basePosition.x + 15,
+                            being.userData.basePosition.y + 8,
+                            being.userData.basePosition.z + 20
+                        );
+                        camera.lookAt(being.userData.basePosition);
+                        
+                        // Strong wind effects
+                        if (Math.random() < 0.1) {
+                            createWindGust(being.userData.basePosition);
+                        }
+                        break;
+                        
+                    case 6: // TREE TOP MASTERY - Panoramic view, harmonious swaying
+                        being.particles.forEach((particle, i) => {
+                            // Master climber - harmonious with tree
+                            const harmony = 1 + Math.sin(time * 0.8) * 0.2;
+                            particle.scale.setScalar(0.9 * harmony);
+                            
+                            // Dancing with the wind
+                            const treeDance = time * 1;
+                            particle.position.x += Math.sin(treeDance + i * 0.01) * 0.015;
+                            particle.position.y += Math.cos(treeDance * 1.3 + i * 0.01) * 0.008;
+                            particle.position.z += Math.sin(treeDance * 0.6 + i * 0.01) * 0.012;
+                            
+                            // Arms moving with wind
+                            if (i > 100 && i < 150) {
+                                particle.userData.targetPosition.x += Math.sin(treeDance) * 1.0;
+                                particle.userData.targetPosition.y += Math.cos(treeDance * 1.5) * 0.8;
+                                particle.userData.targetPosition.z += Math.sin(treeDance * 0.8) * 0.6;
+                            }
+                            
+                            // Looking around at panoramic view
+                            if (i < 50) { // Head
+                                particle.userData.targetPosition.x += Math.sin(time * 0.5) * 0.6;
+                                particle.userData.targetPosition.y += Math.cos(time * 0.3) * 0.4;
+                            }
+                            
+                            // Flowing with tree rhythm
+                            particle.userData.velocity.multiplyScalar(1.02); // Amplifying natural movement
+                            
+                            // Transcendent golden-green
+                            particle.material.color.setHSL(
+                                0.2 + Math.sin(treeDance * 0.5) * 0.1,
+                                0.7,
+                                0.8 + Math.sin(treeDance * 2 + i * 0.01) * 0.2
+                            );
+                            
+                            // Mastery sparkles
+                            if (Math.random() < 0.03) {
+                                createMasteryGlow(particle.position);
+                            }
+                        });
+                        
+                        being.userData.basePosition.y = Math.max(being.userData.basePosition.y, 20 + heightTimer);
+                        being.userData.basePosition.x += Math.sin(time * 0.6) * 3.0; // Full tree sway
+                        being.userData.basePosition.z += Math.cos(time * 0.4) * 2.5;
+                        
+                        // Panoramic mastery camera
+                        camera.position.set(
+                            Math.sin(time * 0.2) * 40,
+                            being.userData.basePosition.y + 15 + Math.sin(time * 0.3) * 5,
+                            Math.cos(time * 0.2) * 40
+                        );
+                        camera.lookAt(being.userData.basePosition);
+                        break;
+                }
+                
+                updateTreeElements();
+            };
+
+            particleSystem.createAmbientParticles(70);
+        }
+
+        function createTreeEnvironment() {
+            // Create main tree trunk
+            tree = new THREE.Mesh(
+                new THREE.CylinderGeometry(2, 3, 50, 12),
+                new THREE.MeshBasicMaterial({
+                    color: 0x8b4513,
+                    transparent: true,
+                    opacity: 0.4
+                })
+            );
+            tree.position.set(0, 20, 0);
+            scene.add(tree);
+
+            // Create major branches
+            for (let i = 0; i < 8; i++) {
+                const branch = new THREE.Mesh(
+                    new THREE.CylinderGeometry(0.3, 0.8, 8, 6),
+                    new THREE.MeshBasicMaterial({
+                        color: 0x654321,
+                        transparent: true,
+                        opacity: 0.3
+                    })
+                );
+                branch.position.set(
+                    Math.cos(i * Math.PI / 4) * 6,
+                    15 + i * 3,
+                    Math.sin(i * Math.PI / 4) * 6
+                );
+                branch.rotation.z = Math.PI / 4;
+                scene.add(branch);
+                branches.push(branch);
+            }
+        }
+
+        function createBarkTouch(position) {
+            const touch = new THREE.Mesh(
+                new THREE.SphereGeometry(0.05, 6, 6),
+                new THREE.MeshBasicMaterial({
+                    color: 0x8b4513,
+                    transparent: true,
+                    opacity: 0.6
+                })
+            );
+            touch.position.copy(position);
+            touch.userData = { life: 0 };
+            scene.add(touch);
+            bark.push(touch);
+        }
+
+        function createFallingLeaf(position) {
+            const leaf = new THREE.Mesh(
+                new THREE.SphereGeometry(0.1, 4, 4),
+                new THREE.MeshBasicMaterial({
+                    color: new THREE.Color().setHSL(0.25 + Math.random() * 0.15, 0.8, 0.6),
+                    transparent: true,
+                    opacity: 0.8
+                })
+            );
+            leaf.position.copy(position);
+            leaf.userData = { 
+                life: 0,
+                fall: 0.01 + Math.random() * 0.01,
+                sway: Math.random() * 0.02
+            };
+            scene.add(leaf);
+            leaves.push(leaf);
+        }
+
+        function createBarkParticle(position) {
+            const particle = new THREE.Mesh(
+                new THREE.SphereGeometry(0.03, 4, 4),
+                new THREE.MeshBasicMaterial({
+                    color: 0x654321,
+                    transparent: true,
+                    opacity: 0.7
+                })
+            );
+            particle.position.copy(position);
+            particle.userData = { 
+                life: 0,
+                velocity: new THREE.Vector3(
+                    (Math.random() - 0.5) * 0.02,
+                    -Math.random() * 0.01,
+                    (Math.random() - 0.5) * 0.02
+                )
+            };
+            scene.add(particle);
+            bark.push(particle);
+        }
+
+        function createFoliageRustle(position) {
+            const rustle = new THREE.Mesh(
+                new THREE.SphereGeometry(0.2, 6, 6),
+                new THREE.MeshBasicMaterial({
+                    color: 0x228b22,
+                    transparent: true,
+                    opacity: 0.4
+                })
+            );
+            rustle.position.copy(position);
+            rustle.userData = { 
+                life: 0,
+                expand: 0.02
+            };
+            scene.add(rustle);
+            leaves.push(rustle);
+        }
+
+        function createWindGust(position) {
+            const gust = new THREE.Mesh(
+                new THREE.SphereGeometry(0.1, 4, 4),
+                new THREE.MeshBasicMaterial({
+                    color: 0xffffff,
+                    transparent: true,
+                    opacity: 0.3
+                })
+            );
+            gust.position.copy(position);
+            gust.userData = { 
+                life: 0,
+                velocity: new THREE.Vector3(
+                    (Math.random() - 0.5) * 0.1,
+                    (Math.random() - 0.5) * 0.05,
+                    (Math.random() - 0.5) * 0.1
+                )
+            };
+            scene.add(gust);
+            wind.push(gust);
+        }
+
+        function createMasteryGlow(position) {
+            const glow = new THREE.Mesh(
+                new THREE.SphereGeometry(0.05, 4, 4),
+                new THREE.MeshBasicMaterial({
+                    color: 0xffd700,
+                    transparent: true,
+                    opacity: 1
+                })
+            );
+            glow.position.copy(position);
+            glow.userData = { 
+                life: 0,
+                pulse: 0.03
+            };
+            scene.add(glow);
+            leaves.push(glow);
+        }
+
+        function updateTreeElements() {
+            // Update leaves and foliage
+            leaves = leaves.filter(element => {
+                element.userData.life += 0.016;
+                
+                if (element.userData.fall) {
+                    element.position.y -= element.userData.fall;
+                    element.position.x += Math.sin(element.userData.life * 10) * element.userData.sway;
+                }
+                
+                if (element.userData.expand) {
+                    element.scale.setScalar(1 + element.userData.life * element.userData.expand);
+                }
+                
+                if (element.userData.pulse) {
+                    element.scale.setScalar(1 + Math.sin(element.userData.life * 20) * element.userData.pulse);
+                    element.position.y += 0.01;
+                }
+                
+                element.material.opacity = Math.max(0, element.material.opacity - 0.01);
+                
+                if (element.material.opacity <= 0) {
+                    scene.remove(element);
+                    return false;
+                }
+                return true;
+            });
+
+            // Update bark particles
+            bark = bark.filter(particle => {
+                particle.userData.life += 0.016;
+                
+                if (particle.userData.velocity) {
+                    particle.position.add(particle.userData.velocity);
+                    particle.userData.velocity.multiplyScalar(0.95);
+                }
+                
+                particle.material.opacity = Math.max(0, particle.material.opacity - 0.02);
+                
+                if (particle.material.opacity <= 0) {
+                    scene.remove(particle);
+                    return false;
+                }
+                return true;
+            });
+
+            // Update wind effects
+            wind = wind.filter(gust => {
+                gust.userData.life += 0.016;
+                gust.position.add(gust.userData.velocity);
+                gust.userData.velocity.multiplyScalar(0.98);
+                gust.material.opacity = Math.max(0, 0.3 - gust.userData.life * 0.2);
+                
+                if (gust.material.opacity <= 0) {
+                    scene.remove(gust);
+                    return false;
+                }
+                return true;
+            });
+
+            // Update tree swaying
+            if (tree) {
+                tree.rotation.x = Math.sin(time * 0.5) * 0.05;
+                tree.rotation.z = Math.cos(time * 0.3) * 0.03;
+            }
+
+            branches.forEach((branch, i) => {
+                branch.rotation.y += 0.001;
+                branch.rotation.z = Math.PI / 4 + Math.sin(time * 0.8 + i) * 0.1;
+            });
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+            time += 0.016;
+
+            particleSystem.update(0.016);
+            
+            renderer.render(scene, camera);
+        }
+
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+
+        init();
+    </script>
+</body>
+</html>

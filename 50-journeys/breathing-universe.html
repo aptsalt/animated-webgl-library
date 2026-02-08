@@ -1,0 +1,963 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Breathing Universe - Revolutionary Digital Healing</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: radial-gradient(ellipse at center, #0a0a2e 0%, #000000 100%);
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            overflow: hidden;
+            cursor: none;
+        }
+
+        #canvas {
+            display: block;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+        }
+
+        .breathing-guide {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: rgba(255, 255, 255, 0.8);
+            font-size: 24px;
+            font-weight: 300;
+            text-align: center;
+            pointer-events: none;
+            z-index: 100;
+            text-shadow: 0 0 20px rgba(255, 255, 255, 0.3);
+            transition: all 0.5s ease;
+        }
+
+        .biometric-panel {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            padding: 20px;
+            color: rgba(255, 255, 255, 0.9);
+            font-size: 14px;
+            z-index: 10;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            min-width: 250px;
+        }
+
+        .metric {
+            display: flex;
+            justify-content: space-between;
+            margin: 10px 0;
+            padding: 8px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .metric:last-child {
+            border-bottom: none;
+        }
+
+        .metric-value {
+            color: #64ffda;
+            font-weight: 500;
+        }
+
+        .controls {
+            position: fixed;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 15px;
+            z-index: 10;
+        }
+
+        .control-btn {
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            color: white;
+            padding: 12px 24px;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(10px);
+        }
+
+        .control-btn:hover {
+            background: rgba(255, 255, 255, 0.2);
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(255, 255, 255, 0.2);
+        }
+
+        .control-btn.active {
+            background: rgba(26, 26, 26, 0.3);
+            border-color: #1a1a1a;
+            color: #1a1a1a;
+        }
+
+        .permission-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(0, 0, 0, 0.9);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            backdrop-filter: blur(20px);
+        }
+
+        .modal-content {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(20px);
+            border-radius: 20px;
+            padding: 40px;
+            text-align: center;
+            color: white;
+            max-width: 500px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .modal-title {
+            font-size: 28px;
+            font-weight: 300;
+            margin-bottom: 20px;
+            color: #64ffda;
+        }
+
+        .modal-text {
+            font-size: 16px;
+            line-height: 1.6;
+            margin-bottom: 30px;
+            opacity: 0.9;
+        }
+
+        .permission-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+            color: white;
+            padding: 15px 30px;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 0 10px;
+            transition: all 0.3s ease;
+            min-width: 120px;
+        }
+
+        .permission-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+        }
+
+        .permission-btn.secondary {
+            background: transparent;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+
+        .breathing-instructions {
+            position: fixed;
+            bottom: 120px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: rgba(255, 255, 255, 0.6);
+            text-align: center;
+            font-size: 16px;
+            z-index: 10;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        /* Breathing phase indicator */
+        .breath-indicator {
+            position: fixed;
+            bottom: 200px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 80px;
+            height: 80px;
+            border: 2px solid rgba(26, 26, 26, 0.3);
+            border-radius: 50%;
+            z-index: 10;
+        }
+
+        .breath-indicator::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 20px;
+            height: 20px;
+            background: #64ffda;
+            border-radius: 50%;
+            transition: all 0.3s ease;
+        }
+
+        @keyframes breathe-expand {
+            0%, 100% { transform: translate(-50%, -50%) scale(1); }
+            50% { transform: translate(-50%, -50%) scale(2.5); }
+        }
+
+        .breath-indicator.breathing::before {
+            animation: breathe-expand 4s ease-in-out infinite;
+        }
+    </style>
+</head>
+<body>
+    <!-- Permission Modal -->
+    <div id="permissionModal" class="permission-modal">
+        <div class="modal-content">
+            <h2 class="modal-title">🌌 Enter the Breathing Universe</h2>
+            <p class="modal-text">
+                This revolutionary experience responds to your breath and heart rate in real-time, 
+                creating a living universe that expands and contracts with your breathing pattern.
+                <br><br>
+                We'll need access to your camera and microphone to detect your biometric signals 
+                for the most healing experience.
+            </p>
+            <button id="allowBtn" class="permission-btn">Allow Access</button>
+            <button id="simulateBtn" class="permission-btn secondary">Use Simulation</button>
+        </div>
+    </div>
+
+    <!-- Main Canvas -->
+    <canvas id="canvas"></canvas>
+
+    <!-- Breathing Guide -->
+    <div id="breathingGuide" class="breathing-guide">
+        Feel your breath... let the universe breathe with you
+    </div>
+
+    <!-- Breath Indicator -->
+    <div id="breathIndicator" class="breath-indicator"></div>
+
+    <!-- Biometric Panel -->
+    <div id="biometricPanel" class="biometric-panel">
+        <h3 style="margin-bottom: 15px; color: #64ffda;">🫁 Biometric State</h3>
+        <div class="metric">
+            <span>Breathing Rate</span>
+            <span id="breathingRate" class="metric-value">12 BPM</span>
+        </div>
+        <div class="metric">
+            <span>Heart Rate</span>
+            <span id="heartRate" class="metric-value">70 BPM</span>
+        </div>
+        <div class="metric">
+            <span>HRV Coherence</span>
+            <span id="coherence" class="metric-value">65%</span>
+        </div>
+        <div class="metric">
+            <span>Stress Level</span>
+            <span id="stressLevel" class="metric-value">Low</span>
+        </div>
+        <div class="metric">
+            <span>Emotional State</span>
+            <span id="emotionalState" class="metric-value">Calm</span>
+        </div>
+    </div>
+
+    <!-- Controls -->
+    <div class="controls">
+        <button id="audioBtn" class="control-btn">🔊 Enable Audio</button>
+        <button id="fullscreenBtn" class="control-btn">⛶ Fullscreen</button>
+        <button id="resetBtn" class="control-btn">↻ Reset</button>
+    </div>
+
+    <!-- Breathing Instructions -->
+    <div class="breathing-instructions">
+        Breathe naturally • Feel the universe expand with your inhale • Contract with your exhale
+    </div>
+
+    <!-- Three.js and Custom Libraries -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script type="module">
+        import { TherapeuticShaders, ShaderManager } from './lib/shaders.js';
+        import { audioEngine } from './lib/audio-engine.js';
+        import { biometricMonitor } from './lib/biometric.js';
+
+        class BreathingUniverse {
+            constructor() {
+                this.scene = null;
+                this.camera = null;
+                this.renderer = null;
+                this.canvas = null;
+                
+                // Universe elements
+                this.breathingSphere = null;
+                this.particleSystem = null;
+                this.cosmicRings = [];
+                this.starField = null;
+                
+                // Biometric integration
+                this.biometricData = {
+                    breathing: { phase: 0, rate: 12, amplitude: 0.5 },
+                    heartRate: { bpm: 70, coherence: 0.5 },
+                    stress: { level: 0.3 },
+                    emotion: { primary: 'calm', intensity: 0.5 }
+                };
+                
+                // Animation state
+                this.time = 0;
+                this.isAudioEnabled = false;
+                this.isInitialized = false;
+                
+                // WebGL 2.0 support
+                this.supportsWebGL2 = false;
+                
+                // Therapeutic colors based on emotional state
+                this.healingColors = {
+                    calm: [0.3, 0.3, 0.3],        // Neutral gray
+                    anxious: [0.5, 0.5, 0.5],     // Medium gray
+                    peaceful: [0.2, 0.2, 0.2],    // Dark charcoal
+                    focused: [0.4, 0.4, 0.4],     // Balanced gray
+                    joyful: [0.9, 0.8, 0.3]       // Bright gold
+                };
+            }
+
+            async initialize() {
+                this.canvas = document.getElementById('canvas');
+                this.setupRenderer();
+                this.setupScene();
+                this.setupCamera();
+                this.setupLights();
+                
+                await this.createUniverseElements();
+                
+                // Setup biometric integration
+                this.setupBiometricCallbacks();
+                
+                // Setup audio engine
+                await audioEngine.initialize();
+                
+                this.setupEventListeners();
+                this.animate();
+                
+                this.isInitialized = true;
+                console.log('🌌 Breathing Universe initialized');
+            }
+
+            setupRenderer() {
+                // Try WebGL 2.0 first
+                const canvas = this.canvas;
+                let context;
+                
+                try {
+                    context = canvas.getContext('webgl2');
+                    if (context) {
+                        this.supportsWebGL2 = true;
+                        console.log('✨ WebGL 2.0 support detected');
+                    }
+                } catch (e) {
+                    console.log('Falling back to WebGL 1.0');
+                }
+                
+                this.renderer = new THREE.WebGLRenderer({ 
+                    canvas: canvas,
+                    context: context,
+                    antialias: true, 
+                    alpha: true,
+                    powerPreference: "high-performance"
+                });
+                
+                this.renderer.setSize(window.innerWidth, window.innerHeight);
+                this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+                this.renderer.setClearColor(0x000000, 0);
+                
+                // Enable advanced features
+                this.renderer.shadowMap.enabled = true;
+                this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+                this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
+                this.renderer.toneMappingExposure = 1.2;
+            }
+
+            setupScene() {
+                this.scene = new THREE.Scene();
+                this.scene.fog = new THREE.FogExp2(0x000011, 0.002);
+            }
+
+            setupCamera() {
+                this.camera = new THREE.PerspectiveCamera(
+                    60, 
+                    window.innerWidth / window.innerHeight, 
+                    0.1, 
+                    1000
+                );
+                this.camera.position.set(0, 0, 30);
+            }
+
+            setupLights() {
+                // Ambient light for subtle illumination
+                const ambientLight = new THREE.AmbientLight(0x111144, 0.4);
+                this.scene.add(ambientLight);
+                
+                // Point light that follows breathing
+                this.breathingLight = new THREE.PointLight(0x4488ff, 2, 100);
+                this.breathingLight.position.set(0, 0, 0);
+                this.scene.add(this.breathingLight);
+                
+                // Directional light for cosmic effect
+                const cosmicLight = new THREE.DirectionalLight(0x8844ff, 0.5);
+                cosmicLight.position.set(10, 10, 5);
+                this.scene.add(cosmicLight);
+            }
+
+            async createUniverseElements() {
+                // Create central breathing sphere
+                await this.createBreathingSphere();
+                
+                // Create particle system (10,000+ particles)
+                await this.createParticleSystem();
+                
+                // Create cosmic rings
+                await this.createCosmicRings();
+                
+                // Create distant star field
+                await this.createStarField();
+                
+                // Create energy flows
+                await this.createEnergyFlows();
+            }
+
+            async createBreathingSphere() {
+                const geometry = new THREE.IcosahedronGeometry(5, 4); // High detail
+                
+                // Use custom therapeutic shader
+                const material = new THREE.ShaderMaterial({
+                    vertexShader: TherapeuticShaders.breathingVertex,
+                    fragmentShader: TherapeuticShaders.breathingFragment,
+                    uniforms: {
+                        time: { value: 0 },
+                        breathPhase: { value: 0 },
+                        heartRate: { value: 70 },
+                        emotionalState: { value: new THREE.Vector3(...this.healingColors.calm) },
+                        stressLevel: { value: 0.3 },
+                        healingColors: { 
+                            value: [
+                                new THREE.Vector3(...this.healingColors.calm),
+                                new THREE.Vector3(...this.healingColors.anxious),
+                                new THREE.Vector3(...this.healingColors.peaceful),
+                                new THREE.Vector3(...this.healingColors.focused),
+                                new THREE.Vector3(...this.healingColors.joyful)
+                            ]
+                        }
+                    },
+                    transparent: true,
+                    side: THREE.DoubleSide,
+                    blending: THREE.AdditiveBlending
+                });
+                
+                this.breathingSphere = new THREE.Mesh(geometry, material);
+                this.scene.add(this.breathingSphere);
+            }
+
+            async createParticleSystem() {
+                const particleCount = 15000; // High particle count for immersion
+                const geometry = new THREE.BufferGeometry();
+                
+                const positions = new Float32Array(particleCount * 3);
+                const colors = new Float32Array(particleCount * 3);
+                const sizes = new Float32Array(particleCount);
+                const phases = new Float32Array(particleCount);
+                
+                for (let i = 0; i < particleCount; i++) {
+                    // Spherical distribution around breathing sphere
+                    const radius = 15 + Math.random() * 40;
+                    const theta = Math.random() * Math.PI * 2;
+                    const phi = Math.acos(2 * Math.random() - 1);
+                    
+                    positions[i * 3] = radius * Math.sin(phi) * Math.cos(theta);
+                    positions[i * 3 + 1] = radius * Math.sin(phi) * Math.sin(theta);
+                    positions[i * 3 + 2] = radius * Math.cos(phi);
+                    
+                    // Therapeutic color based on distance
+                    const color = new THREE.Color();
+                    const hue = 0.6 + (radius / 55) * 0.3; // Blue to purple spectrum
+                    color.setHSL(hue, 0.7, 0.5 + Math.random() * 0.3);
+                    
+                    colors[i * 3] = color.r;
+                    colors[i * 3 + 1] = color.g;
+                    colors[i * 3 + 2] = color.b;
+                    
+                    sizes[i] = Math.random() * 3 + 1;
+                    phases[i] = Math.random() * Math.PI * 2;
+                }
+                
+                geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+                geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+                geometry.setAttribute('size', new THREE.BufferAttribute(sizes, 1));
+                
+                // Store phases for animation
+                geometry.userData.phases = phases;
+                geometry.userData.originalPositions = [...positions];
+                
+                const material = new THREE.PointsMaterial({
+                    size: 2,
+                    vertexColors: true,
+                    transparent: true,
+                    opacity: 0.8,
+                    blending: THREE.AdditiveBlending,
+                    sizeAttenuation: true
+                });
+                
+                this.particleSystem = new THREE.Points(geometry, material);
+                this.scene.add(this.particleSystem);
+            }
+
+            async createCosmicRings() {
+                const ringCount = 7; // Sacred number
+                
+                for (let i = 0; i < ringCount; i++) {
+                    const radius = 8 + i * 4;
+                    const geometry = new THREE.TorusGeometry(radius, 0.1, 16, 100);
+                    
+                    const hue = 0.6 + i * 0.05; // Shift through healing spectrum
+                    const color = new THREE.Color().setHSL(hue, 0.8, 0.6);
+                    
+                    const material = new THREE.MeshBasicMaterial({
+                        color: color,
+                        transparent: true,
+                        opacity: 0.3 - i * 0.03,
+                        side: THREE.DoubleSide
+                    });
+                    
+                    const ring = new THREE.Mesh(geometry, material);
+                    ring.userData = {
+                        originalRadius: radius,
+                        phase: i * 0.3,
+                        rotationSpeed: 0.005 * (i + 1)
+                    };
+                    
+                    // Random orientation
+                    ring.rotation.x = Math.random() * Math.PI;
+                    ring.rotation.y = Math.random() * Math.PI;
+                    ring.rotation.z = Math.random() * Math.PI;
+                    
+                    this.cosmicRings.push(ring);
+                    this.scene.add(ring);
+                }
+            }
+
+            async createStarField() {
+                const starCount = 2000;
+                const geometry = new THREE.BufferGeometry();
+                const positions = new Float32Array(starCount * 3);
+                const colors = new Float32Array(starCount * 3);
+                
+                for (let i = 0; i < starCount; i++) {
+                    // Very distant stars
+                    const radius = 100 + Math.random() * 400;
+                    const theta = Math.random() * Math.PI * 2;
+                    const phi = Math.acos(2 * Math.random() - 1);
+                    
+                    positions[i * 3] = radius * Math.sin(phi) * Math.cos(theta);
+                    positions[i * 3 + 1] = radius * Math.sin(phi) * Math.sin(theta);
+                    positions[i * 3 + 2] = radius * Math.cos(phi);
+                    
+                    // Subtle star colors
+                    const intensity = Math.random() * 0.5 + 0.5;
+                    colors[i * 3] = intensity;
+                    colors[i * 3 + 1] = intensity * 0.9;
+                    colors[i * 3 + 2] = intensity * 1.1;
+                }
+                
+                geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+                geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+                
+                const material = new THREE.PointsMaterial({
+                    size: 1,
+                    vertexColors: true,
+                    transparent: true,
+                    opacity: 0.6,
+                    sizeAttenuation: false
+                });
+                
+                this.starField = new THREE.Points(geometry, material);
+                this.scene.add(this.starField);
+            }
+
+            async createEnergyFlows() {
+                // Create flowing energy streams that respond to breathing
+                const flowCount = 12;
+                
+                for (let i = 0; i < flowCount; i++) {
+                    const points = [];
+                    const segments = 50;
+                    const angle = (i / flowCount) * Math.PI * 2;
+                    
+                    for (let j = 0; j < segments; j++) {
+                        const t = j / segments;
+                        const radius = 12 + t * 25;
+                        const height = Math.sin(t * Math.PI * 3) * 5;
+                        
+                        points.push(new THREE.Vector3(
+                            Math.cos(angle) * radius,
+                            height,
+                            Math.sin(angle) * radius
+                        ));
+                    }
+                    
+                    const curve = new THREE.CatmullRomCurve3(points);
+                    const geometry = new THREE.TubeGeometry(curve, segments * 2, 0.05, 8, false);
+                    
+                    const hue = 0.5 + (i / flowCount) * 0.4;
+                    const color = new THREE.Color().setHSL(hue, 0.8, 0.6);
+                    
+                    const material = new THREE.MeshBasicMaterial({
+                        color: color,
+                        transparent: true,
+                        opacity: 0.4,
+                        emissive: color,
+                        emissiveIntensity: 0.2
+                    });
+                    
+                    const flow = new THREE.Mesh(geometry, material);
+                    flow.userData = { 
+                        angle: angle, 
+                        phase: i * 0.2,
+                        originalPoints: points
+                    };
+                    
+                    this.scene.add(flow);
+                }
+            }
+
+            setupBiometricCallbacks() {
+                // Listen for breathing updates
+                biometricMonitor.onBreathingUpdate((data) => {
+                    this.biometricData.breathing = data;
+                    this.updateBreathingGuide(data);
+                    this.updateBiometricPanel();
+                });
+                
+                // Listen for heart rate updates
+                biometricMonitor.onHeartRateUpdate((data) => {
+                    this.biometricData.heartRate = data;
+                    this.updateBiometricPanel();
+                });
+                
+                // Listen for stress level updates
+                biometricMonitor.onStressUpdate((data) => {
+                    this.biometricData.stress = data;
+                    this.updateBiometricPanel();
+                    
+                    // Adapt audio based on stress
+                    if (this.isAudioEnabled) {
+                        audioEngine.adaptVolumeToStress(data.level);
+                    }
+                });
+                
+                // Listen for emotion updates
+                biometricMonitor.onEmotionUpdate((data) => {
+                    this.biometricData.emotion = data;
+                    this.updateBiometricPanel();
+                });
+            }
+
+            updateBreathingGuide(breathingData) {
+                const guide = document.getElementById('breathingGuide');
+                const indicator = document.getElementById('breathIndicator');
+                
+                const phase = breathingData.phase;
+                
+                if (phase < 0.3) {
+                    guide.textContent = 'Breathe in... feel the universe expand';
+                    indicator.classList.add('breathing');
+                } else if (phase > 0.7) {
+                    guide.textContent = 'Breathe out... let go and contract';
+                    indicator.classList.remove('breathing');
+                } else {
+                    guide.textContent = 'Hold... stay present with the cosmos';
+                    indicator.classList.remove('breathing');
+                }
+                
+                // Scale guide based on breathing amplitude
+                const scale = 1 + breathingData.amplitude * 0.2;
+                guide.style.transform = `translate(-50%, -50%) scale(${scale})`;
+            }
+
+            updateBiometricPanel() {
+                document.getElementById('breathingRate').textContent = 
+                    `${Math.round(this.biometricData.breathing.rate)} BPM`;
+                
+                document.getElementById('heartRate').textContent = 
+                    `${Math.round(this.biometricData.heartRate.bpm)} BPM`;
+                
+                document.getElementById('coherence').textContent = 
+                    `${Math.round(this.biometricData.heartRate.coherence * 100)}%`;
+                
+                const stressLevel = this.biometricData.stress.level;
+                let stressText = 'Low';
+                if (stressLevel > 0.7) stressText = 'High';
+                else if (stressLevel > 0.4) stressText = 'Moderate';
+                document.getElementById('stressLevel').textContent = stressText;
+                
+                document.getElementById('emotionalState').textContent = 
+                    this.biometricData.emotion.primary.charAt(0).toUpperCase() + 
+                    this.biometricData.emotion.primary.slice(1);
+            }
+
+            animate() {
+                if (!this.isInitialized) return;
+                
+                requestAnimationFrame(() => this.animate());
+                
+                this.time += 0.016; // ~60 FPS
+                
+                this.updateUniverse();
+                this.updateCamera();
+                
+                this.renderer.render(this.scene, this.camera);
+            }
+
+            updateUniverse() {
+                const breathingPhase = this.biometricData.breathing.phase;
+                const breathingAmplitude = this.biometricData.breathing.amplitude;
+                const heartRate = this.biometricData.heartRate.bpm;
+                const emotionColor = this.healingColors[this.biometricData.emotion.primary] || this.healingColors.calm;
+                
+                // Update breathing sphere
+                if (this.breathingSphere) {
+                    const scale = 1 + breathingPhase * breathingAmplitude * 0.4;
+                    this.breathingSphere.scale.set(scale, scale, scale);
+                    
+                    // Update shader uniforms
+                    const material = this.breathingSphere.material;
+                    material.uniforms.time.value = this.time;
+                    material.uniforms.breathPhase.value = breathingPhase;
+                    material.uniforms.heartRate.value = heartRate;
+                    material.uniforms.emotionalState.value.fromArray(emotionColor);
+                    material.uniforms.stressLevel.value = this.biometricData.stress.level;
+                }
+                
+                // Update particle system
+                if (this.particleSystem) {
+                    const positions = this.particleSystem.geometry.attributes.position;
+                    const originalPositions = this.particleSystem.geometry.userData.originalPositions;
+                    const phases = this.particleSystem.geometry.userData.phases;
+                    
+                    for (let i = 0; i < positions.count; i++) {
+                        const i3 = i * 3;
+                        const phase = phases[i];
+                        
+                        // Breathing influence on particle positions
+                        const breathInfluence = Math.sin(breathingPhase * Math.PI * 2 + phase) * 0.3;
+                        const heartInfluence = Math.sin(this.time * heartRate / 60 * 2 + phase) * 0.1;
+                        
+                        const originalRadius = Math.sqrt(
+                            originalPositions[i3] ** 2 + 
+                            originalPositions[i3 + 1] ** 2 + 
+                            originalPositions[i3 + 2] ** 2
+                        );
+                        
+                        const newRadius = originalRadius * (1 + breathInfluence + heartInfluence);
+                        const normalizedX = originalPositions[i3] / originalRadius;
+                        const normalizedY = originalPositions[i3 + 1] / originalRadius;
+                        const normalizedZ = originalPositions[i3 + 2] / originalRadius;
+                        
+                        positions.setXYZ(
+                            i,
+                            normalizedX * newRadius,
+                            normalizedY * newRadius + Math.sin(this.time + phase) * 0.5,
+                            normalizedZ * newRadius
+                        );
+                    }
+                    
+                    positions.needsUpdate = true;
+                    
+                    // Rotate particle system
+                    this.particleSystem.rotation.y = this.time * 0.02;
+                }
+                
+                // Update cosmic rings
+                this.cosmicRings.forEach(ring => {
+                    const breathInfluence = Math.sin(breathingPhase * Math.PI * 2 + ring.userData.phase) * 0.2;
+                    const scale = 1 + breathInfluence;
+                    ring.scale.set(scale, scale, scale);
+                    
+                    // Rotation based on breathing and heart rate
+                    ring.rotation.z += ring.userData.rotationSpeed * (1 + heartRate / 70);
+                    ring.rotation.x += ring.userData.rotationSpeed * 0.5;
+                    
+                    // Opacity based on stress level
+                    const baseOpacity = 0.3 - ring.userData.phase * 0.03;
+                    ring.material.opacity = baseOpacity * (1 - this.biometricData.stress.level * 0.3);
+                });
+                
+                // Update breathing light
+                if (this.breathingLight) {
+                    const intensity = 2 + breathingPhase * 3;
+                    this.breathingLight.intensity = intensity;
+                    
+                    // Color shifts with emotion
+                    const color = new THREE.Color().fromArray(emotionColor);
+                    this.breathingLight.color = color;
+                }
+                
+                // Gentle star field rotation
+                if (this.starField) {
+                    this.starField.rotation.y = this.time * 0.001;
+                    this.starField.rotation.x = Math.sin(this.time * 0.0005) * 0.1;
+                }
+            }
+
+            updateCamera() {
+                // Subtle camera movement based on breathing
+                const breathingPhase = this.biometricData.breathing.phase;
+                const amplitude = this.biometricData.breathing.amplitude;
+                
+                const cameraDistance = 30 + Math.sin(breathingPhase * Math.PI * 2) * amplitude * 3;
+                this.camera.position.z = cameraDistance;
+                
+                // Gentle orbital movement
+                const orbitRadius = 2;
+                this.camera.position.x = Math.sin(this.time * 0.05) * orbitRadius;
+                this.camera.position.y = Math.cos(this.time * 0.03) * orbitRadius * 0.5;
+                
+                this.camera.lookAt(0, 0, 0);
+            }
+
+            setupEventListeners() {
+                // Permission modal handlers
+                document.getElementById('allowBtn').addEventListener('click', async () => {
+                    try {
+                        await biometricMonitor.initialize();
+                        document.getElementById('permissionModal').classList.add('hidden');
+                        console.log('✅ Biometric monitoring enabled');
+                    } catch (error) {
+                        console.warn('Biometric initialization failed, using simulation');
+                        await biometricMonitor.initializeSimulatedMode();
+                        document.getElementById('permissionModal').classList.add('hidden');
+                    }
+                });
+                
+                document.getElementById('simulateBtn').addEventListener('click', async () => {
+                    await biometricMonitor.initializeSimulatedMode();
+                    document.getElementById('permissionModal').classList.add('hidden');
+                    console.log('🎭 Using biometric simulation');
+                });
+                
+                // Control button handlers
+                document.getElementById('audioBtn').addEventListener('click', () => {
+                    this.toggleAudio();
+                });
+                
+                document.getElementById('fullscreenBtn').addEventListener('click', () => {
+                    this.toggleFullscreen();
+                });
+                
+                document.getElementById('resetBtn').addEventListener('click', () => {
+                    this.resetExperience();
+                });
+                
+                // Window resize
+                window.addEventListener('resize', () => {
+                    this.camera.aspect = window.innerWidth / window.innerHeight;
+                    this.camera.updateProjectionMatrix();
+                    this.renderer.setSize(window.innerWidth, window.innerHeight);
+                });
+                
+                // Keyboard shortcuts
+                document.addEventListener('keydown', (event) => {
+                    switch(event.code) {
+                        case 'Space':
+                            event.preventDefault();
+                            this.toggleAudio();
+                            break;
+                        case 'KeyF':
+                            this.toggleFullscreen();
+                            break;
+                        case 'KeyR':
+                            this.resetExperience();
+                            break;
+                        case 'Escape':
+                            if (document.fullscreenElement) {
+                                document.exitFullscreen();
+                            }
+                            break;
+                    }
+                });
+            }
+
+            async toggleAudio() {
+                const btn = document.getElementById('audioBtn');
+                
+                if (!this.isAudioEnabled) {
+                    // Generate therapeutic breathing guide audio
+                    audioEngine.generateBreathingGuide('therapeutic', 300000); // 5 minutes
+                    
+                    // Add binaural beats for deep relaxation
+                    audioEngine.generateBinauralBeats(256, 4, 300000); // 4Hz theta waves
+                    
+                    // Generate emotional soundscape
+                    audioEngine.generateEmotionalSoundscape(
+                        this.biometricData.emotion.primary, 
+                        this.biometricData.emotion.intensity,
+                        300000
+                    );
+                    
+                    btn.textContent = '🔇 Disable Audio';
+                    btn.classList.add('active');
+                    this.isAudioEnabled = true;
+                } else {
+                    audioEngine.stopAllAudio();
+                    btn.textContent = '🔊 Enable Audio';
+                    btn.classList.remove('active');
+                    this.isAudioEnabled = false;
+                }
+            }
+
+            toggleFullscreen() {
+                if (!document.fullscreenElement) {
+                    document.documentElement.requestFullscreen();
+                } else {
+                    if (document.exitFullscreen) {
+                        document.exitFullscreen();
+                    }
+                }
+            }
+
+            resetExperience() {
+                // Reset camera position
+                this.camera.position.set(0, 0, 30);
+                
+                // Reset time
+                this.time = 0;
+                
+                // Stop and restart audio
+                if (this.isAudioEnabled) {
+                    audioEngine.stopAllAudio();
+                    setTimeout(() => {
+                        this.toggleAudio();
+                    }, 500);
+                }
+                
+                console.log('🔄 Experience reset');
+            }
+        }
+
+        // Initialize the Breathing Universe
+        window.addEventListener('load', async () => {
+            const universe = new BreathingUniverse();
+            await universe.initialize();
+        });
+    </script>
+</body>
+</html>

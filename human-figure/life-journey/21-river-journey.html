@@ -1,0 +1,523 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Life Journey - River Journey</title>
+    <style>
+        body { 
+            margin: 0; overflow: hidden; 
+            background: linear-gradient(180deg, #87ceeb 0%, #4682b4 50%, #191970 100%);
+            animation: waterFlow 8s infinite;
+        }
+        canvas { display: block; }
+        .title { 
+            position: absolute; top: 25px; left: 50%; transform: translateX(-50%); 
+            color: #00ffff; font-family: 'Trebuchet MS', sans-serif; font-size: 36px; 
+            letter-spacing: 3px; text-shadow: 2px 2px 8px rgba(0,0,0,0.7);
+            animation: ripple 3s infinite;
+        }
+        .river-stage {
+            position: absolute; top: 70px; left: 50%; transform: translateX(-50%);
+            color: #87ceeb; font-family: sans-serif; font-size: 18px; 
+            font-weight: bold; letter-spacing: 2px; text-shadow: 1px 1px 4px rgba(0,0,0,0.8);
+        }
+        @keyframes waterFlow {
+            0%, 100% { filter: hue-rotate(0deg); }
+            50% { filter: hue-rotate(30deg); }
+        }
+        @keyframes ripple {
+            0%, 100% { text-shadow: 2px 2px 8px rgba(0,255,255,0.8); }
+            50% { text-shadow: 4px 4px 12px rgba(0,255,255,0.4); }
+        }
+    </style>
+</head>
+<body>
+    <div class="title">RIVER JOURNEY</div>
+    <div class="river-stage" id="riverStage">MOUNTAIN SOURCE</div>
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="../particle-being-library.js"></script>
+    <script>
+        let scene, camera, renderer, particleSystem;
+        let time = 0;
+        let currentStage = 0;
+        let stageTimer = 0;
+        let waterParticles = [];
+        let riverBed = [];
+        let obstacles = [];
+        let boat;
+        
+        const riverStages = [
+            'MOUNTAIN SOURCE', 'GENTLE STREAM', 'TURBULENT RAPIDS', 'WATERFALL PLUNGE',
+            'WIDE RIVER FLOW', 'DELTA BRANCHING', 'OCEAN MERGE'
+        ];
+
+        function init() {
+            scene = new THREE.Scene();
+            camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+            camera.position.set(0, 15, 30);
+
+            renderer = new THREE.WebGLRenderer({ antialias: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            document.body.appendChild(renderer.domElement);
+
+            // Create river traveler particle system
+            particleSystem = new ParticleBeingSystem(scene, {
+                particleCount: 280,
+                particleSize: 0.08,
+                speedMultiplier: 2.0,
+                colorRange: { h: 0.55, s: 0.7, lMin: 0.5, lMax: 0.8 }
+            });
+
+            createRiverTraveler();
+            createRiverEnvironment();
+            animate();
+        }
+
+        function createRiverTraveler() {
+            const traveler = particleSystem.convertToParticleBeing(
+                null,
+                { x: 0, y: 0, z: 0 },
+                {
+                    particleCount: 300,
+                    states: ['flowing', 'navigating', 'struggling', 'surrendering'],
+                    stateTimings: { flowing: 4, navigating: 3, struggling: 2, surrendering: 3 },
+                    attractionForces: { flowing: 0.02, navigating: 0.025, struggling: 0.015, surrendering: 0.01 }
+                }
+            );
+
+            // 7 distinct river journey phases
+            const originalUpdate = particleSystem.updateBeing.bind(particleSystem);
+            particleSystem.updateBeing = function(being, deltaTime) {
+                originalUpdate(being, deltaTime);
+                
+                stageTimer += deltaTime;
+                if (stageTimer > 6) {
+                    currentStage = (currentStage + 1) % riverStages.length;
+                    stageTimer = 0;
+                    document.getElementById('riverStage').textContent = riverStages[currentStage];
+                }
+                
+                switch(currentStage) {
+                    case 0: // MOUNTAIN SOURCE - Small, pure, emerging
+                        being.particles.forEach((particle, i) => {
+                            particle.scale.setScalar(0.4); // Very small at source
+                            
+                            // Emerging from single point
+                            if (stageTimer < 2) {
+                                const emergence = stageTimer / 2;
+                                particle.visible = i < emergence * being.particles.length;
+                                particle.userData.targetPosition.multiplyScalar(emergence);
+                            }
+                            
+                            // Crystal clear, pure movement
+                            particle.material.color.setHSL(0.58, 0.3, 0.9);
+                            particle.material.opacity = 0.9;
+                            
+                            // Gentle bubbling motion
+                            particle.userData.velocity.y += Math.sin(time * 15 + i * 0.1) * 0.002;
+                            particle.userData.velocity.x += Math.cos(time * 12 + i * 0.05) * 0.001;
+                        });
+                        
+                        being.userData.basePosition.set(0, -2, 10);
+                        
+                        // Close mountain spring view
+                        camera.position.set(2, 2, 8);
+                        camera.lookAt(0, -1, 10);
+                        break;
+                        
+                    case 1: // GENTLE STREAM - Growing, meandering, peaceful
+                        being.particles.forEach((particle, i) => {
+                            particle.scale.setScalar(0.6);
+                            
+                            // Meandering stream motion
+                            const meander = Math.sin(time * 2 + i * 0.2) * 0.01;
+                            particle.userData.velocity.x += meander;
+                            particle.userData.velocity.z -= 0.02; // Flowing forward
+                            
+                            // Gentle ripples
+                            particle.position.y += Math.sin(time * 8 + i * 0.3) * 0.05;
+                            
+                            // Clear water color
+                            particle.material.color.setHSL(0.55, 0.6, 0.8);
+                            
+                            // Create gentle water ripples
+                            if (Math.random() < 0.05) {
+                                createWaterRipple(particle.position, 0.5);
+                            }
+                        });
+                        
+                        being.userData.basePosition.z -= 0.1;
+                        
+                        // Following stream camera
+                        camera.position.set(5, 8, being.userData.basePosition.z + 15);
+                        camera.lookAt(being.userData.basePosition);
+                        break;
+                        
+                    case 2: // TURBULENT RAPIDS - Chaotic, fast, challenging
+                        being.particles.forEach((particle, i) => {
+                            particle.scale.setScalar(0.9);
+                            
+                            // Violent rapids motion
+                            particle.userData.velocity.x += (Math.random() - 0.5) * 0.08;
+                            particle.userData.velocity.y += (Math.random() - 0.5) * 0.06;
+                            particle.userData.velocity.z -= 0.15; // Fast forward flow
+                            
+                            // Turbulent white water
+                            particle.material.color.setHSL(0.58, 0.2, 0.95);
+                            particle.material.opacity = 0.7 + Math.random() * 0.3;
+                            
+                            // Bouncing off rocks
+                            obstacles.forEach(rock => {
+                                const distance = particle.position.distanceTo(rock.position);
+                                if (distance < 2) {
+                                    const bounce = rock.position.clone().sub(particle.position);
+                                    bounce.normalize().multiplyScalar(-0.05);
+                                    particle.userData.velocity.add(bounce);
+                                }
+                            });
+                            
+                            // White water spray
+                            if (Math.random() < 0.2) {
+                                createWaterSpray(particle.position);
+                            }
+                        });
+                        
+                        being.userData.basePosition.z -= 0.5;
+                        
+                        // Turbulent tracking camera
+                        camera.position.set(
+                            being.userData.basePosition.x + (Math.random() - 0.5) * 4,
+                            10 + (Math.random() - 0.5) * 2,
+                            being.userData.basePosition.z + 12
+                        );
+                        camera.lookAt(being.userData.basePosition);
+                        break;
+                        
+                    case 3: // WATERFALL PLUNGE - Dramatic fall, transformation
+                        being.particles.forEach((particle, i) => {
+                            particle.scale.setScalar(1.1);
+                            
+                            // Free fall motion
+                            particle.userData.velocity.y -= 0.1;
+                            particle.userData.velocity.x += Math.sin(i * 0.1) * 0.01; // Slight spread
+                            
+                            // Waterfall stretch effect
+                            particle.scale.y = 3.0;
+                            particle.scale.x = 0.3;
+                            particle.scale.z = 0.3;
+                            
+                            // Mist and spray
+                            particle.material.opacity = 0.4 + Math.sin(time * 20 + i) * 0.3;
+                            particle.material.color.setHSL(0.55, 0.4, 0.9);
+                            
+                            // Create mist clouds
+                            if (Math.random() < 0.15) {
+                                createMist(particle.position);
+                            }
+                        });
+                        
+                        being.userData.basePosition.y -= 0.8;
+                        
+                        // Dramatic waterfall camera
+                        camera.position.set(-8, being.userData.basePosition.y + 5, being.userData.basePosition.z + 20);
+                        camera.lookAt(being.userData.basePosition);
+                        break;
+                        
+                    case 4: // WIDE RIVER FLOW - Mature, powerful, steady
+                        being.particles.forEach((particle, i) => {
+                            particle.scale.setScalar(1.3); // Larger, more powerful
+                            
+                            // Steady, powerful flow
+                            particle.userData.velocity.z -= 0.08;
+                            particle.userData.velocity.x += Math.sin(time * 1 + i * 0.01) * 0.005; // Gentle side flow
+                            
+                            // Deep river motion
+                            particle.position.y += Math.sin(time * 3 + i * 0.1) * 0.02;
+                            
+                            // Deep blue color
+                            particle.material.color.setHSL(0.6, 0.8, 0.5);
+                            particle.material.opacity = 0.8;
+                        });
+                        
+                        being.userData.basePosition.z -= 0.2;
+                        being.userData.basePosition.y = -3; // Deeper water
+                        
+                        // Wide river view
+                        camera.position.set(0, 20, being.userData.basePosition.z + 25);
+                        camera.lookAt(being.userData.basePosition);
+                        break;
+                        
+                    case 5: // DELTA BRANCHING - Splitting paths, choices
+                        being.particles.forEach((particle, i) => {
+                            particle.scale.setScalar(1.0);
+                            
+                            // Branching into multiple streams
+                            const branch = Math.floor(i / (being.particles.length / 5)); // 5 branches
+                            const branchAngle = (branch - 2) * 0.3;
+                            
+                            particle.userData.velocity.x += Math.sin(branchAngle) * 0.03;
+                            particle.userData.velocity.z -= Math.cos(branchAngle) * 0.05;
+                            
+                            // Different colors for different branches
+                            particle.material.color.setHSL(
+                                0.55 + branch * 0.05,
+                                0.7,
+                                0.6
+                            );
+                            
+                            // Sediment and nutrients
+                            if (Math.random() < 0.08) {
+                                createSediment(particle.position, branch);
+                            }
+                        });
+                        
+                        being.userData.basePosition.z -= 0.15;
+                        
+                        // Delta overview camera
+                        camera.position.set(0, 25, being.userData.basePosition.z + 30);
+                        camera.lookAt(being.userData.basePosition);
+                        break;
+                        
+                    case 6: // OCEAN MERGE - Infinite expansion, unity
+                        being.particles.forEach((particle, i) => {
+                            // Expanding into vastness
+                            const expansion = 1 + stageTimer * 0.2;
+                            particle.scale.setScalar(0.8 + expansion * 0.3);
+                            
+                            // Spreading into ocean
+                            particle.userData.targetPosition.multiplyScalar(expansion);
+                            particle.userData.velocity.multiplyScalar(1.02);
+                            
+                            // Ocean wave motion
+                            const wavePhase = time * 2 + i * 0.01;
+                            particle.position.y += Math.sin(wavePhase) * 0.3;
+                            particle.position.x += Math.cos(wavePhase * 1.3) * 0.1;
+                            
+                            // Deep ocean color
+                            particle.material.color.setHSL(
+                                0.65,
+                                0.9,
+                                0.3 + Math.sin(wavePhase) * 0.2
+                            );
+                            
+                            // Gradual transparency as merging
+                            if (stageTimer > 3) {
+                                particle.material.opacity = Math.max(0.2, 0.8 - (stageTimer - 3) * 0.1);
+                            }
+                        });
+                        
+                        being.userData.basePosition.y = Math.sin(time * 1.5) * 2;
+                        
+                        // Infinite ocean camera
+                        camera.position.set(
+                            Math.sin(time * 0.3) * 50,
+                            30 + Math.sin(time * 0.2) * 10,
+                            being.userData.basePosition.z + 40
+                        );
+                        camera.lookAt(being.userData.basePosition);
+                        break;
+                }
+                
+                updateWaterEffects();
+            };
+
+            particleSystem.createAmbientParticles(150);
+        }
+
+        function createRiverEnvironment() {
+            // Create river bed stones
+            for (let i = 0; i < 20; i++) {
+                const stone = new THREE.Mesh(
+                    new THREE.SphereGeometry(0.5 + Math.random() * 1, 8, 8),
+                    new THREE.MeshBasicMaterial({
+                        color: new THREE.Color().setHSL(0.08, 0.3, 0.3 + Math.random() * 0.3),
+                        transparent: true,
+                        opacity: 0.6
+                    })
+                );
+                stone.position.set(
+                    (Math.random() - 0.5) * 30,
+                    -5 - Math.random() * 2,
+                    (Math.random() - 0.5) * 50
+                );
+                scene.add(stone);
+                riverBed.push(stone);
+            }
+
+            // Create obstacles/rocks for rapids
+            for (let i = 0; i < 8; i++) {
+                const rock = new THREE.Mesh(
+                    new THREE.BoxGeometry(1 + Math.random(), 2 + Math.random(), 1 + Math.random()),
+                    new THREE.MeshBasicMaterial({
+                        color: 0x666666,
+                        transparent: true,
+                        opacity: 0.7
+                    })
+                );
+                rock.position.set(
+                    (Math.random() - 0.5) * 15,
+                    -2,
+                    -20 - Math.random() * 10
+                );
+                scene.add(rock);
+                obstacles.push(rock);
+            }
+
+            // Create simple boat
+            boat = new THREE.Mesh(
+                new THREE.BoxGeometry(2, 0.3, 4),
+                new THREE.MeshBasicMaterial({
+                    color: 0x8b4513,
+                    transparent: true,
+                    opacity: 0.5
+                })
+            );
+            boat.position.set(0, 1, 5);
+            scene.add(boat);
+        }
+
+        function createWaterRipple(position, intensity) {
+            const ripple = new THREE.Mesh(
+                new THREE.RingGeometry(0.1, 1, 16),
+                new THREE.MeshBasicMaterial({
+                    color: 0x87ceeb,
+                    transparent: true,
+                    opacity: 0.4,
+                    side: THREE.DoubleSide
+                })
+            );
+            ripple.position.copy(position);
+            ripple.rotation.x = Math.PI / 2;
+            ripple.userData = { life: 0, intensity: intensity };
+            scene.add(ripple);
+            waterParticles.push(ripple);
+        }
+
+        function createWaterSpray(position) {
+            const spray = new THREE.Mesh(
+                new THREE.SphereGeometry(0.1, 4, 4),
+                new THREE.MeshBasicMaterial({
+                    color: 0xffffff,
+                    transparent: true,
+                    opacity: 0.8
+                })
+            );
+            spray.position.copy(position);
+            spray.userData = {
+                life: 0,
+                velocity: new THREE.Vector3(
+                    (Math.random() - 0.5) * 0.2,
+                    Math.random() * 0.3,
+                    (Math.random() - 0.5) * 0.1
+                )
+            };
+            scene.add(spray);
+            waterParticles.push(spray);
+        }
+
+        function createMist(position) {
+            const mist = new THREE.Mesh(
+                new THREE.SphereGeometry(0.3, 6, 6),
+                new THREE.MeshBasicMaterial({
+                    color: 0xffffff,
+                    transparent: true,
+                    opacity: 0.3
+                })
+            );
+            mist.position.copy(position);
+            mist.userData = {
+                life: 0,
+                drift: new THREE.Vector3(
+                    (Math.random() - 0.5) * 0.02,
+                    0.01,
+                    (Math.random() - 0.5) * 0.02
+                )
+            };
+            scene.add(mist);
+            waterParticles.push(mist);
+        }
+
+        function createSediment(position, branch) {
+            const sediment = new THREE.Mesh(
+                new THREE.SphereGeometry(0.05, 4, 4),
+                new THREE.MeshBasicMaterial({
+                    color: new THREE.Color().setHSL(0.1, 0.6, 0.4),
+                    transparent: true,
+                    opacity: 0.6
+                })
+            );
+            sediment.position.copy(position);
+            sediment.userData = {
+                life: 0,
+                branch: branch,
+                sink: 0.001
+            };
+            scene.add(sediment);
+            waterParticles.push(sediment);
+        }
+
+        function updateWaterEffects() {
+            // Update boat position to follow traveler
+            if (boat && particleSystem.beings[0]) {
+                const travelerPos = particleSystem.beings[0].userData.basePosition;
+                boat.position.x = travelerPos.x;
+                boat.position.z = travelerPos.z + 3;
+                boat.position.y = travelerPos.y + 2;
+                
+                // Boat rocking
+                boat.rotation.x = Math.sin(time * 4) * 0.1;
+                boat.rotation.z = Math.cos(time * 3) * 0.05;
+            }
+
+            // Update water effects
+            waterParticles = waterParticles.filter(effect => {
+                effect.userData.life += 0.016;
+                
+                if (effect.userData.velocity) {
+                    effect.position.add(effect.userData.velocity);
+                    effect.userData.velocity.y -= 0.005; // Gravity
+                }
+                
+                if (effect.userData.drift) {
+                    effect.position.add(effect.userData.drift);
+                }
+                
+                if (effect.userData.sink) {
+                    effect.position.y -= effect.userData.sink;
+                }
+                
+                if (effect.userData.intensity) {
+                    effect.scale.setScalar(1 + effect.userData.life * effect.userData.intensity);
+                }
+                
+                effect.material.opacity = Math.max(0, effect.material.opacity - 0.01);
+                
+                if (effect.material.opacity <= 0) {
+                    scene.remove(effect);
+                    return false;
+                }
+                return true;
+            });
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+            time += 0.016;
+
+            particleSystem.update(0.016);
+            
+            renderer.render(scene, camera);
+        }
+
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+
+        init();
+    </script>
+</body>
+</html>

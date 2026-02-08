@@ -1,0 +1,536 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Symphony Souls - Flow Series #49</title>
+    <style>
+        body {
+            margin: 0;
+            background: #f8f8f8;
+            overflow: hidden;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        }
+        canvas { display: block; }
+        .back-btn {
+            position: absolute;
+            top: 30px;
+            left: 30px;
+            background: rgba(26, 26, 26, 0.1);
+            border: 1px solid rgba(26, 26, 26, 0.2);
+            color: #1a1a1a;
+            padding: 12px 24px;
+            text-decoration: none;
+            border-radius: 4px;
+            font-size: 14px;
+            font-weight: 300;
+            letter-spacing: 1px;
+            z-index: 1000;
+            transition: all 0.3s ease;
+            opacity: 0;
+            animation: fadeIn 3s ease-in-out 1s forwards;
+        }
+        .back-btn:hover {
+            background: rgba(26, 26, 26, 0.2);
+            transform: translateY(-1px);
+        }
+        .title {
+            position: absolute;
+            top: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: #333;
+            font-size: 24px;
+            font-weight: 300;
+            z-index: 100;
+            opacity: 0;
+            animation: fadeIn 3s ease-in-out 1s forwards;
+        }
+        .subtitle {
+            position: absolute;
+            bottom: 30px;
+            right: 30px;
+            color: #666;
+            font-size: 14px;
+            z-index: 100;
+            opacity: 0;
+            animation: fadeIn 3s ease-in-out 2s forwards;
+        }
+        @keyframes fadeIn {
+            to { opacity: 1; }
+        }
+    </style>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+</head>
+<body>
+    <a href="gallery.html" class="back-btn">← GALLERY</a>
+    <div class="title">Symphony Souls</div>
+    <div class="subtitle">Harmonized collective movement</div>
+    
+    <script>
+        let scene, camera, renderer;
+        let performers = [];
+        let conductor;
+        let harmonicWaves, resonanceField;
+        let time = 0;
+        let symphonyMovement = 0;
+        
+        function init() {
+            scene = new THREE.Scene();
+            scene.fog = new THREE.Fog(0xf8f8f8, 10, 30);
+            
+            camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+            camera.position.set(0, 8, 20);
+            
+            renderer = new THREE.WebGLRenderer({ antialias: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.setClearColor(0xf8f8f8);
+            renderer.shadowMap.enabled = true;
+            renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+            document.body.appendChild(renderer.domElement);
+            
+            // Concert hall lighting
+            const ambientLight = new THREE.AmbientLight(0x404040, 0.5);
+            scene.add(ambientLight);
+            
+            const spotLight = new THREE.DirectionalLight(0xffffff, 0.8);
+            spotLight.position.set(0, 15, 8);
+            spotLight.castShadow = true;
+            spotLight.shadow.mapSize.width = 2048;
+            spotLight.shadow.mapSize.height = 2048;
+            scene.add(spotLight);
+            
+            const fillLight = new THREE.DirectionalLight(0xffffff, 0.3);
+            fillLight.position.set(-8, 6, -5);
+            scene.add(fillLight);
+            
+            createConductor();
+            createOrchestra();
+            createHarmonicWaves();
+            createResonanceField();
+            
+            animate();
+        }
+        
+        function createConductor() {
+            // Central conductor figure
+            const group = new THREE.Group();
+            const material = new THREE.MeshLambertMaterial({ 
+                color: 0x1a1a1a,
+                transparent: true,
+                opacity: 0.9
+            });
+            
+            // Head
+            const headGeometry = new THREE.SphereGeometry(0.12, 12, 8);
+            const head = new THREE.Mesh(headGeometry, material);
+            head.position.y = 0.7;
+            group.add(head);
+            
+            // Body
+            const bodyGeometry = new THREE.CylinderGeometry(0.08, 0.12, 0.5, 12);
+            const body = new THREE.Mesh(bodyGeometry, material);
+            body.position.y = 0.3;
+            group.add(body);
+            
+            // Conducting arms (will move expressively)
+            const armGeometry = new THREE.CylinderGeometry(0.03, 0.04, 0.35, 8);
+            const leftArm = new THREE.Mesh(armGeometry, material);
+            const rightArm = new THREE.Mesh(armGeometry, material);
+            leftArm.position.set(-0.15, 0.45, 0.05);
+            rightArm.position.set(0.15, 0.45, 0.05);
+            leftArm.rotation.z = 0.6;
+            rightArm.rotation.z = -0.6;
+            group.add(leftArm);
+            group.add(rightArm);
+            
+            // Baton (left hand)
+            const batonGeometry = new THREE.CylinderGeometry(0.005, 0.008, 0.2, 6);
+            const baton = new THREE.Mesh(batonGeometry, material);
+            baton.position.set(-0.25, 0.6, 0.1);
+            baton.rotation.z = 1.2;
+            group.add(baton);
+            
+            // Legs
+            const legGeometry = new THREE.CylinderGeometry(0.04, 0.05, 0.4, 8);
+            const leftLeg = new THREE.Mesh(legGeometry, material);
+            const rightLeg = new THREE.Mesh(legGeometry, material);
+            leftLeg.position.set(-0.06, -0.15, 0);
+            rightLeg.position.set(0.06, -0.15, 0);
+            group.add(leftLeg);
+            group.add(rightLeg);
+            
+            group.position.set(0, 2, 0);
+            group.castShadow = true;
+            scene.add(group);
+            
+            conductor = {
+                mesh: group,
+                basePosition: group.position.clone(),
+                gesturePhase: 0,
+                intensity: 1
+            };
+        }
+        
+        function createOrchestra() {
+            // Create orchestra sections
+            const sections = [
+                { name: 'strings', count: 12, radius: 6, baseAngle: 0 },
+                { name: 'woodwinds', count: 8, radius: 8, baseAngle: Math.PI * 0.4 },
+                { name: 'brass', count: 6, radius: 9, baseAngle: Math.PI * 0.8 },
+                { name: 'percussion', count: 4, radius: 10, baseAngle: Math.PI * 1.2 }
+            ];
+            
+            sections.forEach(section => {
+                for (let i = 0; i < section.count; i++) {
+                    const angle = section.baseAngle + (i / section.count) * Math.PI * 0.6;
+                    const performer = createPerformer(section.name, i / section.count);
+                    
+                    performer.position.x = Math.cos(angle) * section.radius;
+                    performer.position.z = Math.sin(angle) * section.radius;
+                    performer.position.y = 1;
+                    
+                    // Face towards conductor
+                    performer.lookAt(conductor.mesh.position);
+                    
+                    performer.castShadow = true;
+                    scene.add(performer);
+                    
+                    performers.push({
+                        mesh: performer,
+                        section: section.name,
+                        angle: angle,
+                        basePosition: performer.position.clone(),
+                        instrument: section.name,
+                        musicPhase: Math.random() * Math.PI * 2,
+                        intensity: 0.5 + Math.random() * 0.5,
+                        harmonic: Math.floor(Math.random() * 5) + 1
+                    });
+                }
+            });
+        }
+        
+        function createPerformer(instrument, variationIndex) {
+            const group = new THREE.Group();
+            const material = new THREE.MeshLambertMaterial({ 
+                color: 0x1a1a1a,
+                transparent: true,
+                opacity: 0.8
+            });
+            
+            // Head
+            const headGeometry = new THREE.SphereGeometry(0.08, 10, 8);
+            const head = new THREE.Mesh(headGeometry, material);
+            head.position.y = 0.6;
+            group.add(head);
+            
+            // Body - seated position
+            const bodyGeometry = new THREE.CylinderGeometry(0.06, 0.08, 0.4, 8);
+            const body = new THREE.Mesh(bodyGeometry, material);
+            body.position.y = 0.25;
+            group.add(body);
+            
+            // Arms positioned for different instruments
+            const armGeometry = new THREE.CylinderGeometry(0.025, 0.03, 0.25, 6);
+            const leftArm = new THREE.Mesh(armGeometry, material);
+            const rightArm = new THREE.Mesh(armGeometry, material);
+            
+            // Different arm positions based on instrument
+            if (instrument === 'strings') {
+                leftArm.position.set(-0.12, 0.35, 0.05);
+                rightArm.position.set(0.12, 0.35, -0.05);
+                leftArm.rotation.z = 0.5;
+                rightArm.rotation.z = -0.8;
+            } else if (instrument === 'woodwinds') {
+                leftArm.position.set(-0.08, 0.4, 0.1);
+                rightArm.position.set(0.08, 0.4, 0.1);
+                leftArm.rotation.x = -0.5;
+                rightArm.rotation.x = -0.5;
+            } else if (instrument === 'brass') {
+                leftArm.position.set(-0.1, 0.45, 0.08);
+                rightArm.position.set(0.1, 0.45, 0.08);
+                leftArm.rotation.x = -0.3;
+                rightArm.rotation.x = -0.3;
+            } else { // percussion
+                leftArm.position.set(-0.15, 0.5, 0);
+                rightArm.position.set(0.15, 0.5, 0);
+                leftArm.rotation.z = 0.8;
+                rightArm.rotation.z = -0.8;
+            }
+            
+            group.add(leftArm);
+            group.add(rightArm);
+            
+            // Simplified instrument representation
+            const instrumentGeometry = new THREE.BoxGeometry(0.02, 0.1, 0.02);
+            const instrumentMesh = new THREE.Mesh(instrumentGeometry, material);
+            instrumentMesh.position.set(0, 0.4, 0.1);
+            group.add(instrumentMesh);
+            
+            // Legs in seated position
+            const legGeometry = new THREE.CylinderGeometry(0.03, 0.04, 0.3, 6);
+            const leftLeg = new THREE.Mesh(legGeometry, material);
+            const rightLeg = new THREE.Mesh(legGeometry, material);
+            leftLeg.position.set(-0.05, -0.05, 0.1);
+            rightLeg.position.set(0.05, -0.05, 0.1);
+            leftLeg.rotation.x = 0.8;
+            rightLeg.rotation.x = 0.8;
+            group.add(leftLeg);
+            group.add(rightLeg);
+            
+            return group;
+        }
+        
+        function createHarmonicWaves() {
+            // Visual representation of sound waves
+            const waveCount = 800;
+            const geometry = new THREE.BufferGeometry();
+            const positions = new Float32Array(waveCount * 3);
+            const phases = new Float32Array(waveCount);
+            const amplitudes = new Float32Array(waveCount);
+            const frequencies = new Float32Array(waveCount);
+            
+            for (let i = 0; i < waveCount; i++) {
+                const radius = Math.random() * 15;
+                const angle = Math.random() * Math.PI * 2;
+                const height = Math.random() * 6;
+                
+                positions[i * 3] = Math.cos(angle) * radius;
+                positions[i * 3 + 1] = height;
+                positions[i * 3 + 2] = Math.sin(angle) * radius;
+                
+                phases[i] = Math.random() * Math.PI * 2;
+                amplitudes[i] = Math.random() * 0.5 + 0.2;
+                frequencies[i] = Math.random() * 3 + 1;
+            }
+            
+            geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+            geometry.setAttribute('phase', new THREE.BufferAttribute(phases, 1));
+            geometry.setAttribute('amplitude', new THREE.BufferAttribute(amplitudes, 1));
+            geometry.setAttribute('frequency', new THREE.BufferAttribute(frequencies, 1));
+            
+            const material = new THREE.PointsMaterial({
+                color: 0x1a1a1a,
+                size: 0.02,
+                transparent: true,
+                opacity: 0.4,
+                blending: THREE.AdditiveBlending
+            });
+            
+            harmonicWaves = new THREE.Points(geometry, material);
+            scene.add(harmonicWaves);
+        }
+        
+        function createResonanceField() {
+            // Field showing harmonic resonance between performers
+            const fieldCount = 300;
+            const geometry = new THREE.BufferGeometry();
+            const positions = new Float32Array(fieldCount * 3);
+            const connections = new Float32Array(fieldCount * 3);
+            const strength = new Float32Array(fieldCount);
+            
+            for (let i = 0; i < fieldCount; i++) {
+                positions[i * 3] = 0;
+                positions[i * 3 + 1] = 0;
+                positions[i * 3 + 2] = 0;
+                
+                connections[i * 3] = 0;
+                connections[i * 3 + 1] = 0;
+                connections[i * 3 + 2] = 0;
+                
+                strength[i] = 0;
+            }
+            
+            geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+            geometry.setAttribute('connection', new THREE.BufferAttribute(connections, 3));
+            geometry.setAttribute('strength', new THREE.BufferAttribute(strength, 1));
+            
+            const material = new THREE.PointsMaterial({
+                color: 0x1a1a1a,
+                size: 0.015,
+                transparent: true,
+                opacity: 0.6,
+                blending: THREE.NormalBlending
+            });
+            
+            resonanceField = new THREE.Points(geometry, material);
+            scene.add(resonanceField);
+        }
+        
+        function animate() {
+            requestAnimationFrame(animate);
+            
+            time += 0.016;
+            
+            // Symphony movements: exposition -> development -> recapitulation -> coda
+            symphonyMovement = (time * 0.4) % (Math.PI * 4);
+            const movementIntensity = (Math.sin(symphonyMovement) + 1) / 2;
+            const harmonyLevel = Math.sin(symphonyMovement * 0.5) * 0.5 + 0.5;
+            
+            // Animate conductor
+            const conductorGesture = Math.sin(time * 3) * movementIntensity;
+            const conductorBeats = Math.sin(time * 4) * 0.3;
+            
+            // Conductor body sway
+            conductor.mesh.rotation.y = Math.sin(time * 1.5) * 0.1;
+            conductor.mesh.position.y = conductor.basePosition.y + Math.sin(time * 2) * 0.1;
+            
+            // Conducting arms
+            if (conductor.mesh.children[2]) { // left arm
+                conductor.mesh.children[2].rotation.z = 0.6 + conductorGesture * 0.5;
+                conductor.mesh.children[2].rotation.y = Math.sin(time * 2.5) * 0.3;
+            }
+            if (conductor.mesh.children[3]) { // right arm
+                conductor.mesh.children[3].rotation.z = -0.6 - conductorGesture * 0.4;
+                conductor.mesh.children[3].rotation.x = Math.sin(time * 2) * 0.2;
+            }
+            
+            // Baton movement
+            if (conductor.mesh.children[4]) { // baton
+                conductor.mesh.children[4].rotation.z = 1.2 + conductorBeats;
+                conductor.mesh.children[4].rotation.y = Math.sin(time * 3) * 0.2;
+            }
+            
+            // Animate orchestra performers
+            performers.forEach((performer, index) => {
+                const sectionPhase = performer.musicPhase + time * performer.harmonic;
+                const sectionIntensity = Math.sin(sectionPhase) * 0.5 + 0.5;
+                const harmonic = Math.sin(sectionPhase * performer.harmonic) * performer.intensity;
+                
+                // Body movement with music
+                performer.mesh.position.y = performer.basePosition.y + harmonic * 0.08;
+                performer.mesh.rotation.y = Math.sin(sectionPhase * 0.5) * 0.05;
+                
+                // Instrument-specific movements
+                if (performer.section === 'strings') {
+                    // Bowing motion
+                    if (performer.mesh.children[3]) { // right arm
+                        performer.mesh.children[3].rotation.y = Math.sin(sectionPhase * 2) * 0.3;
+                    }
+                } else if (performer.section === 'woodwinds') {
+                    // Breathing motion
+                    performer.mesh.children[1].scale.x = 1 + Math.sin(sectionPhase * 1.5) * 0.05;
+                    performer.mesh.children[1].scale.z = 1 + Math.sin(sectionPhase * 1.5) * 0.05;
+                } else if (performer.section === 'brass') {
+                    // Embouchure tension
+                    if (performer.mesh.children[0]) { // head
+                        performer.mesh.children[0].position.y = 0.6 + Math.sin(sectionPhase * 2) * 0.02;
+                    }
+                } else { // percussion
+                    // Striking motion
+                    const strikeMotion = Math.max(0, Math.sin(sectionPhase * 4)) * 0.3;
+                    if (performer.mesh.children[2]) { // left arm
+                        performer.mesh.children[2].rotation.x = -strikeMotion;
+                    }
+                    if (performer.mesh.children[3]) { // right arm
+                        performer.mesh.children[3].rotation.x = -strikeMotion;
+                    }
+                }
+                
+                // Swaying with ensemble
+                const ensembleSway = Math.sin(time * 1.2 + index * 0.1) * harmonyLevel * 0.05;
+                performer.mesh.rotation.z = ensembleSway;
+                
+                // Opacity based on section activity
+                performer.mesh.children.forEach(part => {
+                    if (part.material) {
+                        part.material.opacity = 0.6 + sectionIntensity * 0.3;
+                    }
+                });
+            });
+            
+            // Animate harmonic waves
+            const wavePositions = harmonicWaves.geometry.attributes.position.array;
+            const wavePhases = harmonicWaves.geometry.attributes.phase.array;
+            const waveAmplitudes = harmonicWaves.geometry.attributes.amplitude.array;
+            const waveFrequencies = harmonicWaves.geometry.attributes.frequency.array;
+            
+            for (let i = 0; i < wavePhases.length; i++) {
+                const amplitude = waveAmplitudes[i];
+                const frequency = waveFrequencies[i];
+                const phase = wavePhases[i];
+                
+                // Wave motion based on symphony intensity
+                const waveHeight = Math.sin(time * frequency + phase) * amplitude * movementIntensity;
+                wavePositions[i * 3 + 1] += waveHeight * 0.01;
+                
+                // Radial wave propagation
+                const centerDistance = Math.sqrt(
+                    wavePositions[i * 3] * wavePositions[i * 3] + 
+                    wavePositions[i * 3 + 2] * wavePositions[i * 3 + 2]
+                );
+                const radialWave = Math.sin(time * 2 - centerDistance * 0.5) * amplitude * 0.02;
+                
+                wavePositions[i * 3] += Math.cos(Math.atan2(wavePositions[i * 3 + 2], wavePositions[i * 3])) * radialWave;
+                wavePositions[i * 3 + 2] += Math.sin(Math.atan2(wavePositions[i * 3 + 2], wavePositions[i * 3])) * radialWave;
+            }
+            harmonicWaves.geometry.attributes.position.needsUpdate = true;
+            
+            // Wave opacity based on harmony
+            harmonicWaves.material.opacity = 0.2 + harmonyLevel * 0.4;
+            
+            // Animate resonance field
+            const resonancePos = resonanceField.geometry.attributes.position.array;
+            const resonanceConn = resonanceField.geometry.attributes.connection.array;
+            const resonanceStr = resonanceField.geometry.attributes.strength.array;
+            
+            // Create connections between harmonized performers
+            for (let i = 0; i < resonanceStr.length; i++) {
+                if (Math.random() < harmonyLevel * 0.02) {
+                    const performerA = performers[Math.floor(Math.random() * performers.length)];
+                    const performerB = performers[Math.floor(Math.random() * performers.length)];
+                    
+                    if (performerA !== performerB) {
+                        // Position between performers
+                        resonancePos[i * 3] = (performerA.mesh.position.x + performerB.mesh.position.x) / 2;
+                        resonancePos[i * 3 + 1] = (performerA.mesh.position.y + performerB.mesh.position.y) / 2;
+                        resonancePos[i * 3 + 2] = (performerA.mesh.position.z + performerB.mesh.position.z) / 2;
+                        
+                        // Connection vector
+                        resonanceConn[i * 3] = performerB.mesh.position.x - performerA.mesh.position.x;
+                        resonanceConn[i * 3 + 1] = performerB.mesh.position.y - performerA.mesh.position.y;
+                        resonanceConn[i * 3 + 2] = performerB.mesh.position.z - performerA.mesh.position.z;
+                        
+                        resonanceStr[i] = harmonyLevel;
+                    }
+                }
+                
+                // Decay strength
+                resonanceStr[i] *= 0.98;
+                
+                if (resonanceStr[i] < 0.1) {
+                    resonanceStr[i] = 0;
+                }
+            }
+            resonanceField.geometry.attributes.position.needsUpdate = true;
+            resonanceField.geometry.attributes.connection.needsUpdate = true;
+            resonanceField.geometry.attributes.strength.needsUpdate = true;
+            
+            // Resonance field opacity
+            resonanceField.material.opacity = harmonyLevel * 0.8;
+            
+            // Camera movement - circular around the orchestra
+            const cameraRadius = 25;
+            const cameraHeight = 8 + Math.sin(time * 0.1) * 4;
+            const cameraAngle = time * 0.1;
+            
+            camera.position.x = Math.sin(cameraAngle) * cameraRadius;
+            camera.position.y = cameraHeight;
+            camera.position.z = Math.cos(cameraAngle) * cameraRadius;
+            camera.lookAt(0, 2, 0);
+            
+            renderer.render(scene, camera);
+        }
+        
+        function onWindowResize() {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        }
+        
+        window.addEventListener('resize', onWindowResize, false);
+        
+        init();
+    </script>
+</body>
+</html>

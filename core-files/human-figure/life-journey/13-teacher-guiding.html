@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Life Journey - Teacher Guiding</title>
+    <style>
+        body { margin: 0; overflow: hidden; background: linear-gradient(135deg, #ffeaa7, #dfe6e9); }
+        canvas { display: block; }
+        .title { position: absolute; top: 40px; left: 50%; transform: translateX(-50%); color: #2d3436; font-family: serif; font-size: 24px; letter-spacing: 2px; }
+    </style>
+</head>
+<body>
+    <div class="title">TEACHER GUIDING</div>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="../particle-being-library.js"></script>
+    <script>
+        let scene, camera, renderer, particleSystem;
+        let time = 0;
+        let students = [];
+        let knowledgeBeams = [];
+
+        function init() {
+            scene = new THREE.Scene();
+            camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+            camera.position.set(0, 15, 40);
+
+            renderer = new THREE.WebGLRenderer({ antialias: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            document.body.appendChild(renderer.domElement);
+
+            // Teacher - wise, patient, illuminating
+            particleSystem = new ParticleBeingSystem(scene, {
+                particleCount: 270,
+                particleSize: 0.09,
+                speedMultiplier: 0.7,
+                colorRange: { h: 0.15, s: 0.3, lMin: 0.4, lMax: 0.7 }
+            });
+
+            const teacher = particleSystem.convertToParticleBeing(
+                null,
+                { x: 0, y: 2, z: -8 },
+                {
+                    particleCount: 290,
+                    states: ['presenting', 'demonstrating', 'questioning', 'encouraging'],
+                    stateTimings: { presenting: 4, demonstrating: 5, questioning: 3, encouraging: 3 },
+                    attractionForces: { presenting: 0.022, demonstrating: 0.025, questioning: 0.018, encouraging: 0.02 }
+                }
+            );
+
+            // Create student figures in semicircle
+            for (let i = 0; i < 5; i++) {
+                const angle = (i - 2) * Math.PI / 6;
+                const student = particleSystem.convertToParticleBeing(
+                    null,
+                    { x: Math.sin(angle) * 10, y: -1, z: Math.cos(angle) * 10 + 5 },
+                    {
+                        particleCount: 140,
+                        particleSize: 0.06,
+                        colorRange: { h: 0.6, s: 0.2, lMin: 0.4, lMax: 0.6 },
+                        states: ['listening', 'thinking', 'understanding', 'questioning'],
+                        stateTimings: { listening: 3, thinking: 2, understanding: 3, questioning: 2 }
+                    }
+                );
+                students.push(student);
+            }
+
+            // Teacher behaviors
+            const originalUpdate = particleSystem.updateBeing.bind(particleSystem);
+            particleSystem.updateBeing = function(being, deltaTime) {
+                originalUpdate(being, deltaTime);
+                
+                if (being === teacher) {
+                    if (being.userData.state === 'presenting') {
+                        // Gesturing while presenting
+                        being.userData.basePosition.x = Math.sin(time * 1.5) * 3;
+                        
+                        // Emanate knowledge
+                        if (Math.random() < 0.05) {
+                            const beam = new THREE.Mesh(
+                                new THREE.CylinderGeometry(0.05, 0.05, 10),
+                                new THREE.MeshBasicMaterial({
+                                    color: 0xffdd00,
+                                    transparent: true,
+                                    opacity: 0.4
+                                })
+                            );
+                            beam.position.copy(being.userData.basePosition);
+                            beam.rotation.x = Math.random() * Math.PI;
+                            beam.rotation.z = Math.random() * Math.PI;
+                            beam.userData = { life: 0 };
+                            scene.add(beam);
+                            knowledgeBeams.push(beam);
+                        }
+                    } else if (being.userData.state === 'demonstrating') {
+                        // Form shapes with particles
+                        being.particles.forEach((particle, i) => {
+                            if (i < 100) {
+                                // Form geometric shape
+                                const angle = (i / 100) * Math.PI * 2;
+                                particle.userData.targetPosition.x = Math.cos(angle) * 4;
+                                particle.userData.targetPosition.y = 5 + Math.sin(angle * 3) * 2;
+                                particle.userData.targetPosition.z = -8 + Math.sin(angle) * 4;
+                            }
+                        });
+                    } else if (being.userData.state === 'questioning') {
+                        // Point to different students
+                        const studentIndex = Math.floor(time * 2) % students.length;
+                        const targetStudent = students[studentIndex].userData.basePosition;
+                        being.userData.basePosition.x = targetStudent.x * 0.3;
+                        being.userData.basePosition.z = -8 + targetStudent.z * 0.1;
+                    } else if (being.userData.state === 'encouraging') {
+                        // Warm, open posture
+                        being.particles.forEach(particle => {
+                            particle.material.color.setHSL(0.12, 0.5, 0.6);
+                            particle.material.opacity = Math.min(0.9, particle.userData.originalOpacity + 0.2);
+                        });
+                    }
+                } else if (students.includes(being)) {
+                    const index = students.indexOf(being);
+                    
+                    if (being.userData.state === 'listening') {
+                        // Lean forward attentively
+                        being.userData.basePosition.z -= 0.01;
+                        being.userData.basePosition.z = Math.max(being.userData.basePosition.z, 0);
+                    } else if (being.userData.state === 'thinking') {
+                        // Particles swirl in thought
+                        being.particles.forEach((particle, i) => {
+                            const thinkPhase = time * 4 + i * 0.1 + index;
+                            particle.userData.velocity.y += Math.sin(thinkPhase) * 0.001;
+                        });
+                    } else if (being.userData.state === 'understanding') {
+                        // Light up with comprehension
+                        being.particles.forEach(particle => {
+                            particle.material.opacity = Math.min(0.9, particle.userData.originalOpacity + 
+                                Math.sin(time * 5) * 0.2);
+                        });
+                    } else if (being.userData.state === 'questioning') {
+                        // Raise hand motion
+                        if (index === Math.floor(time) % students.length) {
+                            being.particles.forEach((particle, i) => {
+                                if (i < 30) {
+                                    particle.userData.targetPosition.y += 0.1;
+                                }
+                            });
+                        }
+                    }
+                }
+                
+                // Update knowledge beams
+                knowledgeBeams = knowledgeBeams.filter(beam => {
+                    beam.userData.life += 0.016;
+                    beam.material.opacity = Math.max(0, 0.4 - beam.userData.life * 0.1);
+                    beam.scale.x = 1 + beam.userData.life * 0.5;
+                    beam.scale.z = 1 + beam.userData.life * 0.5;
+                    
+                    if (beam.material.opacity <= 0) {
+                        scene.remove(beam);
+                        return false;
+                    }
+                    return true;
+                });
+            };
+
+            particleSystem.createAmbientParticles(100);
+            animate();
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+            time += 0.016;
+            particleSystem.update(0.016);
+            
+            camera.position.x = Math.sin(time * 0.04) * 30;
+            camera.position.z = 40 + Math.cos(time * 0.04) * 20;
+            camera.position.y = 15 + Math.sin(time * 0.03) * 5;
+            camera.lookAt(0, 2, 0);
+            
+            renderer.render(scene, camera);
+        }
+
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+
+        init();
+    </script>
+</body>
+</html>

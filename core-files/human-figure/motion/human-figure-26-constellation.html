@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Human Figure Constellation - Mindful Journey</title>
+    <style>
+        body { 
+            margin: 0; 
+            overflow: hidden; 
+            background: #0a0a1a;
+            font-family: 'Inter', system-ui, sans-serif;
+        }
+        canvas { display: block; }
+        
+        .back-btn {
+            position: absolute;
+            top: 40px;
+            left: 40px;
+            padding: 10px 20px;
+            background: transparent;
+            border: 1px solid rgba(100, 149, 237, 0.4);
+            color: #6495ed;
+            text-decoration: none;
+            font-size: 14px;
+            letter-spacing: 1px;
+            border-radius: 20px;
+            transition: all 0.3s ease;
+            z-index: 10;
+        }
+        
+        .back-btn:hover {
+            background: rgba(100, 149, 237, 0.1);
+            border-color: rgba(100, 149, 237, 0.8);
+        }
+        
+        .instruction {
+            position: absolute;
+            bottom: 40px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: rgba(100, 149, 237, 0.8);
+            font-size: 12px;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            pointer-events: none;
+        }
+    </style>
+</head>
+<body>
+    <a href="../index.html" class="back-btn">← Back</a>
+    <div class="instruction">Click to connect constellation</div>
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="../lib/theme-system.js"></script>
+    <script>
+        let scene, camera, renderer;
+        let humanStars = [];
+        let connectionLines = [];
+        let backgroundStars = [];
+        let time = 0;
+        let connecting = false;
+        let connectionProgress = 0;
+        let themeSystem;
+        let materials = [];
+
+        function init() {
+            // Initialize theme system
+            themeSystem = new HumanFigureThemeSystem();
+            
+            scene = new THREE.Scene();
+            scene.background = new THREE.Color(0x0a0a1a);
+
+            camera = new THREE.PerspectiveCamera(
+                75, window.innerWidth / window.innerHeight, 0.1, 1000
+            );
+            camera.position.z = 15;
+
+            renderer = new THREE.WebGLRenderer({ antialias: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            document.body.appendChild(renderer.domElement);
+
+            createBackgroundStars();
+            createHumanConstellation();
+            setupThemeEventListeners();
+            animate();
+        }
+        
+        function setupThemeEventListeners() {
+            window.addEventListener('themeChanged', (event) => {
+                const { theme, palette } = event.detail;
+                updateConstellationWithTheme(theme, palette);
+            });
+            
+            window.addEventListener('paletteChanged', (event) => {
+                const { palette } = event.detail;
+                updateConstellationWithPalette(palette);
+            });
+        }
+        
+        function updateConstellationWithTheme(theme, palette) {
+            // Update stars with new theme
+            humanStars.forEach(star => {
+                if (star.material) {
+                    star.material.opacity = theme.particleOpacity || 0.8;
+                    star.material.transparent = true;
+                }
+            });
+            
+            // Update scene background
+            scene.background.setHex(parseInt(palette.background.replace('#', ''), 16));
+        }
+        
+        function updateConstellationWithPalette(palette) {
+            // Update scene background
+            scene.background.setHex(parseInt(palette.background.replace('#', ''), 16));
+            
+            // Update star colors
+            humanStars.forEach((star, index) => {
+                const colorIndex = index % palette.gradient.length;
+                const color = palette.gradient[colorIndex];
+                star.material.color.setHex(parseInt(color.replace('#', ''), 16));
+            });
+        }
+
+        function createBackgroundStars() {
+            for (let i = 0; i < 1000; i++) {
+                const star = new THREE.Mesh(
+                    new THREE.SphereGeometry(0.01, 4, 3),
+                    new THREE.MeshBasicMaterial({
+                        color: new THREE.Color().setHSL(0.6 + Math.random() * 0.3, 0.5, 0.8),
+                        transparent: true,
+                        opacity: Math.random() * 0.8 + 0.2
+                    })
+                );
+                
+                star.position.set(
+                    (Math.random() - 0.5) * 100,
+                    (Math.random() - 0.5) * 100,
+                    (Math.random() - 0.5) * 100
+                );
+                
+                star.userData = {
+                    twinkleSpeed: Math.random() * 0.02 + 0.01,
+                    baseOpacity: star.material.opacity
+                };
+                
+                scene.add(star);
+                backgroundStars.push(star);
+            }
+        }
+
+        function createHumanConstellation() {
+            const starPositions = [
+                // Head constellation points
+                { x: 0, y: 2.5, z: 0, name: 'crown' },
+                { x: -0.2, y: 2.3, z: 0.1, name: 'left_temple' },
+                { x: 0.2, y: 2.3, z: 0.1, name: 'right_temple' },
+                { x: 0, y: 2.1, z: 0.2, name: 'forehead' },
+                
+                // Torso constellation
+                { x: 0, y: 1.8, z: 0, name: 'throat' },
+                { x: -0.2, y: 1.5, z: 0, name: 'left_shoulder' },
+                { x: 0.2, y: 1.5, z: 0, name: 'right_shoulder' },
+                { x: 0, y: 1.2, z: 0, name: 'heart' },
+                { x: 0, y: 0.8, z: 0, name: 'solar_plexus' },
+                { x: 0, y: 0.4, z: 0, name: 'sacral' },
+                
+                // Arms
+                { x: -0.6, y: 1.4, z: 0, name: 'left_elbow' },
+                { x: -1.0, y: 1.2, z: 0, name: 'left_hand' },
+                { x: 0.6, y: 1.4, z: 0, name: 'right_elbow' },
+                { x: 1.0, y: 1.2, z: 0, name: 'right_hand' },
+                
+                // Legs
+                { x: -0.15, y: 0, z: 0, name: 'left_hip' },
+                { x: 0.15, y: 0, z: 0, name: 'right_hip' },
+                { x: -0.2, y: -0.6, z: 0, name: 'left_knee' },
+                { x: 0.2, y: -0.6, z: 0, name: 'right_knee' },
+                { x: -0.15, y: -1.2, z: 0, name: 'left_foot' },
+                { x: 0.15, y: -1.2, z: 0, name: 'right_foot' }
+            ];
+
+            starPositions.forEach((pos, index) => {
+                const star = new THREE.Mesh(
+                    new THREE.SphereGeometry(0.05, 8, 6),
+                    new THREE.MeshBasicMaterial({
+                        color: 0x6495ed,
+                        transparent: true,
+                        opacity: 0.9
+                    })
+                );
+                
+                star.position.set(pos.x, pos.y, pos.z);
+                star.userData = {
+                    originalPos: star.position.clone(),
+                    name: pos.name,
+                    pulseSpeed: 0.02 + Math.random() * 0.01,
+                    pulsePhase: Math.random() * Math.PI * 2
+                };
+                
+                scene.add(star);
+                humanStars.push(star);
+            });
+
+            // Define constellation connections
+            const connections = [
+                // Head connections
+                [0, 1], [0, 2], [1, 3], [2, 3], // Head diamond
+                
+                // Main body line
+                [0, 4], [4, 7], [7, 8], [8, 9], // Crown to sacral
+                
+                // Shoulders and arms
+                [4, 5], [4, 6], // Throat to shoulders
+                [5, 10], [10, 11], // Left arm
+                [6, 12], [12, 13], // Right arm
+                
+                // Torso width
+                [5, 7], [6, 7], // Shoulders to heart
+                [7, 8], // Heart to solar plexus
+                
+                // Hips and legs
+                [9, 14], [9, 15], // Sacral to hips
+                [14, 16], [16, 18], // Left leg
+                [15, 17], [17, 19], // Right leg
+                [14, 15], // Hip connection
+                
+                // Cross connections for stability
+                [5, 14], [6, 15], // Diagonal shoulder to hip
+                [7, 14], [7, 15] // Heart to hips
+            ];
+
+            connections.forEach(connection => {
+                const [startIndex, endIndex] = connection;
+                const startPos = humanStars[startIndex].position;
+                const endPos = humanStars[endIndex].position;
+                
+                const geometry = new THREE.BufferGeometry().setFromPoints([startPos, endPos]);
+                const material = new THREE.LineBasicMaterial({
+                    color: 0x6495ed,
+                    transparent: true,
+                    opacity: 0
+                });
+                
+                const line = new THREE.Line(geometry, material);
+                line.userData = {
+                    startIndex: startIndex,
+                    endIndex: endIndex,
+                    targetOpacity: 0.6
+                };
+                
+                scene.add(line);
+                connectionLines.push(line);
+            });
+        }
+
+        function updateConnectionLines() {
+            connectionLines.forEach(line => {
+                const startPos = humanStars[line.userData.startIndex].position;
+                const endPos = humanStars[line.userData.endIndex].position;
+                line.geometry.setFromPoints([startPos, endPos]);
+            });
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+            time += 0.01;
+
+            if (connecting) {
+                connectionProgress += 0.015;
+                if (connectionProgress >= 1) {
+                    connectionProgress = 1;
+                    connecting = false;
+                }
+            }
+
+            // Animate background stars twinkling
+            backgroundStars.forEach(star => {
+                star.material.opacity = star.userData.baseOpacity + 
+                    Math.sin(time * star.userData.twinkleSpeed) * 0.3;
+            });
+
+            // Animate human constellation stars
+            humanStars.forEach((star, index) => {
+                // Gentle breathing motion
+                const breathe = Math.sin(time * 0.8 + index * 0.1) * 0.05;
+                star.position.copy(star.userData.originalPos);
+                star.position.y += breathe;
+                
+                // Pulsing brightness
+                const pulse = Math.sin(time * star.userData.pulseSpeed + star.userData.pulsePhase);
+                star.material.opacity = 0.7 + pulse * 0.3;
+                
+                // Color shifting
+                const hue = 0.65 + Math.sin(time * 0.1 + index * 0.2) * 0.1;
+                star.material.color.setHSL(hue, 0.8, 0.7);
+                
+                // Scale pulsing
+                const scale = 1 + pulse * 0.2;
+                star.scale.setScalar(scale);
+            });
+
+            // Animate constellation lines appearing
+            connectionLines.forEach((line, index) => {
+                if (connecting) {
+                    const delay = (index / connectionLines.length) * 0.8;
+                    const progress = Math.max(0, Math.min(1, (connectionProgress - delay) / 0.2));
+                    line.material.opacity = progress * line.userData.targetOpacity;
+                    
+                    // Sparkle effect when line appears
+                    if (progress > 0 && progress < 1) {
+                        const sparkleIntensity = Math.sin(progress * Math.PI) * 2;
+                        line.material.color.setHSL(0.65, 0.8, 0.5 + sparkleIntensity * 0.3);
+                    } else {
+                        line.material.color.setHSL(0.65, 0.8, 0.7);
+                    }
+                } else if (connectionProgress > 0) {
+                    // Gentle pulsing when fully connected
+                    const pulse = Math.sin(time * 0.5 + index * 0.3) * 0.2;
+                    line.material.opacity = line.userData.targetOpacity + pulse;
+                }
+            });
+
+            // Update line geometries
+            updateConnectionLines();
+
+            // Camera movement - slow orbit
+            const radius = 15;
+            camera.position.x = Math.cos(time * 0.05) * radius;
+            camera.position.z = Math.sin(time * 0.05) * radius;
+            camera.position.y = Math.sin(time * 0.03) * 3;
+            camera.lookAt(0, 0.5, 0);
+
+            renderer.render(scene, camera);
+        }
+
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+
+        window.addEventListener('click', () => {
+            if (!connecting && connectionProgress < 1) {
+                connecting = true;
+            } else if (connectionProgress >= 1) {
+                // Reset
+                connectionProgress = 0;
+                connecting = false;
+                
+                connectionLines.forEach(line => {
+                    line.material.opacity = 0;
+                });
+            }
+        });
+
+        init();
+    </script>
+</body>
+</html>

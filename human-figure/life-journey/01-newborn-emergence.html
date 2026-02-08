@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Life Journey - Newborn Emergence</title>
+    <style>
+        body { margin: 0; overflow: hidden; background: radial-gradient(circle, #fff5f5, #ffe0e0, #ffcccb); }
+        canvas { display: block; }
+        .title { 
+            position: absolute; top: 40px; left: 50%; transform: translateX(-50%); 
+            color: #ff6b6b; font-family: serif; font-size: 28px; letter-spacing: 3px; 
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
+        }
+        .phase-indicator {
+            position: absolute; top: 80px; left: 50%; transform: translateX(-50%);
+            color: #ff8a8a; font-family: sans-serif; font-size: 14px; letter-spacing: 2px;
+            opacity: 0.8;
+        }
+    </style>
+</head>
+<body>
+    <div class="title">NEWBORN EMERGENCE</div>
+    <div class="phase-indicator" id="phaseText">CONCEPTION</div>
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="../particle-being-library.js"></script>
+    <script>
+        let scene, camera, renderer, particleSystem;
+        let time = 0;
+        let currentPhase = 0;
+        let phaseTimer = 0;
+        let heartbeat = [];
+        let umbilicalCord = [];
+        
+        const phases = [
+            'CONCEPTION', 'CELL DIVISION', 'EMBRYO FORMATION', 'FETAL DEVELOPMENT',
+            'PREPARING FOR BIRTH', 'FIRST BREATH', 'NEWBORN AWAKENING'
+        ];
+
+        function init() {
+            scene = new THREE.Scene();
+            scene.background = new THREE.Color(0xfff5f5);
+
+            camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+            camera.position.set(0, 0, 15); // Much closer for intimate view
+
+            renderer = new THREE.WebGLRenderer({ antialias: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            document.body.appendChild(renderer.domElement);
+
+            // Create extremely delicate particle system
+            particleSystem = new ParticleBeingSystem(scene, {
+                particleCount: 80, // Very few for tiny newborn
+                particleSize: 0.03, // Extremely small
+                speedMultiplier: 0.2, // Very slow, gentle
+                colorRange: { h: 0, s: 0.2, lMin: 0.9, lMax: 1.0 }
+            });
+
+            createNewborn();
+            createHeartbeat();
+            animate();
+        }
+
+        function createNewborn() {
+            const newborn = particleSystem.convertToParticleBeing(
+                null,
+                { x: 0, y: 0, z: 0 },
+                {
+                    particleCount: 80,
+                    states: ['forming', 'growing', 'breathing', 'awakening'],
+                    stateTimings: { forming: 8, growing: 6, breathing: 4, awakening: 5 },
+                    attractionForces: { forming: 0.005, growing: 0.008, breathing: 0.012, awakening: 0.015 }
+                }
+            );
+
+            // Override update for 7 distinct life stages
+            const originalUpdate = particleSystem.updateBeing.bind(particleSystem);
+            particleSystem.updateBeing = function(being, deltaTime) {
+                originalUpdate(being, deltaTime);
+                
+                phaseTimer += deltaTime;
+                if (phaseTimer > 4) {
+                    currentPhase = (currentPhase + 1) % phases.length;
+                    phaseTimer = 0;
+                    document.getElementById('phaseText').textContent = phases[currentPhase];
+                }
+                
+                switch(currentPhase) {
+                    case 0: // CONCEPTION - Single point
+                        being.particles.forEach((particle, i) => {
+                            if (i < 2) {
+                                particle.userData.targetPosition.set(0, 0, 0);
+                                particle.scale.setScalar(0.2);
+                            } else {
+                                particle.visible = false;
+                            }
+                        });
+                        camera.position.set(0, 0, 3);
+                        break;
+                        
+                    case 1: // CELL DIVISION - Splitting and multiplying
+                        being.particles.forEach((particle, i) => {
+                            particle.visible = i < Math.min(80, Math.floor(time * 2));
+                            if (particle.visible) {
+                                const division = Math.floor(i / 2);
+                                const angle = (division * Math.PI * 2) / 8;
+                                particle.userData.targetPosition.set(
+                                    Math.cos(angle) * 0.3,
+                                    Math.sin(angle) * 0.3,
+                                    0
+                                );
+                                particle.scale.setScalar(0.3);
+                            }
+                        });
+                        camera.position.set(0, 0, 5);
+                        break;
+                        
+                    case 2: // EMBRYO FORMATION - Basic shape forming
+                        being.particles.forEach((particle, i) => {
+                            particle.visible = true;
+                            particle.scale.setScalar(0.4);
+                            // Simple oval shape
+                            const t = i / being.particles.length;
+                            particle.userData.targetPosition.set(
+                                Math.sin(t * Math.PI * 2) * 0.8,
+                                Math.cos(t * Math.PI * 4) * 1.2,
+                                0
+                            );
+                        });
+                        camera.position.set(0, 0, 8);
+                        break;
+                        
+                    case 3: // FETAL DEVELOPMENT - Growing into human shape
+                        being.particles.forEach((particle, i) => {
+                            particle.scale.setScalar(0.6);
+                            // Fetal position
+                            const t = i / being.particles.length;
+                            if (t < 0.2) { // Head
+                                const angle = t * Math.PI * 10;
+                                particle.userData.targetPosition.set(
+                                    Math.cos(angle) * 0.5,
+                                    1.5 + Math.sin(angle) * 0.3,
+                                    0
+                                );
+                            } else if (t < 0.6) { // Body curled
+                                particle.userData.targetPosition.set(
+                                    Math.sin(t * Math.PI * 4) * 0.4,
+                                    0.5 - t * 1.5,
+                                    0
+                                );
+                            } else { // Limbs tucked
+                                particle.userData.targetPosition.set(
+                                    Math.cos(t * Math.PI * 8) * 0.6,
+                                    -0.5 + Math.sin(t * Math.PI * 6) * 0.4,
+                                    0
+                                );
+                            }
+                        });
+                        camera.position.set(0, 0, 12);
+                        break;
+                        
+                    case 4: // PREPARING FOR BIRTH - Movement and positioning
+                        being.particles.forEach((particle, i) => {
+                            particle.scale.setScalar(0.8);
+                            const movement = Math.sin(time * 3 + i * 0.1) * 0.1;
+                            particle.position.x += movement;
+                            particle.position.y += Math.cos(time * 2 + i * 0.1) * 0.05;
+                        });
+                        // Camera movement simulating birth canal
+                        camera.position.set(
+                            Math.sin(time) * 2,
+                            Math.cos(time * 0.5) * 1,
+                            15 + Math.sin(time * 0.3) * 3
+                        );
+                        break;
+                        
+                    case 5: // FIRST BREATH - Expansion and life
+                        being.particles.forEach((particle, i) => {
+                            particle.scale.setScalar(1.0);
+                            const breathe = Math.sin(time * 4) * 0.3;
+                            particle.position.multiplyScalar(1 + breathe * 0.1);
+                            
+                            // First breath glow
+                            particle.material.color.setHSL(0, 0.3, 0.9 + Math.sin(time * 8) * 0.1);
+                        });
+                        camera.position.set(0, 2, 18);
+                        break;
+                        
+                    case 6: // NEWBORN AWAKENING - Full form and gentle movement
+                        being.particles.forEach((particle, i) => {
+                            particle.scale.setScalar(1.2);
+                            // Gentle newborn movements
+                            const flutter = Math.sin(time * 6 + i * 0.2) * 0.02;
+                            particle.position.x += flutter;
+                            particle.position.y += Math.cos(time * 5 + i * 0.3) * 0.01;
+                            
+                            // Warm pink glow
+                            particle.material.color.setHSL(0.95, 0.4, 0.95);
+                            particle.material.opacity = 0.9 + Math.sin(time * 4 + i) * 0.1;
+                        });
+                        camera.position.set(0, 5, 25);
+                        break;
+                }
+                
+                // Update heartbeat visualization
+                updateHeartbeat();
+            };
+
+            particleSystem.createAmbientParticles(30); // Very few ambient particles
+        }
+
+        function createHeartbeat() {
+            // Create heartbeat pulse visualization
+            for (let i = 0; i < 5; i++) {
+                const pulse = new THREE.Mesh(
+                    new THREE.RingGeometry(0.1, 0.3, 16),
+                    new THREE.MeshBasicMaterial({
+                        color: 0xff9999,
+                        transparent: true,
+                        opacity: 0,
+                        side: THREE.DoubleSide
+                    })
+                );
+                pulse.position.set(0, 0, -2);
+                pulse.userData = { phase: i * Math.PI * 0.4, active: false };
+                scene.add(pulse);
+                heartbeat.push(pulse);
+            }
+        }
+
+        function updateHeartbeat() {
+            if (currentPhase >= 3) { // Heartbeat starts during fetal development
+                heartbeat.forEach((pulse, i) => {
+                    pulse.userData.phase += 0.15;
+                    const heartPhase = Math.sin(pulse.userData.phase);
+                    
+                    if (heartPhase > 0.8) {
+                        pulse.userData.active = true;
+                        pulse.material.opacity = (heartPhase - 0.8) * 5;
+                        pulse.scale.setScalar(1 + (heartPhase - 0.8) * 10);
+                    } else {
+                        pulse.userData.active = false;
+                        pulse.material.opacity *= 0.95;
+                        pulse.scale.multiplyScalar(1.02);
+                    }
+                    
+                    if (pulse.scale.x > 5) {
+                        pulse.scale.setScalar(0.1);
+                        pulse.material.opacity = 0;
+                    }
+                });
+            }
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+            time += 0.016;
+
+            particleSystem.update(0.016);
+
+            // Gentle camera breathing motion
+            if (currentPhase >= 5) {
+                camera.position.y += Math.sin(time * 3) * 0.01;
+                camera.position.z += Math.cos(time * 2) * 0.02;
+            }
+            
+            camera.lookAt(0, 0, 0);
+            renderer.render(scene, camera);
+        }
+
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+
+        init();
+    </script>
+</body>
+</html>

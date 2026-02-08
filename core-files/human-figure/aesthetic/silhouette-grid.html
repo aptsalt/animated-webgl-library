@@ -1,0 +1,437 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Silhouette Grid - Human Poses</title>
+    <style>
+        body { 
+            margin: 0; 
+            overflow: hidden; 
+            background: #f0f0f0;
+            font-family: 'Inter', system-ui, sans-serif;
+        }
+        canvas { display: block; }
+        
+        .back-btn {
+            position: absolute;
+            top: 40px;
+            left: 40px;
+            padding: 10px 20px;
+            background: transparent;
+            border: 1px solid rgba(26, 26, 26, 0.1);
+            color: #1a1a1a;
+            text-decoration: none;
+            font-size: 14px;
+            letter-spacing: 1px;
+            border-radius: 20px;
+            transition: all 0.3s ease;
+            z-index: 10;
+        }
+        
+        .back-btn:hover {
+            background: rgba(26, 26, 26, 0.05);
+            border-color: rgba(26, 26, 26, 0.2);
+        }
+    </style>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+</head>
+<body>
+    <a href="../index.html" class="back-btn">← Back</a>
+    
+    <script>
+        let scene, camera, renderer;
+        let silhouettes = [];
+        let time = 0;
+        
+        function init() {
+            scene = new THREE.Scene();
+            scene.background = new THREE.Color(0xfafafa);
+            
+            // Orthographic camera for flat perspective
+            const aspect = window.innerWidth / window.innerHeight;
+            const frustumSize = 30;
+            camera = new THREE.OrthographicCamera(
+                frustumSize * aspect / -2,
+                frustumSize * aspect / 2,
+                frustumSize / 2,
+                frustumSize / -2,
+                0.1,
+                1000
+            );
+            camera.position.set(0, 0, 50);
+            camera.lookAt(0, 0, 0);
+            
+            renderer = new THREE.WebGLRenderer({ antialias: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            document.body.appendChild(renderer.domElement);
+            
+            // Simple lighting
+            const ambientLight = new THREE.AmbientLight(0xffffff, 1);
+            scene.add(ambientLight);
+            
+            createSilhouetteGrid();
+            animate();
+        }
+        
+        function createPose(poseType) {
+            const group = new THREE.Group();
+            
+            const material = new THREE.MeshBasicMaterial({
+                color: 0x1a1a1a,
+                side: THREE.DoubleSide
+            });
+            
+            // Different poses
+            switch(poseType) {
+                case 0: // Standing
+                    createStandingPose(group, material);
+                    break;
+                case 1: // Walking
+                    createWalkingPose(group, material);
+                    break;
+                case 2: // Sitting
+                    createSittingPose(group, material);
+                    break;
+                case 3: // Running
+                    createRunningPose(group, material);
+                    break;
+                case 4: // Arms raised
+                    createArmsRaisedPose(group, material);
+                    break;
+                case 5: // Crouching
+                    createCrouchingPose(group, material);
+                    break;
+                case 6: // Leaning
+                    createLeaningPose(group, material);
+                    break;
+                case 7: // Waving
+                    createWavingPose(group, material);
+                    break;
+                default:
+                    createStandingPose(group, material);
+            }
+            
+            return group;
+        }
+        
+        function createStandingPose(group, material) {
+            // Head
+            const head = new THREE.Mesh(new THREE.CircleGeometry(0.2, 8), material);
+            head.position.y = 1.7;
+            group.add(head);
+            
+            // Body
+            const body = new THREE.Mesh(new THREE.PlaneGeometry(0.4, 0.8), material);
+            body.position.y = 1;
+            group.add(body);
+            
+            // Arms
+            const leftArm = new THREE.Mesh(new THREE.PlaneGeometry(0.1, 0.6), material);
+            leftArm.position.set(-0.25, 1, 0);
+            group.add(leftArm);
+            
+            const rightArm = new THREE.Mesh(new THREE.PlaneGeometry(0.1, 0.6), material);
+            rightArm.position.set(0.25, 1, 0);
+            group.add(rightArm);
+            
+            // Legs
+            const leftLeg = new THREE.Mesh(new THREE.PlaneGeometry(0.12, 0.8), material);
+            leftLeg.position.set(-0.1, 0.4, 0);
+            group.add(leftLeg);
+            
+            const rightLeg = new THREE.Mesh(new THREE.PlaneGeometry(0.12, 0.8), material);
+            rightLeg.position.set(0.1, 0.4, 0);
+            group.add(rightLeg);
+        }
+        
+        function createWalkingPose(group, material) {
+            // Head
+            const head = new THREE.Mesh(new THREE.CircleGeometry(0.2, 8), material);
+            head.position.y = 1.7;
+            group.add(head);
+            
+            // Body (slightly forward)
+            const body = new THREE.Mesh(new THREE.PlaneGeometry(0.4, 0.8), material);
+            body.position.y = 1;
+            body.rotation.z = 0.1;
+            group.add(body);
+            
+            // Arms (swinging)
+            const leftArm = new THREE.Mesh(new THREE.PlaneGeometry(0.1, 0.6), material);
+            leftArm.position.set(-0.25, 1, 0);
+            leftArm.rotation.z = 0.3;
+            group.add(leftArm);
+            
+            const rightArm = new THREE.Mesh(new THREE.PlaneGeometry(0.1, 0.6), material);
+            rightArm.position.set(0.25, 1, 0);
+            rightArm.rotation.z = -0.3;
+            group.add(rightArm);
+            
+            // Legs (mid-stride)
+            const leftLeg = new THREE.Mesh(new THREE.PlaneGeometry(0.12, 0.8), material);
+            leftLeg.position.set(-0.1, 0.4, 0);
+            leftLeg.rotation.z = -0.2;
+            group.add(leftLeg);
+            
+            const rightLeg = new THREE.Mesh(new THREE.PlaneGeometry(0.12, 0.8), material);
+            rightLeg.position.set(0.15, 0.4, 0);
+            rightLeg.rotation.z = 0.2;
+            group.add(rightLeg);
+        }
+        
+        function createSittingPose(group, material) {
+            // Head
+            const head = new THREE.Mesh(new THREE.CircleGeometry(0.2, 8), material);
+            head.position.y = 1.2;
+            group.add(head);
+            
+            // Body
+            const body = new THREE.Mesh(new THREE.PlaneGeometry(0.4, 0.6), material);
+            body.position.y = 0.7;
+            group.add(body);
+            
+            // Arms
+            const leftArm = new THREE.Mesh(new THREE.PlaneGeometry(0.1, 0.5), material);
+            leftArm.position.set(-0.25, 0.7, 0);
+            group.add(leftArm);
+            
+            const rightArm = new THREE.Mesh(new THREE.PlaneGeometry(0.1, 0.5), material);
+            rightArm.position.set(0.25, 0.7, 0);
+            group.add(rightArm);
+            
+            // Legs (bent)
+            const leftLeg = new THREE.Mesh(new THREE.PlaneGeometry(0.5, 0.12), material);
+            leftLeg.position.set(-0.1, 0.3, 0);
+            leftLeg.rotation.z = -Math.PI / 2;
+            group.add(leftLeg);
+            
+            const rightLeg = new THREE.Mesh(new THREE.PlaneGeometry(0.5, 0.12), material);
+            rightLeg.position.set(0.1, 0.3, 0);
+            rightLeg.rotation.z = -Math.PI / 2;
+            group.add(rightLeg);
+        }
+        
+        function createRunningPose(group, material) {
+            // Head
+            const head = new THREE.Mesh(new THREE.CircleGeometry(0.2, 8), material);
+            head.position.set(0.1, 1.7, 0);
+            group.add(head);
+            
+            // Body (leaning forward)
+            const body = new THREE.Mesh(new THREE.PlaneGeometry(0.4, 0.8), material);
+            body.position.set(0.05, 1, 0);
+            body.rotation.z = 0.2;
+            group.add(body);
+            
+            // Arms (dynamic swing)
+            const leftArm = new THREE.Mesh(new THREE.PlaneGeometry(0.1, 0.6), material);
+            leftArm.position.set(-0.2, 1, 0);
+            leftArm.rotation.z = 0.6;
+            group.add(leftArm);
+            
+            const rightArm = new THREE.Mesh(new THREE.PlaneGeometry(0.1, 0.6), material);
+            rightArm.position.set(0.3, 1, 0);
+            rightArm.rotation.z = -0.6;
+            group.add(rightArm);
+            
+            // Legs (wide stride)
+            const leftLeg = new THREE.Mesh(new THREE.PlaneGeometry(0.12, 0.8), material);
+            leftLeg.position.set(-0.2, 0.4, 0);
+            leftLeg.rotation.z = -0.4;
+            group.add(leftLeg);
+            
+            const rightLeg = new THREE.Mesh(new THREE.PlaneGeometry(0.12, 0.8), material);
+            rightLeg.position.set(0.3, 0.4, 0);
+            rightLeg.rotation.z = 0.4;
+            group.add(rightLeg);
+        }
+        
+        function createArmsRaisedPose(group, material) {
+            // Head
+            const head = new THREE.Mesh(new THREE.CircleGeometry(0.2, 8), material);
+            head.position.y = 1.7;
+            group.add(head);
+            
+            // Body
+            const body = new THREE.Mesh(new THREE.PlaneGeometry(0.4, 0.8), material);
+            body.position.y = 1;
+            group.add(body);
+            
+            // Arms (raised)
+            const leftArm = new THREE.Mesh(new THREE.PlaneGeometry(0.1, 0.6), material);
+            leftArm.position.set(-0.35, 1.4, 0);
+            leftArm.rotation.z = -0.8;
+            group.add(leftArm);
+            
+            const rightArm = new THREE.Mesh(new THREE.PlaneGeometry(0.1, 0.6), material);
+            rightArm.position.set(0.35, 1.4, 0);
+            rightArm.rotation.z = 0.8;
+            group.add(rightArm);
+            
+            // Legs
+            const leftLeg = new THREE.Mesh(new THREE.PlaneGeometry(0.12, 0.8), material);
+            leftLeg.position.set(-0.1, 0.4, 0);
+            group.add(leftLeg);
+            
+            const rightLeg = new THREE.Mesh(new THREE.PlaneGeometry(0.12, 0.8), material);
+            rightLeg.position.set(0.1, 0.4, 0);
+            group.add(rightLeg);
+        }
+        
+        function createCrouchingPose(group, material) {
+            // Head
+            const head = new THREE.Mesh(new THREE.CircleGeometry(0.2, 8), material);
+            head.position.y = 0.9;
+            group.add(head);
+            
+            // Body (compressed)
+            const body = new THREE.Mesh(new THREE.PlaneGeometry(0.4, 0.5), material);
+            body.position.y = 0.5;
+            group.add(body);
+            
+            // Arms
+            const leftArm = new THREE.Mesh(new THREE.PlaneGeometry(0.1, 0.4), material);
+            leftArm.position.set(-0.25, 0.5, 0);
+            group.add(leftArm);
+            
+            const rightArm = new THREE.Mesh(new THREE.PlaneGeometry(0.1, 0.4), material);
+            rightArm.position.set(0.25, 0.5, 0);
+            group.add(rightArm);
+            
+            // Legs (bent)
+            const leftLeg = new THREE.Mesh(new THREE.PlaneGeometry(0.12, 0.4), material);
+            leftLeg.position.set(-0.1, 0.2, 0);
+            group.add(leftLeg);
+            
+            const rightLeg = new THREE.Mesh(new THREE.PlaneGeometry(0.12, 0.4), material);
+            rightLeg.position.set(0.1, 0.2, 0);
+            group.add(rightLeg);
+        }
+        
+        function createLeaningPose(group, material) {
+            // Head
+            const head = new THREE.Mesh(new THREE.CircleGeometry(0.2, 8), material);
+            head.position.set(-0.1, 1.7, 0);
+            group.add(head);
+            
+            // Body (angled)
+            const body = new THREE.Mesh(new THREE.PlaneGeometry(0.4, 0.8), material);
+            body.position.y = 1;
+            body.rotation.z = -0.2;
+            group.add(body);
+            
+            // Arms
+            const leftArm = new THREE.Mesh(new THREE.PlaneGeometry(0.1, 0.6), material);
+            leftArm.position.set(-0.3, 1, 0);
+            leftArm.rotation.z = -0.1;
+            group.add(leftArm);
+            
+            const rightArm = new THREE.Mesh(new THREE.PlaneGeometry(0.1, 0.6), material);
+            rightArm.position.set(0.2, 1, 0);
+            group.add(rightArm);
+            
+            // Legs (crossed)
+            const leftLeg = new THREE.Mesh(new THREE.PlaneGeometry(0.12, 0.8), material);
+            leftLeg.position.set(-0.15, 0.4, 0);
+            leftLeg.rotation.z = -0.1;
+            group.add(leftLeg);
+            
+            const rightLeg = new THREE.Mesh(new THREE.PlaneGeometry(0.12, 0.8), material);
+            rightLeg.position.set(0.05, 0.4, 0);
+            rightLeg.rotation.z = 0.1;
+            group.add(rightLeg);
+        }
+        
+        function createWavingPose(group, material) {
+            // Head
+            const head = new THREE.Mesh(new THREE.CircleGeometry(0.2, 8), material);
+            head.position.y = 1.7;
+            group.add(head);
+            
+            // Body
+            const body = new THREE.Mesh(new THREE.PlaneGeometry(0.4, 0.8), material);
+            body.position.y = 1;
+            group.add(body);
+            
+            // Arms (one raised waving)
+            const leftArm = new THREE.Mesh(new THREE.PlaneGeometry(0.1, 0.6), material);
+            leftArm.position.set(-0.25, 1, 0);
+            group.add(leftArm);
+            
+            const rightArm = new THREE.Mesh(new THREE.PlaneGeometry(0.1, 0.6), material);
+            rightArm.position.set(0.35, 1.3, 0);
+            rightArm.rotation.z = 0.9;
+            group.add(rightArm);
+            
+            // Legs
+            const leftLeg = new THREE.Mesh(new THREE.PlaneGeometry(0.12, 0.8), material);
+            leftLeg.position.set(-0.1, 0.4, 0);
+            group.add(leftLeg);
+            
+            const rightLeg = new THREE.Mesh(new THREE.PlaneGeometry(0.12, 0.8), material);
+            rightLeg.position.set(0.1, 0.4, 0);
+            group.add(rightLeg);
+        }
+        
+        function createSilhouetteGrid() {
+            const rows = 5;
+            const cols = 8;
+            const spacing = 3;
+            
+            let poseIndex = 0;
+            for (let row = 0; row < rows; row++) {
+                for (let col = 0; col < cols; col++) {
+                    const silhouette = createPose(poseIndex % 8);
+                    
+                    silhouette.position.x = (col - cols / 2) * spacing + spacing / 2;
+                    silhouette.position.y = (rows / 2 - row) * spacing - spacing / 2;
+                    
+                    silhouette.userData = {
+                        originalY: silhouette.position.y,
+                        floatOffset: Math.random() * Math.PI * 2,
+                        floatSpeed: 0.5 + Math.random() * 0.5
+                    };
+                    
+                    scene.add(silhouette);
+                    silhouettes.push(silhouette);
+                    poseIndex++;
+                }
+            }
+        }
+        
+        function animate() {
+            requestAnimationFrame(animate);
+            time += 0.01;
+            
+            // Subtle floating animation for each silhouette
+            silhouettes.forEach((silhouette, index) => {
+                const data = silhouette.userData;
+                
+                // Gentle floating
+                silhouette.position.y = data.originalY + Math.sin(time * data.floatSpeed + data.floatOffset) * 0.05;
+                
+                // Very subtle rotation
+                silhouette.rotation.z = Math.sin(time * 0.5 + index * 0.1) * 0.02;
+            });
+            
+            renderer.render(scene, camera);
+        }
+        
+        window.addEventListener('resize', () => {
+            const aspect = window.innerWidth / window.innerHeight;
+            const frustumSize = 30;
+            
+            camera.left = frustumSize * aspect / -2;
+            camera.right = frustumSize * aspect / 2;
+            camera.top = frustumSize / 2;
+            camera.bottom = frustumSize / -2;
+            
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+        
+        init();
+    </script>
+</body>
+</html>

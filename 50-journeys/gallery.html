@@ -1,0 +1,462 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>50 Mindful Journeys - Complete Collection</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@100;200;300;400;500;600;700&family=Playfair+Display:wght@400;500;600;700&family=JetBrains+Mono:wght@200;300;400&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, system-ui, sans-serif;
+            background: #f8f8f8;
+            color: #1a1a1a;
+            padding: 40px 20px;
+            font-weight: 300;
+            line-height: 1.6;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 60px;
+        }
+
+        h1 {
+            font-family: 'Playfair Display', serif;
+            font-size: clamp(32px, 5vw, 56px);
+            font-weight: 300;
+            letter-spacing: 0.2em;
+            margin-bottom: 20px;
+            color: #1a1a1a;
+        }
+
+        .subtitle {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 13px;
+            font-weight: 300;
+            color: #666;
+            letter-spacing: 0.15em;
+            text-transform: uppercase;
+            margin-bottom: 20px;
+        }
+
+        .gallery-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 20px;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .effect-card {
+            background: white;
+            border: 1px solid rgba(0, 0, 0, 0.05);
+            border-radius: 4px;
+            padding: 20px;
+            text-align: center;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            text-decoration: none;
+            color: inherit;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .effect-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.08);
+        }
+
+        .effect-number {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 10px;
+            font-weight: 400;
+            color: #999;
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            letter-spacing: 0.1em;
+        }
+
+        .effect-title {
+            font-family: 'Playfair Display', serif;
+            font-size: 16px;
+            font-weight: 300;
+            letter-spacing: 0.05em;
+            margin-bottom: 8px;
+        }
+
+        .effect-description {
+            font-family: 'Inter', sans-serif;
+            font-size: 11px;
+            font-weight: 300;
+            color: #666;
+            line-height: 1.4;
+        }
+
+        .category-label {
+            grid-column: 1 / -1;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 12px;
+            font-weight: 500;
+            letter-spacing: 0.15em;
+            text-transform: uppercase;
+            color: #999;
+            margin: 20px 0 10px;
+            padding-top: 20px;
+            border-top: 1px solid rgba(0, 0, 0, 0.05);
+        }
+
+        .back-link {
+            display: inline-block;
+            margin-bottom: 40px;
+            padding: 10px 20px;
+            background: #1a1a1a;
+            color: white;
+            text-decoration: none;
+            border-radius: 4px;
+            font-size: 14px;
+            transition: all 0.3s ease;
+        }
+
+        .back-link:hover {
+            background: #333;
+        }
+    </style>
+</head>
+<body>
+    <a href="../" class="back-link">← Back to Revolutionary WebGL</a>
+    
+    <div class="header">
+        <h1>50 JOURNEYS</h1>
+        <p class="subtitle">A Complete Collection of Mindful Experiences</p>
+    </div>
+
+    <div class="gallery-grid">
+        <!-- Existing Effects (1-6) -->
+        <div class="category-label">Foundation Series</div>
+        
+        <a href="breathing-circle.html" class="effect-card">
+            <span class="effect-number">01</span>
+            <div class="effect-title">Breathing Circle</div>
+            <div class="effect-description">Rhythmic expansion</div>
+        </a>
+        
+        <a href="ink-flow.html" class="effect-card">
+            <span class="effect-number">02</span>
+            <div class="effect-title">Ink Flow</div>
+            <div class="effect-description">Thoughts dissolving</div>
+        </a>
+        
+        <a href="memory-dots.html" class="effect-card">
+            <span class="effect-number">03</span>
+            <div class="effect-title">Memory Grains</div>
+            <div class="effect-description">Time fragments</div>
+        </a>
+        
+        <a href="shadow-path.html" class="effect-card">
+            <span class="effect-number">04</span>
+            <div class="effect-title">Shadow Path</div>
+            <div class="effect-description">Inner landscapes</div>
+        </a>
+        
+        <a href="growth-lines.html" class="effect-card">
+            <span class="effect-number">05</span>
+            <div class="effect-title">Life Terrain</div>
+            <div class="effect-description">Journey paths</div>
+        </a>
+        
+        <a href="life-terrain-infinite.html" class="effect-card">
+            <span class="effect-number">06</span>
+            <div class="effect-title">Infinite Journey</div>
+            <div class="effect-description">Endless terrain</div>
+        </a>
+
+        <!-- Connection Series (7-16) -->
+        <div class="category-label">Connection Series</div>
+        
+        <a href="soul-threads.html" class="effect-card">
+            <span class="effect-number">07</span>
+            <div class="effect-title">Soul Threads</div>
+            <div class="effect-description">Invisible bonds</div>
+        </a>
+        
+        <a href="constellation-beings.html" class="effect-card">
+            <span class="effect-number">08</span>
+            <div class="effect-title">Constellation Beings</div>
+            <div class="effect-description">Connected stars</div>
+        </a>
+        
+        <a href="web-of-fate.html" class="effect-card">
+            <span class="effect-number">09</span>
+            <div class="effect-title">Web of Fate</div>
+            <div class="effect-description">Intertwined paths</div>
+        </a>
+        
+        <a href="mirror-souls.html" class="effect-card">
+            <span class="effect-number">10</span>
+            <div class="effect-title">Mirror Souls</div>
+            <div class="effect-description">Reflected selves</div>
+        </a>
+        
+        <a href="bridge-walkers.html" class="effect-card">
+            <span class="effect-number">11</span>
+            <div class="effect-title">Bridge Walkers</div>
+            <div class="effect-description">Crossing together</div>
+        </a>
+        
+        <a href="spiral-dance.html" class="effect-card">
+            <span class="effect-number">12</span>
+            <div class="effect-title">Spiral Dance</div>
+            <div class="effect-description">Eternal rotation</div>
+        </a>
+        
+        <a href="echo-chamber.html" class="effect-card">
+            <span class="effect-number">13</span>
+            <div class="effect-title">Echo Chamber</div>
+            <div class="effect-description">Resonating presence</div>
+        </a>
+        
+        <a href="pulse-network.html" class="effect-card">
+            <span class="effect-number">14</span>
+            <div class="effect-title">Pulse Network</div>
+            <div class="effect-description">Heartbeat sync</div>
+        </a>
+        
+        <a href="gravity-wells.html" class="effect-card">
+            <span class="effect-number">15</span>
+            <div class="effect-title">Gravity Wells</div>
+            <div class="effect-description">Pulling together</div>
+        </a>
+        
+        <a href="string-theory.html" class="effect-card">
+            <span class="effect-number">16</span>
+            <div class="effect-title">String Theory</div>
+            <div class="effect-description">Quantum connections</div>
+        </a>
+
+        <!-- Solitude Series (17-26) -->
+        <div class="category-label">Solitude Series</div>
+        
+        <a href="lone-wanderer.html" class="effect-card">
+            <span class="effect-number">17</span>
+            <div class="effect-title">Lone Wanderer</div>
+            <div class="effect-description">Solo journey</div>
+        </a>
+        
+        <a href="desert-walker.html" class="effect-card">
+            <span class="effect-number">18</span>
+            <div class="effect-title">Desert Walker</div>
+            <div class="effect-description">Vast emptiness</div>
+        </a>
+        
+        <a href="island-figure.html" class="effect-card">
+            <span class="effect-number">19</span>
+            <div class="effect-title">Island Figure</div>
+            <div class="effect-description">Isolated being</div>
+        </a>
+        
+        <a href="void-dancer.html" class="effect-card">
+            <span class="effect-number">20</span>
+            <div class="effect-title">Void Dancer</div>
+            <div class="effect-description">Empty space</div>
+        </a>
+        
+        <a href="lighthouse-keeper.html" class="effect-card">
+            <span class="effect-number">21</span>
+            <div class="effect-title">Lighthouse Keeper</div>
+            <div class="effect-description">Guiding light</div>
+        </a>
+        
+        <a href="mountain-hermit.html" class="effect-card">
+            <span class="effect-number">22</span>
+            <div class="effect-title">Mountain Hermit</div>
+            <div class="effect-description">Peak dweller</div>
+        </a>
+        
+        <a href="cave-dweller.html" class="effect-card">
+            <span class="effect-number">23</span>
+            <div class="effect-title">Cave Dweller</div>
+            <div class="effect-description">Inner depths</div>
+        </a>
+        
+        <a href="moon-gazer.html" class="effect-card">
+            <span class="effect-number">24</span>
+            <div class="effect-title">Moon Gazer</div>
+            <div class="effect-description">Night watcher</div>
+        </a>
+        
+        <a href="horizon-seeker.html" class="effect-card">
+            <span class="effect-number">25</span>
+            <div class="effect-title">Horizon Seeker</div>
+            <div class="effect-description">Endless view</div>
+        </a>
+        
+        <a href="silence-holder.html" class="effect-card">
+            <span class="effect-number">26</span>
+            <div class="effect-title">Silence Holder</div>
+            <div class="effect-description">Quiet presence</div>
+        </a>
+
+        <!-- Movement Series (27-36) -->
+        <div class="category-label">Movement Series</div>
+        
+        <a href="wind-dancers.html" class="effect-card">
+            <span class="effect-number">27</span>
+            <div class="effect-title">Wind Dancers</div>
+            <div class="effect-description">Flowing motion</div>
+        </a>
+        
+        <a href="wave-riders.html" class="effect-card">
+            <span class="effect-number">28</span>
+            <div class="effect-title">Wave Riders</div>
+            <div class="effect-description">Ocean rhythm</div>
+        </a>
+        
+        <a href="pendulum-souls.html" class="effect-card">
+            <span class="effect-number">29</span>
+            <div class="effect-title">Pendulum Souls</div>
+            <div class="effect-description">Swinging life</div>
+        </a>
+        
+        <a href="orbit-beings.html" class="effect-card">
+            <span class="effect-number">30</span>
+            <div class="effect-title">Orbit Beings</div>
+            <div class="effect-description">Circular paths</div>
+        </a>
+        
+        <a href="drift-patterns.html" class="effect-card">
+            <span class="effect-number">31</span>
+            <div class="effect-title">Drift Patterns</div>
+            <div class="effect-description">Gentle float</div>
+        </a>
+        
+        <a href="tornado-souls.html" class="effect-card">
+            <span class="effect-number">32</span>
+            <div class="effect-title">Tornado Souls</div>
+            <div class="effect-description">Spiraling force</div>
+        </a>
+        
+        <a href="river-flow.html" class="effect-card">
+            <span class="effect-number">33</span>
+            <div class="effect-title">River Flow</div>
+            <div class="effect-description">Current riders</div>
+        </a>
+        
+        <a href="butterfly-effect.html" class="effect-card">
+            <span class="effect-number">34</span>
+            <div class="effect-title">Butterfly Effect</div>
+            <div class="effect-description">Chaos wings</div>
+        </a>
+        
+        <a href="migration-paths.html" class="effect-card">
+            <span class="effect-number">35</span>
+            <div class="effect-title">Migration Paths</div>
+            <div class="effect-description">Seasonal journey</div>
+        </a>
+        
+        <a href="vortex-beings.html" class="effect-card">
+            <span class="effect-number">36</span>
+            <div class="effect-title">Vortex Beings</div>
+            <div class="effect-description">Swirling souls</div>
+        </a>
+
+        <!-- Transformation Series (37-46) -->
+        <div class="category-label">Transformation Series</div>
+        
+        <a href="particle-beings.html" class="effect-card">
+            <span class="effect-number">37</span>
+            <div class="effect-title">Particle Beings</div>
+            <div class="effect-description">Dissolving form</div>
+        </a>
+        
+        <a href="smoke-figures.html" class="effect-card">
+            <span class="effect-number">38</span>
+            <div class="effect-title">Smoke Figures</div>
+            <div class="effect-description">Ethereal shapes</div>
+        </a>
+        
+        <a href="sand-people.html" class="effect-card">
+            <span class="effect-number">39</span>
+            <div class="effect-title">Sand People</div>
+            <div class="effect-description">Grain by grain</div>
+        </a>
+        
+        <a href="crystal-growth.html" class="effect-card">
+            <span class="effect-number">40</span>
+            <div class="effect-title">Crystal Growth</div>
+            <div class="effect-description">Forming structure</div>
+        </a>
+        
+        <a href="melting-forms.html" class="effect-card">
+            <span class="effect-number">41</span>
+            <div class="effect-title">Melting Forms</div>
+            <div class="effect-description">Liquid souls</div>
+        </a>
+        
+        <a href="fractal-beings.html" class="effect-card">
+            <span class="effect-number">42</span>
+            <div class="effect-title">Fractal Beings</div>
+            <div class="effect-description">Infinite detail</div>
+        </a>
+        
+        <a href="phoenix-rise.html" class="effect-card">
+            <span class="effect-number">43</span>
+            <div class="effect-title">Phoenix Rise</div>
+            <div class="effect-description">Rebirth cycle</div>
+        </a>
+        
+        <a href="metamorphosis.html" class="effect-card">
+            <span class="effect-number">44</span>
+            <div class="effect-title">Metamorphosis</div>
+            <div class="effect-description">Shape shifting</div>
+        </a>
+        
+        <a href="erosion-souls.html" class="effect-card">
+            <span class="effect-number">45</span>
+            <div class="effect-title">Erosion Souls</div>
+            <div class="effect-description">Wearing away</div>
+        </a>
+        
+        <a href="bloom-beings.html" class="effect-card">
+            <span class="effect-number">46</span>
+            <div class="effect-title">Bloom Beings</div>
+            <div class="effect-description">Flowering souls</div>
+        </a>
+
+        <!-- Unity Series (47-50) -->
+        <div class="category-label">Unity Series</div>
+        
+        <a href="collective-breath.html" class="effect-card">
+            <span class="effect-number">47</span>
+            <div class="effect-title">Collective Breath</div>
+            <div class="effect-description">Unified rhythm</div>
+        </a>
+        
+        <a href="hive-mind.html" class="effect-card">
+            <span class="effect-number">48</span>
+            <div class="effect-title">Hive Mind</div>
+            <div class="effect-description">Shared consciousness</div>
+        </a>
+        
+        <a href="symphony-souls.html" class="effect-card">
+            <span class="effect-number">49</span>
+            <div class="effect-title">Symphony Souls</div>
+            <div class="effect-description">Harmonic beings</div>
+        </a>
+        
+        <a href="infinity-loop.html" class="effect-card">
+            <span class="effect-number">50</span>
+            <div class="effect-title">Infinity Loop</div>
+            <div class="effect-description">Eternal connection</div>
+        </a>
+    </div>
+</body>
+</html>

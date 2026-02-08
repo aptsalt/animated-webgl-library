@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Revolutionary WebGL Framework - Core Files</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, system-ui, sans-serif;
+            background: #f8f8f8;
+            color: #1a1a1a;
+            padding: 40px 20px;
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 60px;
+        }
+
+        h1 {
+            font-size: 42px;
+            font-weight: 200;
+            letter-spacing: 4px;
+            margin-bottom: 20px;
+            color: #1a1a1a;
+        }
+
+        .subtitle {
+            font-size: 16px;
+            color: #666;
+            letter-spacing: 1px;
+            font-weight: 300;
+        }
+
+        .section {
+            margin-bottom: 60px;
+            background: white;
+            padding: 40px;
+            border-radius: 8px;
+            border: 1px solid rgba(0, 0, 0, 0.05);
+        }
+
+        .section-title {
+            font-size: 24px;
+            font-weight: 300;
+            margin-bottom: 30px;
+            letter-spacing: 2px;
+            color: #1a1a1a;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 15px;
+        }
+
+        .file-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+        }
+
+        .file-card {
+            background: #f8f8f8;
+            padding: 20px;
+            border-radius: 6px;
+            border: 1px solid rgba(0, 0, 0, 0.05);
+            transition: all 0.3s ease;
+        }
+
+        .file-card:hover {
+            background: #f0f0f0;
+            transform: translateY(-2px);
+        }
+
+        .file-name {
+            font-size: 14px;
+            font-weight: 500;
+            margin-bottom: 8px;
+            color: #1a1a1a;
+        }
+
+        .file-description {
+            font-size: 12px;
+            color: #666;
+            line-height: 1.4;
+        }
+
+        .folder-link {
+            text-decoration: none;
+            color: inherit;
+        }
+
+        .folder-icon {
+            font-size: 18px;
+            margin-right: 8px;
+        }
+
+        .back-link {
+            display: inline-block;
+            margin-bottom: 40px;
+            padding: 10px 20px;
+            background: #1a1a1a;
+            color: white;
+            text-decoration: none;
+            border-radius: 4px;
+            font-size: 14px;
+            transition: all 0.3s ease;
+        }
+
+        .back-link:hover {
+            background: #333;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <a href="../" class="back-link">← Back to Revolutionary WebGL</a>
+        
+        <header>
+            <h1>FRAMEWORK CORE</h1>
+            <p class="subtitle">Technical Foundation & Documentation</p>
+        </header>
+
+        <div class="section">
+            <h2 class="section-title">Documentation</h2>
+            <div class="file-grid">
+                <div class="file-card">
+                    <div class="file-name">📋 DESIGN_SYSTEM.md</div>
+                    <div class="file-description">Visual design principles, color psychology, and therapeutic aesthetics guidelines</div>
+                </div>
+                <div class="file-card">
+                    <div class="file-name">🔧 INTEGRATION_GUIDE.md</div>
+                    <div class="file-description">Technical implementation guide for developers and system integrators</div>
+                </div>
+                <div class="file-card">
+                    <div class="file-name">📢 MARKETING_CONTENT.md</div>
+                    <div class="file-description">Content strategy, messaging, and positioning for therapeutic technology</div>
+                </div>
+                <div class="file-card">
+                    <div class="file-name">🧠 PSYCHOLOGICAL_FRAMEWORK.md</div>
+                    <div class="file-description">Research foundation, therapeutic principles, and psychological theory</div>
+                </div>
+                <div class="file-card">
+                    <div class="file-name">🎨 THEME_SYSTEM_INTEGRATION_GUIDE.md</div>
+                    <div class="file-description">Advanced theming system for customizable therapeutic experiences</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2 class="section-title">Human Figure Library</h2>
+            <div class="file-grid">
+                <a href="human-figure/aesthetic/" class="file-card folder-link">
+                    <div class="file-name"><span class="folder-icon">📁</span> Aesthetic Collection</div>
+                    <div class="file-description">Minimalist human figure compositions for contemplative experiences</div>
+                </a>
+                <a href="human-figure/life-journey/" class="file-card folder-link">
+                    <div class="file-name"><span class="folder-icon">📁</span> Life Journey Series</div>
+                    <div class="file-description">20 stages of human development from birth to transcendence</div>
+                </a>
+                <a href="human-figure/motion/" class="file-card folder-link">
+                    <div class="file-name"><span class="folder-icon">📁</span> Motion Library</div>
+                    <div class="file-description">30 dynamic human figure animations and transformations</div>
+                </a>
+                <div class="file-card">
+                    <div class="file-name">⚡ particle-being-library.js</div>
+                    <div class="file-description">Advanced particle system for human figure dissolution effects</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2 class="section-title">Core Libraries</h2>
+            <div class="file-grid">
+                <div class="file-card">
+                    <div class="file-name">📊 analytics-dashboard.js</div>
+                    <div class="file-description">User engagement and therapeutic progress tracking</div>
+                </div>
+                <div class="file-card">
+                    <div class="file-name">📈 assessment-metrics.js</div>
+                    <div class="file-description">Psychological assessment and wellness measurement tools</div>
+                </div>
+                <div class="file-card">
+                    <div class="file-name">🔊 audio-engine.js</div>
+                    <div class="file-description">Spatial audio and therapeutic soundscape management</div>
+                </div>
+                <div class="file-card">
+                    <div class="file-name">❤️ biometric.js</div>
+                    <div class="file-description">Heart rate, breathing, and biometric sensor integration</div>
+                </div>
+                <div class="file-card">
+                    <div class="file-name">🧠 psychology-engine.js</div>
+                    <div class="file-description">Core psychological processing and therapeutic algorithms</div>
+                </div>
+                <div class="file-card">
+                    <div class="file-name">✨ shaders.js</div>
+                    <div class="file-description">Custom WebGL shaders for therapeutic visual effects</div>
+                </div>
+                <div class="file-card">
+                    <div class="file-name">🎨 theme-system.js</div>
+                    <div class="file-description">Dynamic theming and personalization engine</div>
+                </div>
+                <div class="file-card">
+                    <div class="file-name">🏥 therapeutic-protocols.js</div>
+                    <div class="file-description">Clinical protocols and evidence-based intervention modules</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

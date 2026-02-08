@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Human Figure Energy - Mindful Journey</title>
+    <style>
+        body { 
+            margin: 0; 
+            overflow: hidden; 
+            background: #f8f8f8;
+            font-family: 'Inter', system-ui, sans-serif;
+        }
+        canvas { display: block; }
+        
+        .back-btn {
+            position: absolute;
+            top: 40px;
+            left: 40px;
+            padding: 10px 20px;
+            background: transparent;
+            border: 1px solid rgba(26, 26, 26, 0.2);
+            color: #1a1a1a;
+            text-decoration: none;
+            font-size: 14px;
+            letter-spacing: 1px;
+            border-radius: 20px;
+            transition: all 0.3s ease;
+            z-index: 10;
+        }
+        
+        .back-btn:hover {
+            background: rgba(26, 26, 26, 0.05);
+            border-color: rgba(26, 26, 26, 0.4);
+        }
+        
+        .instruction {
+            position: absolute;
+            bottom: 40px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: rgba(26, 26, 26, 0.4);
+            font-size: 12px;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            pointer-events: none;
+        }
+    </style>
+</head>
+<body>
+    <a href="../index.html" class="back-btn">← Back</a>
+    <div class="instruction">Click to expand energy rings</div>
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script>
+        let scene, camera, renderer;
+        let humanFigure, energyRings;
+        let time = 0;
+        let expanding = false;
+        let expandProgress = 0;
+
+        function init() {
+            scene = new THREE.Scene();
+            scene.background = new THREE.Color(0xf8f8f8);
+
+            camera = new THREE.PerspectiveCamera(
+                75, window.innerWidth / window.innerHeight, 0.1, 1000
+            );
+            camera.position.z = 10;
+
+            renderer = new THREE.WebGLRenderer({ antialias: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            document.body.appendChild(renderer.domElement);
+
+            createHumanFigure();
+            createEnergyRings();
+            animate();
+        }
+
+        function createHumanFigure() {
+            const group = new THREE.Group();
+            
+            const material = new THREE.MeshBasicMaterial({
+                color: 0x1a1a1a,
+                transparent: true,
+                opacity: 0.8,
+                side: THREE.DoubleSide
+            });
+            
+            // Head
+            const headGeometry = new THREE.SphereGeometry(0.4, 8, 6);
+            const head = new THREE.Mesh(headGeometry, material.clone());
+            head.position.y = 2.2;
+            
+            // Torso
+            const torsoGeometry = new THREE.CylinderGeometry(0.4, 0.6, 1.8, 8);
+            const torso = new THREE.Mesh(torsoGeometry, material.clone());
+            torso.position.y = 1;
+            
+            // Arms in meditation pose
+            const armGeometry = new THREE.CylinderGeometry(0.15, 0.18, 1.0, 6);
+            const leftArm = new THREE.Mesh(armGeometry, material.clone());
+            leftArm.position.set(-0.5, 0.8, 0);
+            leftArm.rotation.z = 1;
+            
+            const rightArm = new THREE.Mesh(armGeometry, material.clone());
+            rightArm.position.set(0.5, 0.8, 0);
+            rightArm.rotation.z = -1;
+            
+            // Legs in lotus position
+            const legGeometry = new THREE.CylinderGeometry(0.22, 0.3, 1.2, 6);
+            const leftLeg = new THREE.Mesh(legGeometry, material.clone());
+            leftLeg.position.set(-0.6, -0.8, 0);
+            leftLeg.rotation.z = 1.2;
+            
+            const rightLeg = new THREE.Mesh(legGeometry, material.clone());
+            rightLeg.position.set(0.6, -0.8, 0);
+            rightLeg.rotation.z = -1.2;
+            
+            group.add(head, torso, leftArm, rightArm, leftLeg, rightLeg);
+            
+            scene.add(group);
+            humanFigure = group;
+        }
+
+        function createEnergyRings() {
+            energyRings = [];
+            
+            const ringMaterial = new THREE.MeshBasicMaterial({
+                color: 0x4fc3f7,
+                transparent: true,
+                opacity: 0,
+                side: THREE.DoubleSide
+            });
+            
+            for (let i = 0; i < 5; i++) {
+                const ringGeometry = new THREE.RingGeometry(1 + i * 0.5, 1.2 + i * 0.5, 32);
+                const ring = new THREE.Mesh(ringGeometry, ringMaterial.clone());
+                
+                ring.rotation.x = Math.PI / 2;
+                ring.position.y = 1; // Center on torso
+                
+                scene.add(ring);
+                energyRings.push({
+                    mesh: ring,
+                    baseRadius: 1 + i * 0.5,
+                    delay: i * 0.2
+                });
+            }
+            
+            // Add vertical energy rings
+            for (let i = 0; i < 3; i++) {
+                const vRingGeometry = new THREE.RingGeometry(0.8 + i * 0.4, 1 + i * 0.4, 32);
+                const vRing = new THREE.Mesh(vRingGeometry, ringMaterial.clone());
+                
+                vRing.rotation.y = Math.PI / 2;
+                vRing.position.y = 1;
+                
+                scene.add(vRing);
+                energyRings.push({
+                    mesh: vRing,
+                    baseRadius: 0.8 + i * 0.4,
+                    delay: i * 0.15 + 0.5,
+                    vertical: true
+                });
+            }
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+            time += 0.01;
+
+            if (expanding) {
+                expandProgress += 0.008;
+                if (expandProgress >= 1) {
+                    expandProgress = 1;
+                }
+            }
+
+            // Animate energy rings
+            energyRings.forEach((ring, index) => {
+                const delay = ring.delay;
+                const progress = Math.max(0, Math.min(1, (expandProgress - delay) / 0.8));
+                
+                // Fade in and expand
+                ring.mesh.material.opacity = progress * 0.6 * Math.sin(time * 2 + index) * 0.5 + 0.3;
+                
+                const expansionFactor = 1 + progress * 3;
+                ring.mesh.scale.set(expansionFactor, expansionFactor, 1);
+                
+                // Pulse effect
+                const pulse = Math.sin(time * 3 + index * 0.5) * 0.1 + 1;
+                ring.mesh.scale.multiplyScalar(pulse);
+                
+                // Color shift
+                const hue = (time + index * 0.2) % 1;
+                ring.mesh.material.color.setHSL(0.5 + hue * 0.3, 0.8, 0.7);
+                
+                // Rotation
+                if (ring.vertical) {
+                    ring.mesh.rotation.y += 0.01;
+                } else {
+                    ring.mesh.rotation.z += 0.008;
+                }
+            });
+
+            // Figure becomes more luminous
+            humanFigure.children.forEach(child => {
+                const glow = expandProgress * 0.3;
+                child.material.color.setRGB(0.1 + glow, 0.1 + glow, 0.1 + glow);
+            });
+
+            // Gentle levitation
+            humanFigure.position.y = expandProgress * 0.5 + Math.sin(time * 0.5) * 0.1 * expandProgress;
+            
+            // Subtle breathing expansion
+            const breathScale = 1 + Math.sin(time * 0.8) * 0.02;
+            humanFigure.scale.set(breathScale, breathScale, breathScale);
+            
+            // Head slight tilt in meditation
+            humanFigure.children[0].rotation.x = -0.1 - expandProgress * 0.1;
+
+            // Camera gentle movement
+            camera.position.x = Math.sin(time * 0.3) * 0.5;
+            camera.position.y = Math.cos(time * 0.2) * 0.3;
+            camera.lookAt(0, 1, 0);
+
+            renderer.render(scene, camera);
+        }
+
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+
+        window.addEventListener('click', () => {
+            if (!expanding) {
+                expanding = true;
+            } else {
+                // Reset
+                expandProgress = 0;
+                expanding = false;
+                
+                // Reset figure colors
+                humanFigure.children.forEach(child => {
+                    child.material.color.setRGB(0.1, 0.1, 0.1);
+                });
+            }
+        });
+
+        init();
+    </script>
+</body>
+</html>

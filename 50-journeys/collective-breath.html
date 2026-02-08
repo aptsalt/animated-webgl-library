@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Collective Breath - Synchronized Being</title>
+    <style>
+        body {
+            margin: 0;
+            background: #f8f8f8;
+            overflow: hidden;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        }
+        canvas { display: block; }
+        .title {
+            position: absolute;
+            top: 30px;
+            left: 30px;
+            color: #1a1a1a;
+            font-size: 24px;
+            font-weight: 300;
+            z-index: 100;
+            opacity: 0;
+            animation: fadeIn 3s ease-in-out 1s forwards;
+        }
+        .subtitle {
+            position: absolute;
+            bottom: 30px;
+            right: 30px;
+            color: #1a1a1a;
+            font-size: 14px;
+            z-index: 100;
+            opacity: 0;
+            animation: fadeIn 3s ease-in-out 2s forwards;
+        }
+        .back-button {
+            position: absolute;
+            top: 30px;
+            right: 30px;
+            background: none;
+            border: 2px solid #1a1a1a;
+            color: #1a1a1a;
+            padding: 10px 20px;
+            font-size: 14px;
+            cursor: pointer;
+            border-radius: 25px;
+            text-decoration: none;
+            transition: all 0.3s ease;
+            z-index: 1000;
+        }
+        .back-button:hover {
+            background: #1a1a1a;
+            color: #f8f8f8;
+        }
+        @keyframes fadeIn {
+            to { opacity: 1; }
+        }
+    </style>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+</head>
+<body>
+    <div class="title">Collective Breath</div>
+    <div class="subtitle">Unity in synchronized rhythm</div>
+    <a href="gallery.html" class="back-button">← Gallery</a>
+    
+    <script>
+        let scene, camera, renderer;
+        let breathingFigures = [];
+        let centralBreath;
+        let breathWaves = [];
+        let time = 0;
+        let breathPhase = 0;
+        
+        function init() {
+            scene = new THREE.Scene();
+            scene.fog = new THREE.Fog(0xf8f8f8, 8, 25);
+            
+            camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+            camera.position.set(0, 12, 18);
+            
+            renderer = new THREE.WebGLRenderer({ antialias: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.setClearColor(0xf8f8f8);
+            renderer.shadowMap.enabled = true;
+            renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+            document.body.appendChild(renderer.domElement);
+            
+            // Soft ambient light
+            const ambientLight = new THREE.AmbientLight(0x404040, 0.5);
+            scene.add(ambientLight);
+            
+            // Main directional light
+            const mainLight = new THREE.DirectionalLight(0xffffff, 0.6);
+            mainLight.position.set(-10, 15, 5);
+            mainLight.castShadow = true;
+            mainLight.shadow.mapSize.width = 2048;
+            mainLight.shadow.mapSize.height = 2048;
+            scene.add(mainLight);
+            
+            // Rim light
+            const rimLight = new THREE.DirectionalLight(0xffffff, 0.3);
+            rimLight.position.set(10, 8, -5);
+            scene.add(rimLight);
+            
+            // No ground plane for minimalist aesthetic
+            
+            createCentralBreath();
+            createBreathingFigures();
+            createBreathWaves();
+            
+            animate();
+        }
+        
+        function createCentralBreath() {
+            // Central breathing visualization
+            const particleCount = 200;
+            const geometry = new THREE.BufferGeometry();
+            const positions = new Float32Array(particleCount * 3);
+            const originalPositions = new Float32Array(particleCount * 3);
+            const opacities = new Float32Array(particleCount);
+            
+            for (let i = 0; i < particleCount; i++) {
+                const radius = Math.random() * 2;
+                const theta = Math.random() * Math.PI * 2;
+                const phi = Math.random() * Math.PI;
+                
+                const x = radius * Math.sin(phi) * Math.cos(theta);
+                const y = 2 + radius * Math.cos(phi);
+                const z = radius * Math.sin(phi) * Math.sin(theta);
+                
+                positions[i * 3] = x;
+                positions[i * 3 + 1] = y;
+                positions[i * 3 + 2] = z;
+                
+                originalPositions[i * 3] = x;
+                originalPositions[i * 3 + 1] = y;
+                originalPositions[i * 3 + 2] = z;
+                
+                opacities[i] = Math.random() * 0.8 + 0.2;
+            }
+            
+            geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+            geometry.setAttribute('originalPosition', new THREE.BufferAttribute(originalPositions, 3));
+            geometry.setAttribute('opacity', new THREE.BufferAttribute(opacities, 1));
+            
+            const material = new THREE.PointsMaterial({
+                color: 0x1a1a1a,
+                size: 0.03,
+                transparent: true,
+                opacity: 0.7,
+                blending: THREE.NormalBlending
+            });
+            
+            centralBreath = new THREE.Points(geometry, material);
+            scene.add(centralBreath);
+        }
+        
+        function createBreathingFigures() {
+            const figureCount = 8;
+            const radius = 8;
+            
+            for (let i = 0; i < figureCount; i++) {
+                const angle = (i / figureCount) * Math.PI * 2;
+                const figure = createBreathingFigure();
+                
+                figure.position.x = Math.cos(angle) * radius;
+                figure.position.z = Math.sin(angle) * radius;
+                figure.position.y = 0.8;
+                
+                // Face towards center
+                figure.rotation.y = angle + Math.PI;
+                
+                figure.castShadow = true;
+                scene.add(figure);
+                
+                breathingFigures.push({
+                    mesh: figure,
+                    angle: angle,
+                    baseRadius: radius,
+                    breathPhase: (i / figureCount) * Math.PI * 0.5, // Slight phase offset
+                    basePosition: figure.position.clone(),
+                    baseScale: 1.0
+                });
+            }
+        }
+        
+        function createBreathingFigure() {
+            const group = new THREE.Group();
+            const material = new THREE.MeshLambertMaterial({ 
+                color: 0x1a1a1a,
+                transparent: true,
+                opacity: 0.9
+            });
+            
+            // Head
+            const headGeometry = new THREE.SphereGeometry(0.1, 12, 8);
+            const head = new THREE.Mesh(headGeometry, material);
+            head.position.y = 0.6;
+            group.add(head);
+            
+            // Torso (main breathing part)
+            const torsoGeometry = new THREE.CylinderGeometry(0.08, 0.1, 0.4, 12);
+            const torso = new THREE.Mesh(torsoGeometry, material);
+            torso.position.y = 0.25;
+            group.add(torso);
+            
+            // Arms in meditative position
+            const armGeometry = new THREE.CylinderGeometry(0.03, 0.04, 0.3, 8);
+            const leftArm = new THREE.Mesh(armGeometry, material);
+            const rightArm = new THREE.Mesh(armGeometry, material);
+            leftArm.position.set(-0.15, 0.3, 0);
+            rightArm.position.set(0.15, 0.3, 0);
+            leftArm.rotation.z = 0.5;
+            rightArm.rotation.z = -0.5;
+            group.add(leftArm);
+            group.add(rightArm);
+            
+            // Forearms
+            const forearmGeometry = new THREE.CylinderGeometry(0.025, 0.03, 0.25, 8);
+            const leftForearm = new THREE.Mesh(forearmGeometry, material);
+            const rightForearm = new THREE.Mesh(forearmGeometry, material);
+            leftForearm.position.set(-0.25, 0.15, 0.1);
+            rightForearm.position.set(0.25, 0.15, 0.1);
+            leftForearm.rotation.z = 1.0;
+            rightForearm.rotation.z = -1.0;
+            group.add(leftForearm);
+            group.add(rightForearm);
+            
+            // Legs in seated position
+            const legGeometry = new THREE.CylinderGeometry(0.05, 0.06, 0.35, 8);
+            const leftLeg = new THREE.Mesh(legGeometry, material);
+            const rightLeg = new THREE.Mesh(legGeometry, material);
+            leftLeg.position.set(-0.08, -0.1, 0.15);
+            rightLeg.position.set(0.08, -0.1, 0.15);
+            leftLeg.rotation.x = 1.2;
+            rightLeg.rotation.x = 1.2;
+            group.add(leftLeg);
+            group.add(rightLeg);
+            
+            // Lower legs
+            const calfGeometry = new THREE.CylinderGeometry(0.04, 0.05, 0.25, 8);
+            const leftCalf = new THREE.Mesh(calfGeometry, material);
+            const rightCalf = new THREE.Mesh(calfGeometry, material);
+            leftCalf.position.set(-0.08, -0.35, 0.35);
+            rightCalf.position.set(0.08, -0.35, 0.35);
+            group.add(leftCalf);
+            group.add(rightCalf);
+            
+            return group;
+        }
+        
+        function createBreathWaves() {
+            // Create expanding breath rings
+            for (let i = 0; i < 5; i++) {
+                const ringGeometry = new THREE.RingGeometry(4 + i * 2, 4.2 + i * 2, 32);
+                const ringMaterial = new THREE.MeshBasicMaterial({ 
+                    color: 0x1a1a1a,
+                    transparent: true,
+                    opacity: 0.0,
+                    side: THREE.DoubleSide
+                });
+                
+                const ring = new THREE.Mesh(ringGeometry, ringMaterial);
+                ring.rotation.x = -Math.PI / 2;
+                ring.position.y = 0.01;
+                scene.add(ring);
+                
+                breathWaves.push({
+                    mesh: ring,
+                    baseOpacity: 0.3 - i * 0.05,
+                    phase: i * Math.PI * 0.4
+                });
+            }
+        }
+        
+        function animate() {
+            requestAnimationFrame(animate);
+            
+            time += 0.016;
+            
+            // Master breath rhythm (4 seconds inhale, 4 seconds exhale)
+            breathPhase = Math.sin(time * 0.785); // ~4 second cycle
+            const breathIntensity = (breathPhase + 1) / 2; // 0 to 1
+            
+            // Animate central breath
+            const centralPositions = centralBreath.geometry.attributes.position.array;
+            const centralOriginal = centralBreath.geometry.attributes.originalPosition.array;
+            const centralOpacities = centralBreath.geometry.attributes.opacity.array;
+            
+            for (let i = 0; i < centralPositions.length; i += 3) {
+                const particleIndex = i / 3;
+                
+                // Breathing expansion/contraction
+                const expansion = 1 + breathIntensity * 0.8;
+                centralPositions[i] = centralOriginal[i] * expansion;
+                centralPositions[i + 1] = centralOriginal[i + 1] + breathIntensity * 0.5;
+                centralPositions[i + 2] = centralOriginal[i + 2] * expansion;
+                
+                // Breathing glow
+                centralOpacities[particleIndex] = 0.3 + breathIntensity * 0.5;
+            }
+            centralBreath.geometry.attributes.position.needsUpdate = true;
+            centralBreath.geometry.attributes.opacity.needsUpdate = true;
+            
+            // Animate breathing figures
+            breathingFigures.forEach((figure, index) => {
+                const figureBreath = Math.sin(time * 0.785 + figure.breathPhase);
+                const figureIntensity = (figureBreath + 1) / 2;
+                
+                // Position breathing (subtle movement toward/away from center)
+                const breathRadius = figure.baseRadius + figureIntensity * 0.3;
+                figure.mesh.position.x = Math.cos(figure.angle) * breathRadius;
+                figure.mesh.position.z = Math.sin(figure.angle) * breathRadius;
+                figure.mesh.position.y = figure.basePosition.y + figureIntensity * 0.1;
+                
+                // Body scale breathing
+                const scaleBreath = 1 + figureIntensity * 0.08;
+                figure.mesh.scale.set(scaleBreath, scaleBreath, scaleBreath);
+                
+                // Torso breathing
+                if (figure.mesh.children[1]) {
+                    figure.mesh.children[1].scale.y = 1 + figureIntensity * 0.15;
+                    figure.mesh.children[1].scale.x = 1 + figureIntensity * 0.05;
+                    figure.mesh.children[1].scale.z = 1 + figureIntensity * 0.05;
+                }
+                
+                // Arm breathing movement
+                if (figure.mesh.children[2] && figure.mesh.children[3]) {
+                    const armBreath = figureIntensity * 0.1;
+                    figure.mesh.children[2].rotation.z = 0.5 + armBreath;
+                    figure.mesh.children[3].rotation.z = -0.5 - armBreath;
+                }
+                
+                // Head subtle movement
+                if (figure.mesh.children[0]) {
+                    figure.mesh.children[0].position.y = 0.6 + figureIntensity * 0.02;
+                }
+                
+                // Opacity breathing
+                figure.mesh.children.forEach(part => {
+                    if (part.material) {
+                        part.material.opacity = 0.7 + figureIntensity * 0.2;
+                    }
+                });
+            });
+            
+            // Animate breath waves
+            breathWaves.forEach((wave, index) => {
+                const wavePhase = Math.sin(time * 0.785 + wave.phase);
+                const waveIntensity = Math.max(0, wavePhase);
+                
+                wave.mesh.material.opacity = wave.baseOpacity * waveIntensity;
+                
+                // Scale waves with breath
+                const waveScale = 1 + waveIntensity * 0.2;
+                wave.mesh.scale.set(waveScale, 1, waveScale);
+            });
+            
+            // Camera breathing movement
+            camera.position.y = 12 + breathIntensity * 1.5;
+            camera.position.z = 18 + Math.sin(time * 0.2) * 2;
+            camera.position.x = Math.sin(time * 0.15) * 3;
+            
+            // Look at the center with slight breathing offset
+            camera.lookAt(0, 2 + breathIntensity * 0.5, 0);
+            
+            renderer.render(scene, camera);
+        }
+        
+        function onWindowResize() {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        }
+        
+        window.addEventListener('resize', onWindowResize, false);
+        
+        init();
+    </script>
+</body>
+</html>

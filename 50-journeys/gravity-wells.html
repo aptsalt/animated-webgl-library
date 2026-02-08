@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gravity Wells - Mindful Journey</title>
+    <style>
+        body { 
+            margin: 0; 
+            overflow: hidden; 
+            background: #f8f8f8;
+            font-family: 'Inter', system-ui, sans-serif;
+        }
+        canvas { display: block; }
+        
+        .instruction {
+            position: absolute;
+            bottom: 40px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: rgba(26, 26, 26, 0.6);
+            font-size: 14px;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            pointer-events: none;
+            transition: opacity 0.5s ease;
+        }
+        
+        .back-btn {
+            position: absolute;
+            top: 40px;
+            left: 40px;
+            padding: 10px 20px;
+            background: transparent;
+            border: 1px solid rgba(26, 26, 26, 0.2);
+            color: #1a1a1a;
+            text-decoration: none;
+            font-size: 14px;
+            letter-spacing: 1px;
+            border-radius: 20px;
+            transition: all 0.3s ease;
+        }
+        
+        .back-btn:hover {
+            background: rgba(26, 26, 26, 0.05);
+            border-color: rgba(26, 26, 26, 0.4);
+        }
+    </style>
+</head>
+<body>
+    <a href="gallery.html" class="back-btn">← Back</a>
+    <div class="instruction">Watch souls drawn together by invisible forces</div>
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script>
+        let scene, camera, renderer;
+        let figures = [];
+        let gravityWells = [];
+        let time = 0;
+        let mouse = new THREE.Vector2();
+
+        function init() {
+            scene = new THREE.Scene();
+            scene.background = new THREE.Color(0xf8f8f8);
+
+            camera = new THREE.PerspectiveCamera(
+                75, window.innerWidth / window.innerHeight, 0.1, 1000
+            );
+            camera.position.z = 50;
+
+            renderer = new THREE.WebGLRenderer({ antialias: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            document.body.appendChild(renderer.domElement);
+
+            createGravityWells();
+            createFigures();
+            animate();
+        }
+
+        function createGravityWells() {
+            // Create invisible gravity wells
+            const wellPositions = [
+                { x: -15, y: 10 },
+                { x: 20, y: -8 },
+                { x: 0, y: 0 },
+                { x: -8, y: -15 }
+            ];
+
+            wellPositions.forEach((pos, index) => {
+                const well = {
+                    position: new THREE.Vector3(pos.x, pos.y, 0),
+                    strength: 0.5 + Math.random() * 0.3,
+                    radius: 12 + Math.random() * 8,
+                    pulsePhase: Math.random() * Math.PI * 2
+                };
+                gravityWells.push(well);
+
+                // Create visual indicator for gravity well (subtle ripple effect)
+                for (let i = 0; i < 3; i++) {
+                    const geometry = new THREE.RingGeometry(
+                        well.radius * 0.3 + i * 2,
+                        well.radius * 0.3 + i * 2 + 0.1,
+                        32
+                    );
+                    const material = new THREE.MeshBasicMaterial({
+                        color: 0x1a1a1a,
+                        transparent: true,
+                        opacity: 0.05 - i * 0.01,
+                        side: THREE.DoubleSide
+                    });
+                    const ring = new THREE.Mesh(geometry, material);
+                    ring.position.copy(well.position);
+                    ring.userData = { wellIndex: index, ringIndex: i };
+                    scene.add(ring);
+                }
+            });
+        }
+
+        function createFigures() {
+            const figureCount = 12;
+            
+            for (let i = 0; i < figureCount; i++) {
+                // Create human-like figure silhouette
+                const figureGroup = new THREE.Group();
+                
+                // Body (elongated ellipse)
+                const bodyGeometry = new THREE.CylinderGeometry(0.8, 1.2, 4, 8);
+                const bodyMaterial = new THREE.MeshBasicMaterial({ 
+                    color: 0x1a1a1a,
+                    transparent: true,
+                    opacity: 0.7
+                });
+                const body = new THREE.Mesh(bodyGeometry, bodyMaterial);
+                figureGroup.add(body);
+                
+                // Head
+                const headGeometry = new THREE.SphereGeometry(0.8, 8, 8);
+                const head = new THREE.Mesh(headGeometry, bodyMaterial);
+                head.position.y = 3;
+                figureGroup.add(head);
+                
+                // Arms
+                const armGeometry = new THREE.CylinderGeometry(0.2, 0.2, 2.5, 6);
+                const leftArm = new THREE.Mesh(armGeometry, bodyMaterial);
+                leftArm.position.set(-1.5, 1, 0);
+                leftArm.rotation.z = 0.3;
+                figureGroup.add(leftArm);
+                
+                const rightArm = new THREE.Mesh(armGeometry, bodyMaterial);
+                rightArm.position.set(1.5, 1, 0);
+                rightArm.rotation.z = -0.3;
+                figureGroup.add(rightArm);
+                
+                // Legs
+                const legGeometry = new THREE.CylinderGeometry(0.3, 0.3, 3, 6);
+                const leftLeg = new THREE.Mesh(legGeometry, bodyMaterial);
+                leftLeg.position.set(-0.5, -3.5, 0);
+                figureGroup.add(leftLeg);
+                
+                const rightLeg = new THREE.Mesh(legGeometry, bodyMaterial);
+                rightLeg.position.set(0.5, -3.5, 0);
+                figureGroup.add(rightLeg);
+
+                // Random initial position
+                figureGroup.position.set(
+                    (Math.random() - 0.5) * 60,
+                    (Math.random() - 0.5) * 40,
+                    0
+                );
+
+                figureGroup.userData = {
+                    velocity: new THREE.Vector3(
+                        (Math.random() - 0.5) * 0.1,
+                        (Math.random() - 0.5) * 0.1,
+                        0
+                    ),
+                    mass: 0.5 + Math.random() * 0.5,
+                    originalScale: 0.3 + Math.random() * 0.2
+                };
+
+                figureGroup.scale.setScalar(figureGroup.userData.originalScale);
+                scene.add(figureGroup);
+                figures.push(figureGroup);
+            }
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+            time += 0.01;
+
+            // Update gravity well visualization
+            scene.children.forEach(child => {
+                if (child.userData.wellIndex !== undefined) {
+                    const well = gravityWells[child.userData.wellIndex];
+                    const pulseEffect = Math.sin(time * 2 + well.pulsePhase + child.userData.ringIndex * 0.5);
+                    child.material.opacity = (0.05 - child.userData.ringIndex * 0.01) * (0.5 + pulseEffect * 0.3);
+                    child.rotation.z = time * 0.1 * (child.userData.ringIndex % 2 === 0 ? 1 : -1);
+                }
+            });
+
+            // Apply gravitational forces to figures
+            figures.forEach((figure, figureIndex) => {
+                const forces = new THREE.Vector3(0, 0, 0);
+
+                // Calculate gravitational forces from wells
+                gravityWells.forEach(well => {
+                    const distance = figure.position.distanceTo(well.position);
+                    if (distance > 1) {
+                        const direction = well.position.clone().sub(figure.position).normalize();
+                        const force = (well.strength * figure.userData.mass) / (distance * distance * 0.1);
+                        forces.add(direction.multiplyScalar(force));
+                    }
+                });
+
+                // Inter-figure attraction with circular formation
+                let nearbyFigures = [];
+                figures.forEach((otherFigure, otherIndex) => {
+                    if (figureIndex !== otherIndex) {
+                        const distance = figure.position.distanceTo(otherFigure.position);
+                        if (distance < 10) {
+                            nearbyFigures.push({ figure: otherFigure, distance: distance });
+                        }
+                        if (distance > 2 && distance < 15) {
+                            const direction = otherFigure.position.clone().sub(figure.position).normalize();
+                            const force = 0.001 / (distance * distance);
+                            forces.add(direction.multiplyScalar(force));
+                        }
+                    }
+                });
+                
+                // Circular formation when multiple figures are close
+                if (nearbyFigures.length >= 2) {
+                    // Calculate center of nearby figures
+                    let center = new THREE.Vector3(0, 0, 0);
+                    nearbyFigures.forEach(nf => {
+                        center.add(nf.figure.position);
+                    });
+                    center.add(figure.position);
+                    center.divideScalar(nearbyFigures.length + 1);
+                    
+                    // Apply tangential force for circular motion
+                    const toCenter = center.clone().sub(figure.position);
+                    const targetRadius = 5 + nearbyFigures.length * 0.5;
+                    const currentRadius = toCenter.length();
+                    
+                    if (currentRadius > 0.1) {
+                        // Radial force to maintain circle radius
+                        const radialForce = toCenter.normalize().multiplyScalar((targetRadius - currentRadius) * 0.001);
+                        forces.add(radialForce);
+                        
+                        // Tangential force for circular motion
+                        const tangent = new THREE.Vector3(-toCenter.y, toCenter.x, 0).normalize();
+                        forces.add(tangent.multiplyScalar(0.002));
+                    }
+                }
+
+                // Apply forces to velocity (reduced for slower movement)
+                figure.userData.velocity.add(forces.multiplyScalar(0.008));
+                
+                // Apply stronger damping for slower, smoother movement
+                figure.userData.velocity.multiplyScalar(0.94);
+                
+                // Update position
+                figure.position.add(figure.userData.velocity);
+
+                // Rotation based on movement
+                if (figure.userData.velocity.length() > 0.001) {
+                    const angle = Math.atan2(figure.userData.velocity.y, figure.userData.velocity.x);
+                    figure.rotation.z = angle + Math.PI / 2;
+                }
+
+                // Gentle swaying motion
+                const sway = Math.sin(time * 1.5 + figureIndex) * 0.05;
+                figure.children.forEach((part, partIndex) => {
+                    if (partIndex > 0) { // Skip body
+                        part.rotation.x = sway * (partIndex % 2 === 0 ? 1 : -1);
+                    }
+                });
+
+                // Scale based on speed (visual feedback)
+                const speed = figure.userData.velocity.length();
+                const scaleMultiplier = 1 + speed * 2;
+                figure.scale.setScalar(figure.userData.originalScale * scaleMultiplier);
+
+                // Keep figures within bounds (loose boundaries)
+                if (Math.abs(figure.position.x) > 40) {
+                    figure.userData.velocity.x *= -0.5;
+                }
+                if (Math.abs(figure.position.y) > 25) {
+                    figure.userData.velocity.y *= -0.5;
+                }
+            });
+
+            // Mouse influence on gravity wells
+            if (mouse.length() > 0) {
+                const mouseWorld = new THREE.Vector3(mouse.x * 30, mouse.y * 20, 0);
+                gravityWells[0].position.lerp(mouseWorld, 0.02);
+            }
+
+            renderer.render(scene, camera);
+        }
+
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+
+        window.addEventListener('mousemove', (event) => {
+            mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+            mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+        });
+
+        init();
+    </script>
+</body>
+</html>

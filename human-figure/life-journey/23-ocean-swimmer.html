@@ -1,0 +1,558 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Life Journey - Ocean Swimmer</title>
+    <style>
+        body { 
+            margin: 0; overflow: hidden; 
+            background: radial-gradient(ellipse at center, #4169e1 0%, #1e90ff 30%, #006994 60%, #000080 100%);
+            animation: oceanWaves 8s ease-in-out infinite;
+        }
+        canvas { display: block; }
+        .title { 
+            position: absolute; top: 20px; left: 50%; transform: translateX(-50%); 
+            color: #00ffff; font-family: 'Trebuchet MS', sans-serif; font-size: 38px; 
+            letter-spacing: 3px; text-shadow: 2px 2px 8px rgba(0,0,0,0.7);
+            animation: waterShimmer 4s infinite;
+        }
+        .depth-phase {
+            position: absolute; top: 65px; left: 50%; transform: translateX(-50%);
+            color: #87ceeb; font-family: sans-serif; font-size: 18px; 
+            font-weight: bold; letter-spacing: 2px; text-shadow: 1px 1px 4px rgba(0,0,0,0.8);
+        }
+        .depth-meter {
+            position: absolute; bottom: 30px; left: 30px;
+            color: #00bfff; font-family: monospace; font-size: 14px;
+            background: rgba(0,0,0,0.6); padding: 10px; border-radius: 5px;
+            border: 1px solid #4169e1;
+        }
+        @keyframes oceanWaves {
+            0%, 100% { filter: hue-rotate(0deg) brightness(1); }
+            25% { filter: hue-rotate(15deg) brightness(1.1); }
+            75% { filter: hue-rotate(-10deg) brightness(0.9); }
+        }
+        @keyframes waterShimmer {
+            0%, 100% { text-shadow: 2px 2px 8px rgba(0,255,255,0.8); }
+            50% { text-shadow: 4px 4px 16px rgba(0,255,255,0.4); }
+        }
+    </style>
+</head>
+<body>
+    <div class="title">OCEAN SWIMMER</div>
+    <div class="depth-phase" id="depthPhase">SHALLOW WATERS</div>
+    <div class="depth-meter" id="depthMeter">Depth: 2m<br>Pressure: 1.2 atm</div>
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="../particle-being-library.js"></script>
+    <script>
+        let scene, camera, renderer, particleSystem;
+        let time = 0;
+        let currentDepth = 0;
+        let depthTimer = 0;
+        let bubbles = [];
+        let seaLife = [];
+        let currents = [];
+        let lightRays = [];
+        
+        const depthPhases = [
+            'SHALLOW WATERS', 'SURFACE SWIMMING', 'DIVING DEEPER', 'UNDERWATER EXPLORATION',
+            'DEEP OCEAN CURRENTS', 'ABYSSAL DEPTHS', 'SURFACING TO BREATHE'
+        ];
+
+        const depths = ['2m', '5m', '15m', '40m', '150m', '1000m', '0m'];
+        const pressures = ['1.2 atm', '1.5 atm', '2.5 atm', '5.0 atm', '16 atm', '101 atm', '1.0 atm'];
+
+        function init() {
+            scene = new THREE.Scene();
+            camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+            camera.position.set(0, 8, 25);
+
+            renderer = new THREE.WebGLRenderer({ antialias: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            document.body.appendChild(renderer.domElement);
+
+            // Create fluid swimmer particle system
+            particleSystem = new ParticleBeingSystem(scene, {
+                particleCount: 260,
+                particleSize: 0.08,
+                speedMultiplier: 2.2,
+                colorRange: { h: 0.6, s: 0.7, lMin: 0.5, lMax: 0.8 }
+            });
+
+            createSwimmer();
+            createOceanEnvironment();
+            animate();
+        }
+
+        function createSwimmer() {
+            const swimmer = particleSystem.convertToParticleBeing(
+                null,
+                { x: 0, y: 0, z: 0 },
+                {
+                    particleCount: 290,
+                    states: ['floating', 'swimming', 'diving', 'exploring'],
+                    stateTimings: { floating: 3, swimming: 4, diving: 3, exploring: 5 },
+                    attractionForces: { floating: 0.025, swimming: 0.02, diving: 0.015, exploring: 0.03 }
+                }
+            );
+
+            // 7 distinct ocean depth experiences with extreme variations
+            const originalUpdate = particleSystem.updateBeing.bind(particleSystem);
+            particleSystem.updateBeing = function(being, deltaTime) {
+                originalUpdate(being, deltaTime);
+                
+                depthTimer += deltaTime;
+                if (depthTimer > 6) {
+                    currentDepth = (currentDepth + 1) % depthPhases.length;
+                    depthTimer = 0;
+                    document.getElementById('depthPhase').textContent = depthPhases[currentDepth];
+                    document.getElementById('depthMeter').innerHTML = `Depth: ${depths[currentDepth]}<br>Pressure: ${pressures[currentDepth]}`;
+                }
+                
+                switch(currentDepth) {
+                    case 0: // SHALLOW WATERS - Small, hesitant, getting accustomed
+                        being.particles.forEach((particle, i) => {
+                            particle.scale.setScalar(0.5); // Small, cautious
+                            
+                            // Hesitant, gentle movements
+                            particle.userData.velocity.multiplyScalar(0.6);
+                            
+                            // Gentle floating motion
+                            particle.position.y += Math.sin(time * 3 + i * 0.1) * 0.02;
+                            particle.position.x += Math.cos(time * 2 + i * 0.2) * 0.01;
+                            
+                            // Testing water movements
+                            if (i > 100 && i < 140) { // Arms
+                                particle.userData.targetPosition.x += Math.sin(time * 4) * 0.5;
+                                particle.userData.targetPosition.y += Math.cos(time * 5) * 0.3;
+                            }
+                            
+                            // Light aqua color for shallow water
+                            particle.material.color.setHSL(0.55, 0.5, 0.8);
+                            particle.material.opacity = 0.9;
+                        });
+                        
+                        // Create gentle bubbles
+                        if (Math.random() < 0.03) {
+                            createBubble(being.userData.basePosition, 'gentle');
+                        }
+                        
+                        being.userData.basePosition.set(0, 2, 0);
+                        
+                        // Shallow water close view
+                        camera.position.set(3, 5, 12);
+                        camera.lookAt(0, 2, 0);
+                        break;
+                        
+                    case 1: // SURFACE SWIMMING - Steady strokes, moderate size, rhythmic
+                        being.particles.forEach((particle, i) => {
+                            particle.scale.setScalar(0.8);
+                            
+                            // Swimming stroke rhythm
+                            const strokeCycle = time * 4;
+                            
+                            // Freestyle stroke motion
+                            if (i > 80 && i < 140) { // Arms
+                                particle.userData.targetPosition.x += Math.sin(strokeCycle + i * 0.1) * 1.5;
+                                particle.userData.targetPosition.y += Math.cos(strokeCycle + i * 0.1) * 0.8;
+                                particle.userData.targetPosition.z += Math.sin(strokeCycle * 2) * 0.5;
+                            }
+                            
+                            // Kicking motion
+                            if (i > 200) { // Legs
+                                particle.userData.targetPosition.y += Math.sin(strokeCycle * 3 + i) * 0.6;
+                                particle.userData.targetPosition.x += Math.cos(strokeCycle * 3 + i) * 0.3;
+                            }
+                            
+                            // Body roll
+                            if (i > 50 && i < 150) {
+                                particle.userData.targetPosition.z += Math.sin(strokeCycle) * 0.4;
+                            }
+                            
+                            // Forward propulsion
+                            particle.userData.velocity.x += Math.sin(strokeCycle) * 0.003;
+                            
+                            // Surface water blue
+                            particle.material.color.setHSL(0.6, 0.7, 0.7);
+                        });
+                        
+                        // Moving forward
+                        being.userData.basePosition.x += 0.05;
+                        being.userData.basePosition.y = Math.sin(time * 6) * 0.5; // Surface bobbing
+                        
+                        // Following swimming camera
+                        camera.position.set(being.userData.basePosition.x - 8, 6, 20);
+                        camera.lookAt(being.userData.basePosition);
+                        break;
+                        
+                    case 2: // DIVING DEEPER - Streamlined, compressed, diving motion
+                        being.particles.forEach((particle, i) => {
+                            // Streamlined diving form
+                            particle.scale.x = 0.6;
+                            particle.scale.y = 1.4; // Elongated for diving
+                            particle.scale.z = 0.6;
+                            
+                            // Diving motion - pointed downward
+                            particle.userData.velocity.y -= 0.02;
+                            
+                            // Arms extended overhead for diving
+                            if (i > 100 && i < 140) {
+                                particle.userData.targetPosition.y += 2;
+                                particle.userData.targetPosition.x *= 0.5; // Narrow
+                            }
+                            
+                            // Legs together
+                            if (i > 200) {
+                                particle.userData.targetPosition.x *= 0.6;
+                            }
+                            
+                            // Pressure effect - slight compression
+                            particle.userData.targetPosition.multiplyScalar(0.95);
+                            
+                            // Deeper blue color
+                            particle.material.color.setHSL(0.65, 0.8, 0.6);
+                            
+                            // Trail bubbles from diving
+                            if (Math.random() < 0.1) {
+                                createBubble(particle.position, 'diving');
+                            }
+                        });
+                        
+                        being.userData.basePosition.y -= 0.15; // Diving down
+                        
+                        // Diving angle camera
+                        camera.position.set(10, being.userData.basePosition.y + 8, 15);
+                        camera.lookAt(being.userData.basePosition);
+                        break;
+                        
+                    case 3: // UNDERWATER EXPLORATION - Graceful, flowing, curious
+                        being.particles.forEach((particle, i) => {
+                            particle.scale.setScalar(0.9);
+                            
+                            // Graceful underwater floating
+                            particle.userData.velocity.multiplyScalar(0.8);
+                            
+                            // Fluid underwater motion
+                            const flowTime = time * 2;
+                            particle.position.x += Math.sin(flowTime + i * 0.05) * 0.005;
+                            particle.position.y += Math.cos(flowTime * 1.3 + i * 0.03) * 0.003;
+                            particle.position.z += Math.sin(flowTime * 0.7 + i * 0.02) * 0.004;
+                            
+                            // Exploring gestures
+                            if (i > 120 && i < 160) { // Arms reaching
+                                particle.userData.targetPosition.x += Math.sin(time * 3 + i) * 0.8;
+                                particle.userData.targetPosition.y += Math.cos(time * 2.5 + i) * 0.6;
+                            }
+                            
+                            // Head turning to look around
+                            if (i < 50) {
+                                particle.userData.targetPosition.x += Math.sin(time * 1.5) * 0.4;
+                            }
+                            
+                            // Medium depth blue-green
+                            particle.material.color.setHSL(0.58, 0.7, 0.6);
+                            
+                            // Create exploration bubbles
+                            if (Math.random() < 0.02) {
+                                createBubble(particle.position, 'exploration');
+                            }
+                        });
+                        
+                        // Gentle underwater drift
+                        being.userData.basePosition.x += Math.sin(time * 0.8) * 0.02;
+                        being.userData.basePosition.z += Math.cos(time * 0.6) * 0.015;
+                        
+                        // Underwater exploration camera
+                        camera.position.set(
+                            being.userData.basePosition.x + 12,
+                            being.userData.basePosition.y + 3,
+                            being.userData.basePosition.z + 18
+                        );
+                        break;
+                        
+                    case 4: // DEEP OCEAN CURRENTS - Powerful, being carried, large scale
+                        being.particles.forEach((particle, i) => {
+                            particle.scale.setScalar(1.2); // Larger in powerful currents
+                            
+                            // Powerful current effects
+                            const currentFlow = time * 5;
+                            particle.userData.velocity.x += Math.sin(currentFlow) * 0.02;
+                            particle.userData.velocity.y += Math.cos(currentFlow * 1.5) * 0.015;
+                            particle.userData.velocity.z += Math.sin(currentFlow * 0.8) * 0.01;
+                            
+                            // Swimming against/with current
+                            if (i > 100 && i < 150) { // Arms
+                                particle.userData.targetPosition.x += Math.sin(currentFlow * 2) * 1.2;
+                                particle.userData.targetPosition.y += Math.cos(currentFlow * 1.8) * 0.8;
+                                particle.scale.setScalar(1.5); // Powerful strokes
+                            }
+                            
+                            // Being pushed by current
+                            particle.position.add(
+                                new THREE.Vector3(
+                                    Math.sin(currentFlow * 0.5) * 0.01,
+                                    Math.cos(currentFlow * 0.3) * 0.008,
+                                    Math.sin(currentFlow * 0.7) * 0.006
+                                )
+                            );
+                            
+                            // Deep ocean dark blue
+                            particle.material.color.setHSL(0.67, 0.9, 0.4);
+                        });
+                        
+                        // Strong current movement
+                        being.userData.basePosition.x += Math.sin(time * 3) * 0.3;
+                        being.userData.basePosition.y += Math.cos(time * 2) * 0.2;
+                        being.userData.basePosition.z += Math.sin(time * 1.5) * 0.15;
+                        
+                        // Dynamic current camera
+                        camera.position.set(
+                            being.userData.basePosition.x + Math.sin(time * 2) * 15,
+                            being.userData.basePosition.y + 10,
+                            being.userData.basePosition.z + 25
+                        );
+                        break;
+                        
+                    case 5: // ABYSSAL DEPTHS - Tiny, pressurized, mysterious
+                        being.particles.forEach((particle, i) => {
+                            // Extreme pressure compression
+                            particle.scale.setScalar(0.3); // Very compressed
+                            
+                            // Very slow, pressurized movement
+                            particle.userData.velocity.multiplyScalar(0.2);
+                            
+                            // Pressure effects
+                            particle.userData.targetPosition.multiplyScalar(0.7);
+                            
+                            // Minimal, survival movements
+                            if (i > 120 && i < 150) { // Arms
+                                particle.userData.targetPosition.x += Math.sin(time * 1) * 0.2;
+                            }
+                            
+                            // Deep pressure breathing simulation
+                            if (i < 80) { // Chest
+                                particle.position.multiplyScalar(1 + Math.sin(time * 1.5) * 0.02);
+                            }
+                            
+                            // Abyssal black-blue
+                            particle.material.color.setHSL(0.7, 1.0, 0.2 + Math.sin(time * 10 + i) * 0.1);
+                            particle.material.opacity = 0.7 + Math.sin(time * 8 + i) * 0.3;
+                            
+                            // Mysterious deep-sea effects
+                            if (Math.random() < 0.01) {
+                                createDeepSeaEffect(particle.position);
+                            }
+                        });
+                        
+                        // Minimal deep sea movement
+                        being.userData.basePosition.y += Math.sin(time * 0.5) * 0.1;
+                        
+                        // Distant mysterious camera
+                        camera.position.set(0, being.userData.basePosition.y + 15, 40);
+                        camera.lookAt(being.userData.basePosition);
+                        break;
+                        
+                    case 6: // SURFACING TO BREATHE - Explosive emergence, expansion
+                        being.particles.forEach((particle, i) => {
+                            // Explosive expansion as surfacing
+                            const emergenceForce = 1 + depthTimer * 0.3;
+                            particle.scale.setScalar(0.6 + emergenceForce * 0.4);
+                            
+                            // Powerful upward motion
+                            particle.userData.velocity.y += 0.05;
+                            
+                            // Desperate surfacing motion
+                            if (i > 100 && i < 150) { // Arms
+                                particle.userData.targetPosition.y += emergenceForce * 2;
+                                particle.userData.targetPosition.x += Math.sin(time * 10) * emergenceForce;
+                                particle.scale.setScalar(1.5); // Powerful strokes
+                            }
+                            
+                            // Kicking desperately
+                            if (i > 200) {
+                                particle.userData.velocity.y += 0.03;
+                                particle.userData.targetPosition.y += Math.sin(time * 15) * 0.8;
+                            }
+                            
+                            // Gasping motion - chest expansion
+                            if (i > 50 && i < 120 && depthTimer > 3) {
+                                particle.scale.setScalar(1.2 + Math.sin(time * 20) * 0.3);
+                            }
+                            
+                            // Bright surface blue
+                            particle.material.color.setHSL(0.55, 0.6, 0.8 + Math.sin(time * 5) * 0.2);
+                            
+                            // Explosive bubble trail
+                            if (Math.random() < 0.2) {
+                                createBubble(particle.position, 'explosive');
+                            }
+                        });
+                        
+                        // Rapid surfacing
+                        being.userData.basePosition.y += 0.2;
+                        being.userData.basePosition.y = Math.min(being.userData.basePosition.y, 3);
+                        
+                        // Surface breakthrough camera
+                        camera.position.set(0, being.userData.basePosition.y + 5, 20);
+                        camera.lookAt(being.userData.basePosition);
+                        break;
+                }
+                
+                updateOceanElements();
+            };
+
+            particleSystem.createAmbientParticles(100);
+        }
+
+        function createOceanEnvironment() {
+            // Create light rays from surface
+            for (let i = 0; i < 8; i++) {
+                const ray = new THREE.Mesh(
+                    new THREE.CylinderGeometry(0.1, 2, 30, 6),
+                    new THREE.MeshBasicMaterial({
+                        color: 0x87ceeb,
+                        transparent: true,
+                        opacity: 0.1
+                    })
+                );
+                ray.position.set(
+                    (Math.random() - 0.5) * 40,
+                    10,
+                    (Math.random() - 0.5) * 40
+                );
+                ray.rotation.x = Math.PI;
+                scene.add(ray);
+                lightRays.push(ray);
+            }
+
+            // Create sea life
+            for (let i = 0; i < 6; i++) {
+                const fish = new THREE.Mesh(
+                    new THREE.SphereGeometry(0.3, 6, 6),
+                    new THREE.MeshBasicMaterial({
+                        color: new THREE.Color().setHSL(0.1 + Math.random() * 0.3, 0.7, 0.6),
+                        transparent: true,
+                        opacity: 0.6
+                    })
+                );
+                fish.position.set(
+                    (Math.random() - 0.5) * 30,
+                    (Math.random() - 0.5) * 20,
+                    (Math.random() - 0.5) * 30
+                );
+                fish.userData = {
+                    speed: 0.01 + Math.random() * 0.02,
+                    direction: Math.random() * Math.PI * 2
+                };
+                scene.add(fish);
+                seaLife.push(fish);
+            }
+        }
+
+        function createBubble(position, type) {
+            const bubbleSize = type === 'explosive' ? 0.3 : type === 'diving' ? 0.15 : 0.1;
+            const bubble = new THREE.Mesh(
+                new THREE.SphereGeometry(bubbleSize, 6, 6),
+                new THREE.MeshBasicMaterial({
+                    color: 0xffffff,
+                    transparent: true,
+                    opacity: 0.6
+                })
+            );
+            bubble.position.copy(position);
+            bubble.userData = { 
+                life: 0,
+                rise: type === 'explosive' ? 0.05 : 0.02,
+                wobble: Math.random() * 0.02
+            };
+            scene.add(bubble);
+            bubbles.push(bubble);
+        }
+
+        function createDeepSeaEffect(position) {
+            const effect = new THREE.Mesh(
+                new THREE.SphereGeometry(0.05, 4, 4),
+                new THREE.MeshBasicMaterial({
+                    color: new THREE.Color().setHSL(0.8, 1.0, 0.8),
+                    transparent: true,
+                    opacity: 1
+                })
+            );
+            effect.position.copy(position);
+            effect.userData = { 
+                life: 0,
+                pulse: 0.02 + Math.random() * 0.03
+            };
+            scene.add(effect);
+            currents.push(effect);
+        }
+
+        function updateOceanElements() {
+            // Update bubbles
+            bubbles = bubbles.filter(bubble => {
+                bubble.userData.life += 0.016;
+                bubble.position.y += bubble.userData.rise;
+                bubble.position.x += Math.sin(time * 5 + bubble.userData.life * 10) * bubble.userData.wobble;
+                bubble.scale.setScalar(1 + bubble.userData.life * 0.5);
+                bubble.material.opacity = Math.max(0, 0.6 - bubble.userData.life * 0.3);
+                
+                if (bubble.material.opacity <= 0) {
+                    scene.remove(bubble);
+                    return false;
+                }
+                return true;
+            });
+
+            // Update sea life
+            seaLife.forEach(fish => {
+                fish.position.x += Math.cos(fish.userData.direction) * fish.userData.speed;
+                fish.position.z += Math.sin(fish.userData.direction) * fish.userData.speed;
+                fish.position.y += Math.sin(time * 2 + fish.position.x) * 0.002;
+                
+                // Turn around if too far
+                if (Math.abs(fish.position.x) > 25 || Math.abs(fish.position.z) > 25) {
+                    fish.userData.direction += Math.PI;
+                }
+            });
+
+            // Update deep sea effects
+            currents = currents.filter(effect => {
+                effect.userData.life += 0.016;
+                effect.scale.setScalar(1 + Math.sin(effect.userData.life * 20) * effect.userData.pulse);
+                effect.material.opacity = Math.max(0, 1 - effect.userData.life * 0.5);
+                
+                if (effect.material.opacity <= 0) {
+                    scene.remove(effect);
+                    return false;
+                }
+                return true;
+            });
+
+            // Update light rays
+            lightRays.forEach(ray => {
+                ray.material.opacity = 0.05 + Math.sin(time * 2) * 0.05;
+                ray.rotation.z += 0.001;
+            });
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+            time += 0.016;
+
+            particleSystem.update(0.016);
+            
+            renderer.render(scene, camera);
+        }
+
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+
+        init();
+    </script>
+</body>
+</html>

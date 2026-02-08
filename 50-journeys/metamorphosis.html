@@ -1,0 +1,434 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Metamorphosis - Transformation Series #44</title>
+    <style>
+        body {
+            margin: 0;
+            background: #f8f8f8;
+            overflow: hidden;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        }
+        canvas { display: block; }
+        .title {
+            position: absolute;
+            top: 30px;
+            left: 30px;
+            color: #1a1a1a;
+            font-size: 24px;
+            font-weight: 300;
+            z-index: 100;
+            opacity: 0;
+            animation: fadeIn 3s ease-in-out 1s forwards;
+        }
+        .subtitle {
+            position: absolute;
+            bottom: 30px;
+            right: 30px;
+            color: #1a1a1a;
+            font-size: 14px;
+            z-index: 100;
+            opacity: 0;
+            animation: fadeIn 3s ease-in-out 2s forwards;
+        }
+        .back-button {
+            position: absolute;
+            top: 30px;
+            right: 30px;
+            background: none;
+            border: 2px solid #1a1a1a;
+            color: #1a1a1a;
+            padding: 10px 20px;
+            font-size: 14px;
+            cursor: pointer;
+            border-radius: 25px;
+            text-decoration: none;
+            transition: all 0.3s ease;
+            z-index: 1000;
+        }
+        .back-button:hover {
+            background: #1a1a1a;
+            color: #f8f8f8;
+        }
+        @keyframes fadeIn {
+            to { opacity: 1; }
+        }
+    </style>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+</head>
+<body>
+    <div class="title">Metamorphosis</div>
+    <div class="subtitle">Complete transformation cycle</div>
+    <a href="gallery.html" class="back-button">← Gallery</a>
+    
+    <script>
+        let scene, camera, renderer;
+        let morphingFigures = [];
+        let transformationField, energyParticles;
+        let time = 0;
+        let cyclePhase = 0;
+        
+        function init() {
+            scene = new THREE.Scene();
+            scene.fog = new THREE.Fog(0xf8f8f8, 8, 25);
+            
+            camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+            camera.position.set(0, 6, 15);
+            
+            renderer = new THREE.WebGLRenderer({ antialias: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.setClearColor(0xf8f8f8);
+            renderer.shadowMap.enabled = true;
+            renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+            document.body.appendChild(renderer.domElement);
+            
+            // Dynamic lighting for transformation
+            const ambientLight = new THREE.AmbientLight(0x404040, 0.5);
+            scene.add(ambientLight);
+            
+            const mainLight = new THREE.DirectionalLight(0xffffff, 0.7);
+            mainLight.position.set(-8, 12, 5);
+            mainLight.castShadow = true;
+            mainLight.shadow.mapSize.width = 2048;
+            mainLight.shadow.mapSize.height = 2048;
+            scene.add(mainLight);
+            
+            const rimLight = new THREE.DirectionalLight(0xffffff, 0.4);
+            rimLight.position.set(8, 6, -5);
+            scene.add(rimLight);
+            
+            createMorphingFigures();
+            createTransformationField();
+            createEnergyParticles();
+            
+            animate();
+        }
+        
+        function createMorphingFigures() {
+            // Create multiple figures at different stages of metamorphosis
+            const figureCount = 6;
+            const radius = 6;
+            
+            for (let i = 0; i < figureCount; i++) {
+                const angle = (i / figureCount) * Math.PI * 2;
+                const figure = createAdaptiveFigure(i / figureCount);
+                
+                figure.position.x = Math.cos(angle) * radius;
+                figure.position.z = Math.sin(angle) * radius;
+                figure.position.y = 1;
+                
+                // Face towards center
+                figure.rotation.y = angle + Math.PI;
+                
+                figure.castShadow = true;
+                scene.add(figure);
+                
+                morphingFigures.push({
+                    mesh: figure,
+                    angle: angle,
+                    basePosition: figure.position.clone(),
+                    morphPhase: i / figureCount, // Each figure at different phase
+                    targetShape: (i + 1) % 4, // Cycle through 4 different shapes
+                    morphSpeed: 0.5 + Math.random() * 0.5
+                });
+            }
+        }
+        
+        function createAdaptiveFigure(morphState) {
+            const group = new THREE.Group();
+            const material = new THREE.MeshLambertMaterial({ 
+                color: 0x1a1a1a,
+                transparent: true,
+                opacity: 0.8
+            });
+            
+            // Core body that morphs
+            const coreGeometry = new THREE.SphereGeometry(0.1, 12, 8);
+            const core = new THREE.Mesh(coreGeometry, material);
+            core.position.y = 0.5;
+            group.add(core);
+            
+            // Shape 1: Human-like
+            const headGeometry = new THREE.SphereGeometry(0.08, 10, 8);
+            const head = new THREE.Mesh(headGeometry, material);
+            head.position.y = 0.7;
+            head.userData = { shapeType: 'human', baseScale: 1 };
+            group.add(head);
+            
+            const torsoGeometry = new THREE.CylinderGeometry(0.06, 0.08, 0.4, 8);
+            const torso = new THREE.Mesh(torsoGeometry, material);
+            torso.position.y = 0.25;
+            torso.userData = { shapeType: 'human', baseScale: 1 };
+            group.add(torso);
+            
+            // Arms that morph
+            const armGeometry = new THREE.CylinderGeometry(0.03, 0.04, 0.3, 6);
+            const leftArm = new THREE.Mesh(armGeometry, material);
+            const rightArm = new THREE.Mesh(armGeometry, material);
+            leftArm.position.set(-0.12, 0.3, 0);
+            rightArm.position.set(0.12, 0.3, 0);
+            leftArm.rotation.z = 0.5;
+            rightArm.rotation.z = -0.5;
+            leftArm.userData = { shapeType: 'limb', baseScale: 1 };
+            rightArm.userData = { shapeType: 'limb', baseScale: 1 };
+            group.add(leftArm);
+            group.add(rightArm);
+            
+            // Legs that transform
+            const legGeometry = new THREE.CylinderGeometry(0.04, 0.05, 0.4, 6);
+            const leftLeg = new THREE.Mesh(legGeometry, material);
+            const rightLeg = new THREE.Mesh(legGeometry, material);
+            leftLeg.position.set(-0.05, -0.05, 0);
+            rightLeg.position.set(0.05, -0.05, 0);
+            leftLeg.userData = { shapeType: 'limb', baseScale: 1 };
+            rightLeg.userData = { shapeType: 'limb', baseScale: 1 };
+            group.add(leftLeg);
+            group.add(rightLeg);
+            
+            // Additional morphing elements
+            for (let i = 0; i < 8; i++) {
+                const morphGeometry = new THREE.SphereGeometry(0.02, 6, 4);
+                const morphElement = new THREE.Mesh(morphGeometry, material);
+                const angle = (i / 8) * Math.PI * 2;
+                morphElement.position.set(
+                    Math.cos(angle) * 0.15,
+                    0.5 + Math.sin(i) * 0.1,
+                    Math.sin(angle) * 0.15
+                );
+                morphElement.userData = { shapeType: 'morph', baseScale: 0.5, morphIndex: i };
+                group.add(morphElement);
+            }
+            
+            return group;
+        }
+        
+        function createTransformationField() {
+            // Energy field showing transformation waves
+            const fieldCount = 400;
+            const geometry = new THREE.BufferGeometry();
+            const positions = new Float32Array(fieldCount * 3);
+            const phases = new Float32Array(fieldCount);
+            const intensities = new Float32Array(fieldCount);
+            
+            for (let i = 0; i < fieldCount; i++) {
+                const radius = Math.random() * 12;
+                const angle = Math.random() * Math.PI * 2;
+                const height = Math.random() * 4;
+                
+                positions[i * 3] = Math.cos(angle) * radius;
+                positions[i * 3 + 1] = height;
+                positions[i * 3 + 2] = Math.sin(angle) * radius;
+                
+                phases[i] = Math.random() * Math.PI * 2;
+                intensities[i] = Math.random();
+            }
+            
+            geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+            geometry.setAttribute('phase', new THREE.BufferAttribute(phases, 1));
+            geometry.setAttribute('intensity', new THREE.BufferAttribute(intensities, 1));
+            
+            const material = new THREE.PointsMaterial({
+                color: 0x1a1a1a,
+                size: 0.03,
+                transparent: true,
+                opacity: 0.3,
+                blending: THREE.NormalBlending
+            });
+            
+            transformationField = new THREE.Points(geometry, material);
+            scene.add(transformationField);
+        }
+        
+        function createEnergyParticles() {
+            // Flowing energy showing transformation
+            const particleCount = 200;
+            const geometry = new THREE.BufferGeometry();
+            const positions = new Float32Array(particleCount * 3);
+            const velocities = new Float32Array(particleCount * 3);
+            const life = new Float32Array(particleCount);
+            
+            for (let i = 0; i < particleCount; i++) {
+                const radius = Math.random() * 8;
+                const angle = Math.random() * Math.PI * 2;
+                
+                positions[i * 3] = Math.cos(angle) * radius;
+                positions[i * 3 + 1] = Math.random() * 3;
+                positions[i * 3 + 2] = Math.sin(angle) * radius;
+                
+                velocities[i * 3] = (Math.random() - 0.5) * 0.02;
+                velocities[i * 3 + 1] = Math.random() * 0.01;
+                velocities[i * 3 + 2] = (Math.random() - 0.5) * 0.02;
+                
+                life[i] = Math.random();
+            }
+            
+            geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+            geometry.setAttribute('velocity', new THREE.BufferAttribute(velocities, 3));
+            geometry.setAttribute('life', new THREE.BufferAttribute(life, 1));
+            
+            const material = new THREE.PointsMaterial({
+                color: 0x1a1a1a,
+                size: 0.02,
+                transparent: true,
+                opacity: 0.5,
+                blending: THREE.AdditiveBlending
+            });
+            
+            energyParticles = new THREE.Points(geometry, material);
+            scene.add(energyParticles);
+        }
+        
+        function animate() {
+            requestAnimationFrame(animate);
+            
+            time += 0.016;
+            
+            // Metamorphosis cycle phases
+            cyclePhase = (Math.sin(time * 0.4) + 1) / 2; // 0 to 1
+            const transformationIntensity = Math.sin(time * 0.8) * 0.5 + 0.5;
+            
+            // Animate morphing figures
+            morphingFigures.forEach((figure, index) => {
+                const localPhase = (cyclePhase + figure.morphPhase) % 1;
+                const morphIntensity = Math.sin(localPhase * Math.PI * 2) * 0.5 + 0.5;
+                
+                // Position transformations
+                const floatHeight = Math.sin(time * 2 + index) * 0.3;
+                figure.mesh.position.y = figure.basePosition.y + floatHeight * morphIntensity;
+                
+                // Radius pulsing during transformation
+                const radiusPulse = 1 + Math.sin(time * 3 + index) * 0.2 * morphIntensity;
+                figure.mesh.position.x = Math.cos(figure.angle) * 6 * radiusPulse;
+                figure.mesh.position.z = Math.sin(figure.angle) * 6 * radiusPulse;
+                
+                // Rotation during transformation
+                figure.mesh.rotation.y = figure.angle + Math.PI + Math.sin(time * 1.5) * 0.3 * morphIntensity;
+                figure.mesh.rotation.x = Math.sin(time * 2.5 + index) * 0.1 * morphIntensity;
+                
+                // Morph individual parts
+                figure.mesh.children.forEach((part, partIndex) => {
+                    const partPhase = (localPhase + partIndex * 0.1) % 1;
+                    const partMorph = Math.sin(partPhase * Math.PI * 4) * 0.5 + 0.5;
+                    
+                    if (part.userData.shapeType === 'human') {
+                        // Human parts scale and distort
+                        const humanScale = 1 + partMorph * 0.5;
+                        part.scale.set(humanScale, humanScale, humanScale);
+                        part.material.opacity = 0.6 + partMorph * 0.3;
+                    } else if (part.userData.shapeType === 'limb') {
+                        // Limbs stretch and contract
+                        part.scale.y = 1 + partMorph * 0.8;
+                        part.scale.x = 1 + Math.sin(partMorph * Math.PI) * 0.3;
+                        part.scale.z = 1 + Math.sin(partMorph * Math.PI) * 0.3;
+                    } else if (part.userData.shapeType === 'morph') {
+                        // Morphing elements orbit and scale
+                        const morphIndex = part.userData.morphIndex;
+                        const orbitRadius = 0.15 + partMorph * 0.1;
+                        const orbitAngle = (morphIndex / 8) * Math.PI * 2 + time * 2;
+                        
+                        part.position.x = Math.cos(orbitAngle) * orbitRadius;
+                        part.position.z = Math.sin(orbitAngle) * orbitRadius;
+                        part.position.y = 0.5 + Math.sin(time * 3 + morphIndex) * 0.2 * partMorph;
+                        
+                        const morphScale = 0.5 + partMorph * 1.5;
+                        part.scale.setScalar(morphScale);
+                        part.material.opacity = partMorph * 0.8;
+                    }
+                });
+                
+                // Overall figure opacity based on transformation
+                figure.mesh.children[0].material.opacity = 0.5 + morphIntensity * 0.4; // Core
+            });
+            
+            // Animate transformation field
+            const fieldPositions = transformationField.geometry.attributes.position.array;
+            const fieldPhases = transformationField.geometry.attributes.phase.array;
+            const fieldIntensities = transformationField.geometry.attributes.intensity.array;
+            
+            for (let i = 0; i < fieldPositions.length; i += 3) {
+                const particleIndex = i / 3;
+                const phase = fieldPhases[particleIndex];
+                const intensity = fieldIntensities[particleIndex];
+                
+                // Wave motion
+                const waveHeight = Math.sin(time * 2 + phase) * intensity * transformationIntensity;
+                fieldPositions[i + 1] += waveHeight * 0.01;
+                
+                // Orbital motion
+                const orbitalSpeed = 0.005 * intensity;
+                const currentRadius = Math.sqrt(fieldPositions[i] * fieldPositions[i] + fieldPositions[i + 2] * fieldPositions[i + 2]);
+                const currentAngle = Math.atan2(fieldPositions[i + 2], fieldPositions[i]) + orbitalSpeed;
+                
+                fieldPositions[i] = Math.cos(currentAngle) * currentRadius;
+                fieldPositions[i + 2] = Math.sin(currentAngle) * currentRadius;
+            }
+            transformationField.geometry.attributes.position.needsUpdate = true;
+            
+            // Field opacity pulsing
+            transformationField.material.opacity = 0.2 + transformationIntensity * 0.3;
+            
+            // Animate energy particles
+            const energyPositions = energyParticles.geometry.attributes.position.array;
+            const energyVelocities = energyParticles.geometry.attributes.velocity.array;
+            const energyLife = energyParticles.geometry.attributes.life.array;
+            
+            for (let i = 0; i < energyPositions.length; i += 3) {
+                const particleIndex = i / 3;
+                
+                // Move particles
+                energyPositions[i] += energyVelocities[i] * (1 + transformationIntensity);
+                energyPositions[i + 1] += energyVelocities[i + 1] * (1 + transformationIntensity);
+                energyPositions[i + 2] += energyVelocities[i + 2] * (1 + transformationIntensity);
+                
+                // Spiral motion during transformation
+                const spiralForce = transformationIntensity * 0.02;
+                const centerX = 0, centerZ = 0;
+                const dx = energyPositions[i] - centerX;
+                const dz = energyPositions[i + 2] - centerZ;
+                
+                energyPositions[i] -= dz * spiralForce;
+                energyPositions[i + 2] += dx * spiralForce;
+                
+                // Life cycle
+                energyLife[particleIndex] -= 0.008;
+                
+                if (energyLife[particleIndex] <= 0) {
+                    const radius = Math.random() * 8;
+                    const angle = Math.random() * Math.PI * 2;
+                    
+                    energyPositions[i] = Math.cos(angle) * radius;
+                    energyPositions[i + 1] = Math.random() * 3;
+                    energyPositions[i + 2] = Math.sin(angle) * radius;
+                    
+                    energyLife[particleIndex] = 1;
+                }
+            }
+            energyParticles.geometry.attributes.position.needsUpdate = true;
+            energyParticles.geometry.attributes.life.needsUpdate = true;
+            
+            // Particle intensity
+            energyParticles.material.opacity = 0.3 + transformationIntensity * 0.4;
+            
+            // Camera movement
+            camera.position.x = Math.sin(time * 0.1) * 10;
+            camera.position.y = 6 + Math.sin(time * 0.2) * 2;
+            camera.position.z = 15 + Math.cos(time * 0.15) * 5;
+            camera.lookAt(0, 2, 0);
+            
+            renderer.render(scene, camera);
+        }
+        
+        function onWindowResize() {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        }
+        
+        window.addEventListener('resize', onWindowResize, false);
+        
+        init();
+    </script>
+</body>
+</html>

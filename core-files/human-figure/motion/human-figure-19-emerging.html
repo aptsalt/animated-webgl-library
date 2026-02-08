@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Human Figure Emerging - Mindful Journey</title>
+    <style>
+        body { 
+            margin: 0; 
+            overflow: hidden; 
+            background: linear-gradient(to bottom, #e8f0e8 0%, #d0e0d0 100%);
+            font-family: 'Inter', system-ui, sans-serif;
+        }
+        canvas { display: block; }
+        
+        .back-btn {
+            position: absolute;
+            top: 40px;
+            left: 40px;
+            padding: 10px 20px;
+            background: transparent;
+            border: 1px solid rgba(26, 26, 26, 0.2);
+            color: #1a1a1a;
+            text-decoration: none;
+            font-size: 14px;
+            letter-spacing: 1px;
+            border-radius: 20px;
+            transition: all 0.3s ease;
+            z-index: 10;
+        }
+        
+        .back-btn:hover {
+            background: rgba(26, 26, 26, 0.05);
+            border-color: rgba(26, 26, 26, 0.4);
+        }
+        
+        .instruction {
+            position: absolute;
+            bottom: 40px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: rgba(26, 26, 26, 0.4);
+            font-size: 12px;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            pointer-events: none;
+        }
+    </style>
+</head>
+<body>
+    <a href="../index.html" class="back-btn">← Back</a>
+    <div class="instruction">Click to emerge from ground</div>
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script>
+        let scene, camera, renderer;
+        let humanFigure, ground;
+        let time = 0;
+        let emerging = false;
+        let emergeProgress = 0;
+
+        function init() {
+            scene = new THREE.Scene();
+            scene.background = new THREE.Color(0xe8f0e8);
+
+            camera = new THREE.PerspectiveCamera(
+                75, window.innerWidth / window.innerHeight, 0.1, 1000
+            );
+            camera.position.set(0, 1, 10);
+
+            renderer = new THREE.WebGLRenderer({ antialias: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.shadowMap.enabled = true;
+            renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+            document.body.appendChild(renderer.domElement);
+            
+            // Lighting
+            const ambientLight = new THREE.AmbientLight(0xf0f8f0, 0.6);
+            scene.add(ambientLight);
+            
+            const directionalLight = new THREE.DirectionalLight(0xfffae6, 0.8);
+            directionalLight.position.set(10, 15, 5);
+            directionalLight.castShadow = true;
+            scene.add(directionalLight);
+
+            createGround();
+            createHumanFigure();
+            animate();
+        }
+
+        function createGround() {
+            const groundGroup = new THREE.Group();
+            
+            const soilMaterial = new THREE.MeshLambertMaterial({
+                color: 0x8b7355,
+                transparent: true,
+                opacity: 0.9
+            });
+            
+            // Main ground plane
+            const groundGeometry = new THREE.PlaneGeometry(20, 20);
+            const groundMesh = new THREE.Mesh(groundGeometry, soilMaterial);
+            groundMesh.rotation.x = -Math.PI / 2;
+            groundMesh.position.y = -2.5;
+            groundMesh.receiveShadow = true;
+            groundGroup.add(groundMesh);
+            
+            // Highly irregular organic sand patch surface like golf course trap where figure emerges
+            const patchGeometry = new THREE.PlaneGeometry(10, 7, 48, 36);
+            const positions = patchGeometry.attributes.position;
+            const vertex = new THREE.Vector3();
+            
+            // Create highly organic, irregular shape with natural curves
+            for (let i = 0; i < positions.count; i++) {
+                vertex.fromBufferAttribute(positions, i);
+                
+                // Create complex irregular boundary with multiple lobes and indentations
+                const angle = Math.atan2(vertex.y, vertex.x);
+                const distance = Math.sqrt(vertex.x * vertex.x + vertex.y * vertex.y);
+                
+                // Create organic boundary shape with multiple undulations
+                const baseBoundary = 3.5 + Math.sin(angle * 3) * 0.8 + Math.cos(angle * 5) * 0.6;
+                const organicVariation = Math.sin(angle * 7 + 1.2) * 0.5 + Math.cos(angle * 4 + 2.8) * 0.4;
+                const detailVariation = Math.sin(angle * 12 + 0.7) * 0.3 + Math.cos(angle * 9 + 1.9) * 0.2;
+                
+                // Combine all variations for highly irregular edge
+                const totalBoundary = baseBoundary + organicVariation + detailVariation;
+                
+                // Create smooth falloff from edge
+                const edgeFalloff = Math.max(0, 1 - distance / totalBoundary);
+                const smoothFalloff = Math.pow(edgeFalloff, 1.5);
+                
+                // Add surface undulations and depth variations
+                const surfaceNoise1 = Math.sin(vertex.x * 0.8 + 0.5) * Math.cos(vertex.y * 1.1 + 1.2) * 0.25;
+                const surfaceNoise2 = Math.sin(vertex.x * 1.4 + 2.1) * Math.cos(vertex.y * 0.9 + 0.8) * 0.18;
+                const detailNoise = Math.sin(vertex.x * 2.2 + 1.7) * Math.cos(vertex.y * 1.8 + 2.3) * 0.12;
+                
+                // Create deeper center area where figure emerges
+                const centerDepth = Math.exp(-distance * 0.3) * 0.2;
+                
+                // Combine all height variations
+                vertex.z = smoothFalloff * (surfaceNoise1 + surfaceNoise2 + detailNoise - centerDepth) * 0.18;
+                positions.setXYZ(i, vertex.x, vertex.y, vertex.z);
+            }
+            
+            patchGeometry.computeVertexNormals();
+            
+            // Create light sandy material
+            const sandMaterial = new THREE.MeshLambertMaterial({
+                color: 0xc8ad88, // Light sandy color
+                transparent: true,
+                opacity: 0.4 // Light density as requested
+            });
+            
+            const sandPatch = new THREE.Mesh(patchGeometry, sandMaterial);
+            sandPatch.rotation.x = -Math.PI / 2;
+            sandPatch.position.y = -2.3;
+            sandPatch.receiveShadow = true;
+            groundGroup.add(sandPatch);
+            
+            scene.add(groundGroup);
+            ground = groundGroup;
+        }
+
+        function createHumanFigure() {
+            const group = new THREE.Group();
+            
+            const material = new THREE.MeshLambertMaterial({
+                color: 0x2a2520,
+                transparent: true,
+                opacity: 0.9
+            });
+            
+            // Head
+            const headGeometry = new THREE.SphereGeometry(0.35, 12, 8);
+            const head = new THREE.Mesh(headGeometry, material.clone());
+            head.position.y = 2.2;
+            head.castShadow = true;
+            
+            // Torso
+            const torsoGeometry = new THREE.CylinderGeometry(0.4, 0.5, 1.8, 12);
+            const torso = new THREE.Mesh(torsoGeometry, material.clone());
+            torso.position.y = 1.0;
+            torso.castShadow = true;
+            
+            // Arms reaching upward
+            const armGeometry = new THREE.CylinderGeometry(0.12, 0.15, 1.2, 8);
+            const leftArm = new THREE.Mesh(armGeometry, material.clone());
+            leftArm.position.set(-0.6, 1.8, 0);
+            leftArm.rotation.z = 0.8;
+            leftArm.castShadow = true;
+            
+            const rightArm = new THREE.Mesh(armGeometry, material.clone());
+            rightArm.position.set(0.6, 1.8, 0);
+            rightArm.rotation.z = -0.8;
+            rightArm.castShadow = true;
+            
+            // Enhanced hands with finger details
+            function createHand() {
+                const handGroup = new THREE.Group();
+                
+                // Palm
+                const palmGeometry = new THREE.BoxGeometry(0.1, 0.15, 0.06);
+                const palm = new THREE.Mesh(palmGeometry, material.clone());
+                handGroup.add(palm);
+                
+                // Fingers
+                const fingerGeometry = new THREE.BoxGeometry(0.02, 0.08, 0.02);
+                for (let i = 0; i < 4; i++) {
+                    const finger = new THREE.Mesh(fingerGeometry, material.clone());
+                    finger.position.set((i - 1.5) * 0.025, 0.1, 0);
+                    finger.castShadow = true;
+                    handGroup.add(finger);
+                }
+                
+                // Thumb
+                const thumbGeometry = new THREE.BoxGeometry(0.02, 0.06, 0.02);
+                const thumb = new THREE.Mesh(thumbGeometry, material.clone());
+                thumb.position.set(-0.05, 0.05, 0.02);
+                thumb.rotation.z = 0.3;
+                thumb.castShadow = true;
+                handGroup.add(thumb);
+                
+                return handGroup;
+            }
+            
+            const leftHand = createHand();
+            leftHand.position.set(-0.9, 2.5, 0);
+            leftHand.rotation.z = 0.5;
+            
+            const rightHand = createHand();
+            rightHand.position.set(0.9, 2.5, 0);
+            rightHand.rotation.z = -0.5;
+            
+            // Legs
+            const legGeometry = new THREE.CylinderGeometry(0.15, 0.2, 1.8, 8);
+            const leftLeg = new THREE.Mesh(legGeometry, material.clone());
+            leftLeg.position.set(-0.3, -0.4, 0);
+            leftLeg.castShadow = true;
+            
+            const rightLeg = new THREE.Mesh(legGeometry, material.clone());
+            rightLeg.position.set(0.3, -0.4, 0);
+            rightLeg.castShadow = true;
+            
+            group.add(head, torso, leftArm, rightArm, leftHand, rightHand, leftLeg, rightLeg);
+            
+            // Start buried underground
+            group.position.y = -6;
+            
+            scene.add(group);
+            humanFigure = group;
+        }
+        
+        function animate() {
+            requestAnimationFrame(animate);
+            time += 0.01;
+
+            if (emerging) {
+                emergeProgress += 0.008;
+                if (emergeProgress >= 1) {
+                    emergeProgress = 1;
+                }
+            }
+
+            // Emergence animation
+            if (emerging) {
+                const emergeCurve = 1 - Math.pow(1 - emergeProgress, 1.5);
+                const targetY = -6 + emergeCurve * 6;
+                humanFigure.position.y += (targetY - humanFigure.position.y) * 0.1;
+                
+                // Arms spread as figure emerges
+                humanFigure.children[2].rotation.z = 0.8 + emergeProgress * 0.5; // left arm
+                humanFigure.children[3].rotation.z = -0.8 - emergeProgress * 0.5; // right arm
+                
+                // Color brightens
+                const brightness = 0.16 + emergeProgress * 0.2;
+                humanFigure.children.forEach(child => {
+                    if (child.material) {
+                        child.material.color.setRGB(brightness, brightness * 0.9, brightness * 0.8);
+                    }
+                });
+            }
+
+            // Gentle breathing
+            const breath = 1 + Math.sin(time * 3) * 0.02;
+            humanFigure.scale.set(breath, breath, breath);
+
+            // Camera follows emergence
+            camera.position.y = 1 + emergeProgress * 2;
+            camera.lookAt(0, humanFigure.position.y + 1, 0);
+
+            renderer.render(scene, camera);
+        }
+
+        // Event listeners
+        window.addEventListener('click', () => {
+            if (!emerging) {
+                emerging = true;
+            } else if (emergeProgress >= 1) {
+                // Reset
+                emerging = false;
+                emergeProgress = 0;
+                humanFigure.position.y = -6;
+                humanFigure.children[2].rotation.z = 0.8; // left arm
+                humanFigure.children[3].rotation.z = -0.8; // right arm
+                humanFigure.children.forEach(child => {
+                    if (child.material) {
+                        child.material.color.setRGB(0.16, 0.14, 0.13);
+                    }
+                });
+            }
+        });
+
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+
+        init();
+    </script>
+</body>
+</html>

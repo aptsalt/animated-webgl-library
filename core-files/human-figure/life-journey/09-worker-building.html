@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Life Journey - Worker Building</title>
+    <style>
+        body { margin: 0; overflow: hidden; background: linear-gradient(135deg, #667db6, #0082c8); }
+        canvas { display: block; }
+        .title { position: absolute; top: 40px; left: 50%; transform: translateX(-50%); color: #fff; font-family: sans-serif; font-size: 24px; letter-spacing: 2px; }
+    </style>
+</head>
+<body>
+    <div class="title">WORKER BUILDING</div>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="../particle-being-library.js"></script>
+    <script>
+        let scene, camera, renderer, particleSystem;
+        let time = 0;
+        let structureParticles = [];
+
+        function init() {
+            scene = new THREE.Scene();
+            camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+            camera.position.set(0, 15, 35);
+
+            renderer = new THREE.WebGLRenderer({ antialias: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            document.body.appendChild(renderer.domElement);
+
+            // Worker - persistent, constructive, methodical
+            particleSystem = new ParticleBeingSystem(scene, {
+                particleCount: 260,
+                particleSize: 0.08,
+                speedMultiplier: 0.8,
+                colorRange: { h: 0.58, s: 0.4, lMin: 0.3, lMax: 0.6 }
+            });
+
+            const worker = particleSystem.convertToParticleBeing(
+                null,
+                { x: 0, y: 0, z: 0 },
+                {
+                    particleCount: 280,
+                    states: ['lifting', 'building', 'organizing', 'resting'],
+                    stateTimings: { lifting: 3, building: 5, organizing: 4, resting: 2 },
+                    attractionForces: { lifting: 0.022, building: 0.025, organizing: 0.02, resting: 0.015 }
+                }
+            );
+
+            // Create structure being built
+            for (let i = 0; i < 100; i++) {
+                const geometry = new THREE.BoxGeometry(0.3, 0.3, 0.3);
+                const material = new THREE.MeshBasicMaterial({
+                    color: 0x888888,
+                    transparent: true,
+                    opacity: 0
+                });
+                const block = new THREE.Mesh(geometry, material);
+                block.userData = {
+                    targetPosition: new THREE.Vector3(
+                        (Math.random() - 0.5) * 10,
+                        Math.random() * 10,
+                        (Math.random() - 0.5) * 10
+                    ),
+                    placed: false,
+                    placeTime: 0
+                };
+                block.position.set(
+                    (Math.random() - 0.5) * 20,
+                    -5,
+                    (Math.random() - 0.5) * 20
+                );
+                scene.add(block);
+                structureParticles.push(block);
+            }
+
+            // Worker behaviors
+            const originalUpdate = particleSystem.updateBeing.bind(particleSystem);
+            particleSystem.updateBeing = function(being, deltaTime) {
+                originalUpdate(being, deltaTime);
+                
+                if (being.userData.state === 'lifting') {
+                    // Lifting motion
+                    being.userData.basePosition.y = Math.abs(Math.sin(time * 3)) * 3;
+                    
+                    // Move unplaced blocks up
+                    structureParticles.forEach((block, i) => {
+                        if (!block.userData.placed && i < being.userData.stateTimer * 10) {
+                            block.position.y += 0.05;
+                        }
+                    });
+                } else if (being.userData.state === 'building') {
+                    // Place blocks in structure
+                    const buildProgress = being.userData.stateTimer / 5;
+                    const blocksToPlace = Math.floor(buildProgress * structureParticles.length);
+                    
+                    structureParticles.forEach((block, i) => {
+                        if (i < blocksToPlace && !block.userData.placed) {
+                            block.userData.placed = true;
+                            block.userData.placeTime = time;
+                        }
+                        
+                        if (block.userData.placed) {
+                            block.position.lerp(block.userData.targetPosition, 0.05);
+                            block.material.opacity = Math.min(0.7, (time - block.userData.placeTime) * 0.5);
+                        }
+                    });
+                    
+                    // Worker moves around structure
+                    being.userData.basePosition.x = Math.sin(time * 2) * 5;
+                    being.userData.basePosition.z = Math.cos(time * 2) * 5;
+                } else if (being.userData.state === 'organizing') {
+                    // Refine structure alignment
+                    structureParticles.forEach(block => {
+                        if (block.userData.placed) {
+                            block.rotation.x += (0 - block.rotation.x) * 0.05;
+                            block.rotation.z += (0 - block.rotation.z) * 0.05;
+                        }
+                    });
+                } else if (being.userData.state === 'resting') {
+                    // Worker at rest
+                    being.userData.basePosition.y = 0;
+                    being.userData.basePosition.x = 10;
+                }
+            };
+
+            particleSystem.createAmbientParticles(80);
+            animate();
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+            time += 0.016;
+            particleSystem.update(0.016);
+            
+            camera.position.x = Math.sin(time * 0.05) * 30;
+            camera.position.z = 35 + Math.cos(time * 0.05) * 20;
+            camera.position.y = 15 + Math.sin(time * 0.03) * 5;
+            camera.lookAt(0, 5, 0);
+            
+            renderer.render(scene, camera);
+        }
+
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+
+        init();
+    </script>
+</body>
+</html>

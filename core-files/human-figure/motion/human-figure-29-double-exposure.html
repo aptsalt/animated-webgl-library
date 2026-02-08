@@ -1,0 +1,424 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Human Figure Double Exposure - Mindful Journey</title>
+    <style>
+        body { 
+            margin: 0; 
+            overflow: hidden; 
+            background: #0f2027;
+            font-family: 'Inter', system-ui, sans-serif;
+        }
+        canvas { display: block; }
+        
+        .back-btn {
+            position: absolute;
+            top: 40px;
+            left: 40px;
+            padding: 10px 20px;
+            background: transparent;
+            border: 1px solid rgba(34, 139, 34, 0.4);
+            color: #228b22;
+            text-decoration: none;
+            font-size: 14px;
+            letter-spacing: 1px;
+            border-radius: 20px;
+            transition: all 0.3s ease;
+            z-index: 10;
+        }
+        
+        .back-btn:hover {
+            background: rgba(34, 139, 34, 0.1);
+            border-color: rgba(34, 139, 34, 0.8);
+        }
+        
+        .instruction {
+            position: absolute;
+            bottom: 40px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: rgba(34, 139, 34, 0.8);
+            font-size: 12px;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            pointer-events: none;
+        }
+    </style>
+</head>
+<body>
+    <a href="../index.html" class="back-btn">← Back</a>
+    <div class="instruction">Click to reveal nature within</div>
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script>
+        let scene, camera, renderer;
+        let humanSilhouette;
+        let landscapeElements = [];
+        let time = 0;
+        let exposing = false;
+        let exposureProgress = 0;
+
+        function init() {
+            scene = new THREE.Scene();
+            scene.background = new THREE.Color(0x0f2027);
+
+            camera = new THREE.PerspectiveCamera(
+                75, window.innerWidth / window.innerHeight, 0.1, 1000
+            );
+            camera.position.z = 12;
+
+            renderer = new THREE.WebGLRenderer({ antialias: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            document.body.appendChild(renderer.domElement);
+
+            createHumanSilhouette();
+            createLandscapeElements();
+            animate();
+        }
+
+        function createHumanSilhouette() {
+            const group = new THREE.Group();
+            
+            // Create a more detailed silhouette using multiple shapes
+            const silhouetteParts = [];
+            
+            // Head
+            const headGeometry = new THREE.SphereGeometry(0.5, 16, 12);
+            const head = new THREE.Mesh(headGeometry, new THREE.MeshBasicMaterial({
+                color: 0x000000,
+                transparent: true,
+                opacity: 0.9
+            }));
+            head.position.y = 2.5;
+            silhouetteParts.push(head);
+            
+            // Neck
+            const neck = new THREE.Mesh(
+                new THREE.CylinderGeometry(0.15, 0.2, 0.3, 8),
+                new THREE.MeshBasicMaterial({ color: 0x000000, transparent: true, opacity: 0.9 })
+            );
+            neck.position.y = 2;
+            silhouetteParts.push(neck);
+            
+            // Torso
+            const torso = new THREE.Mesh(
+                new THREE.CylinderGeometry(0.4, 0.5, 1.6, 8),
+                new THREE.MeshBasicMaterial({ color: 0x000000, transparent: true, opacity: 0.9 })
+            );
+            torso.position.y = 1.2;
+            silhouetteParts.push(torso);
+            
+            // Arms
+            const leftShoulder = new THREE.Mesh(
+                new THREE.SphereGeometry(0.2, 8, 6),
+                new THREE.MeshBasicMaterial({ color: 0x000000, transparent: true, opacity: 0.9 })
+            );
+            leftShoulder.position.set(-0.6, 1.8, 0);
+            silhouetteParts.push(leftShoulder);
+            
+            const leftArm = new THREE.Mesh(
+                new THREE.CylinderGeometry(0.12, 0.15, 1.2, 8),
+                new THREE.MeshBasicMaterial({ color: 0x000000, transparent: true, opacity: 0.9 })
+            );
+            leftArm.position.set(-1.2, 1.2, 0);
+            leftArm.rotation.z = Math.PI / 6;
+            silhouetteParts.push(leftArm);
+            
+            const rightShoulder = new THREE.Mesh(
+                new THREE.SphereGeometry(0.2, 8, 6),
+                new THREE.MeshBasicMaterial({ color: 0x000000, transparent: true, opacity: 0.9 })
+            );
+            rightShoulder.position.set(0.6, 1.8, 0);
+            silhouetteParts.push(rightShoulder);
+            
+            const rightArm = new THREE.Mesh(
+                new THREE.CylinderGeometry(0.12, 0.15, 1.2, 8),
+                new THREE.MeshBasicMaterial({ color: 0x000000, transparent: true, opacity: 0.9 })
+            );
+            rightArm.position.set(1.2, 1.2, 0);
+            rightArm.rotation.z = -Math.PI / 6;
+            silhouetteParts.push(rightArm);
+            
+            // Legs
+            const leftLeg = new THREE.Mesh(
+                new THREE.CylinderGeometry(0.15, 0.18, 2.0, 8),
+                new THREE.MeshBasicMaterial({ color: 0x000000, transparent: true, opacity: 0.9 })
+            );
+            leftLeg.position.set(-0.2, -0.6, 0);
+            silhouetteParts.push(leftLeg);
+            
+            const rightLeg = new THREE.Mesh(
+                new THREE.CylinderGeometry(0.15, 0.18, 2.0, 8),
+                new THREE.MeshBasicMaterial({ color: 0x000000, transparent: true, opacity: 0.9 })
+            );
+            rightLeg.position.set(0.2, -0.6, 0);
+            silhouetteParts.push(rightLeg);
+            
+            silhouetteParts.forEach(part => group.add(part));
+            group.userData.parts = silhouetteParts;
+            scene.add(group);
+            humanSilhouette = group;
+        }
+
+        function createLandscapeElements() {
+            // Mountain ranges
+            for (let range = 0; range < 3; range++) {
+                for (let i = 0; i < 8; i++) {
+                    const mountain = new THREE.Mesh(
+                        new THREE.ConeGeometry(0.3 + Math.random() * 0.4, 1 + Math.random() * 1.5, 6),
+                        new THREE.MeshBasicMaterial({
+                            color: new THREE.Color().setHSL(0.15 + Math.random() * 0.1, 0.6, 0.3 + range * 0.1),
+                            transparent: true,
+                            opacity: 0
+                        })
+                    );
+                    
+                    mountain.position.set(
+                        (i - 4) * 0.8 + (Math.random() - 0.5) * 0.5,
+                        0.3 + range * 0.3,
+                        -range * 2 - 2
+                    );
+                    
+                    mountain.userData = {
+                        type: 'mountain',
+                        delay: (range * 8 + i) * 0.05,
+                        targetOpacity: 0.6 - range * 0.15,
+                        originalPos: mountain.position.clone()
+                    };
+                    
+                    scene.add(mountain);
+                    landscapeElements.push(mountain);
+                }
+            }
+            
+            // Trees
+            for (let i = 0; i < 15; i++) {
+                const trunk = new THREE.Mesh(
+                    new THREE.CylinderGeometry(0.05, 0.08, 0.6, 6),
+                    new THREE.MeshBasicMaterial({
+                        color: 0x8B4513,
+                        transparent: true,
+                        opacity: 0
+                    })
+                );
+                
+                const leaves = new THREE.Mesh(
+                    new THREE.SphereGeometry(0.2 + Math.random() * 0.15, 8, 6),
+                    new THREE.MeshBasicMaterial({
+                        color: new THREE.Color().setHSL(0.25 + Math.random() * 0.15, 0.7, 0.4),
+                        transparent: true,
+                        opacity: 0
+                    })
+                );
+                
+                const treeGroup = new THREE.Group();
+                trunk.position.y = 0.3;
+                leaves.position.y = 0.8;
+                treeGroup.add(trunk, leaves);
+                
+                treeGroup.position.set(
+                    (Math.random() - 0.5) * 8,
+                    -0.5 + Math.random() * 0.3,
+                    -1 - Math.random() * 3
+                );
+                
+                treeGroup.userData = {
+                    type: 'tree',
+                    delay: 0.5 + i * 0.03,
+                    targetOpacity: 0.7,
+                    originalPos: treeGroup.position.clone(),
+                    swaySpeed: 0.02 + Math.random() * 0.01
+                };
+                
+                scene.add(treeGroup);
+                landscapeElements.push(treeGroup);
+            }
+            
+            // Clouds
+            for (let i = 0; i < 6; i++) {
+                const cloudGroup = new THREE.Group();
+                
+                for (let j = 0; j < 5; j++) {
+                    const cloudPart = new THREE.Mesh(
+                        new THREE.SphereGeometry(0.15 + Math.random() * 0.1, 8, 6),
+                        new THREE.MeshBasicMaterial({
+                            color: 0xffffff,
+                            transparent: true,
+                            opacity: 0
+                        })
+                    );
+                    cloudPart.position.set(
+                        (j - 2) * 0.2 + (Math.random() - 0.5) * 0.1,
+                        (Math.random() - 0.5) * 0.1,
+                        0
+                    );
+                    cloudGroup.add(cloudPart);
+                }
+                
+                cloudGroup.position.set(
+                    (i - 3) * 1.5,
+                    3 + Math.random() * 1.5,
+                    -2 - Math.random() * 2
+                );
+                
+                cloudGroup.userData = {
+                    type: 'cloud',
+                    delay: 0.8 + i * 0.1,
+                    targetOpacity: 0.4,
+                    originalPos: cloudGroup.position.clone(),
+                    driftSpeed: 0.005 + Math.random() * 0.005
+                };
+                
+                scene.add(cloudGroup);
+                landscapeElements.push(cloudGroup);
+            }
+            
+            // Birds
+            for (let i = 0; i < 8; i++) {
+                const bird = new THREE.Mesh(
+                    new THREE.SphereGeometry(0.02, 4, 3),
+                    new THREE.MeshBasicMaterial({
+                        color: 0x000000,
+                        transparent: true,
+                        opacity: 0
+                    })
+                );
+                
+                bird.position.set(
+                    (Math.random() - 0.5) * 10,
+                    2 + Math.random() * 3,
+                    -1 - Math.random() * 4
+                );
+                
+                bird.userData = {
+                    type: 'bird',
+                    delay: 1.2 + i * 0.05,
+                    targetOpacity: 0.8,
+                    flightPath: {
+                        center: bird.position.clone(),
+                        radius: 1 + Math.random() * 2,
+                        speed: 0.03 + Math.random() * 0.02,
+                        angle: Math.random() * Math.PI * 2
+                    }
+                };
+                
+                scene.add(bird);
+                landscapeElements.push(bird);
+            }
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+            time += 0.01;
+
+            if (exposing) {
+                exposureProgress += 0.008;
+                if (exposureProgress >= 1) {
+                    exposureProgress = 1;
+                    exposing = false;
+                }
+            }
+
+            // Animate human silhouette
+            humanSilhouette.userData.parts.forEach((part, index) => {
+                // Breathing effect
+                const breathe = Math.sin(time * 0.6 + index * 0.1) * 0.02;
+                part.scale.setScalar(1 + breathe);
+                
+                if (exposing && exposureProgress > 0.1) {
+                    // Gradually make silhouette semi-transparent to reveal landscape
+                    const fadeProgress = Math.min(1, (exposureProgress - 0.1) / 0.4);
+                    part.material.opacity = 0.9 - fadeProgress * 0.6;
+                }
+            });
+
+            // Animate landscape elements
+            landscapeElements.forEach((element, index) => {
+                if (exposing && exposureProgress > element.userData.delay) {
+                    const progress = Math.min(1, (exposureProgress - element.userData.delay) / 0.3);
+                    
+                    switch (element.userData.type) {
+                        case 'mountain':
+                            element.material.opacity = progress * element.userData.targetOpacity;
+                            element.position.y = element.userData.originalPos.y + (1 - progress) * -2;
+                            break;
+                            
+                        case 'tree':
+                            element.children.forEach(child => {
+                                child.material.opacity = progress * element.userData.targetOpacity;
+                            });
+                            element.rotation.z = Math.sin(time * element.userData.swaySpeed) * 0.1;
+                            break;
+                            
+                        case 'cloud':
+                            element.children.forEach(child => {
+                                child.material.opacity = progress * element.userData.targetOpacity;
+                            });
+                            element.position.x += element.userData.driftSpeed;
+                            element.position.y += Math.sin(time * 0.5 + index) * 0.002;
+                            break;
+                            
+                        case 'bird':
+                            element.material.opacity = progress * element.userData.targetOpacity;
+                            const flight = element.userData.flightPath;
+                            flight.angle += flight.speed;
+                            element.position.x = flight.center.x + Math.cos(flight.angle) * flight.radius;
+                            element.position.y = flight.center.y + Math.sin(flight.angle * 0.5) * 0.5;
+                            element.position.z = flight.center.z + Math.sin(flight.angle) * 0.5;
+                            break;
+                    }
+                }
+            });
+
+            // Camera gentle movement
+            camera.position.x = Math.sin(time * 0.1) * 2;
+            camera.position.y = Math.cos(time * 0.08) * 1.5 + 1;
+            camera.lookAt(0, 1, 0);
+
+            renderer.render(scene, camera);
+        }
+
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+
+        window.addEventListener('click', () => {
+            if (!exposing && exposureProgress < 1) {
+                exposing = true;
+            } else if (exposureProgress >= 1) {
+                // Reset
+                exposing = false;
+                exposureProgress = 0;
+                
+                // Reset silhouette
+                humanSilhouette.userData.parts.forEach(part => {
+                    part.material.opacity = 0.9;
+                });
+                
+                // Reset landscape elements
+                landscapeElements.forEach(element => {
+                    if (element.userData.type === 'mountain' || element.userData.type === 'bird') {
+                        element.material.opacity = 0;
+                        if (element.userData.type === 'mountain') {
+                            element.position.copy(element.userData.originalPos);
+                        }
+                    } else {
+                        element.children.forEach(child => {
+                            child.material.opacity = 0;
+                        });
+                        if (element.userData.type === 'cloud') {
+                            element.position.copy(element.userData.originalPos);
+                        }
+                    }
+                });
+            }
+        });
+
+        init();
+    </script>
+</body>
+</html>

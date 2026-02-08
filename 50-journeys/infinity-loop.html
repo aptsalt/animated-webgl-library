@@ -1,0 +1,487 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Infinity Loop - Flow Series #50</title>
+    <style>
+        body {
+            margin: 0;
+            background: #f8f8f8;
+            overflow: hidden;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        }
+        canvas { display: block; }
+        .back-btn {
+            position: absolute;
+            top: 30px;
+            left: 30px;
+            background: rgba(26, 26, 26, 0.1);
+            border: 1px solid rgba(26, 26, 26, 0.2);
+            color: #1a1a1a;
+            padding: 12px 24px;
+            text-decoration: none;
+            border-radius: 4px;
+            font-size: 14px;
+            font-weight: 300;
+            letter-spacing: 1px;
+            z-index: 1000;
+            transition: all 0.3s ease;
+            opacity: 0;
+            animation: fadeIn 3s ease-in-out 1s forwards;
+        }
+        .back-btn:hover {
+            background: rgba(26, 26, 26, 0.2);
+            transform: translateY(-1px);
+        }
+        .title {
+            position: absolute;
+            top: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: #333;
+            font-size: 24px;
+            font-weight: 300;
+            z-index: 100;
+            opacity: 0;
+            animation: fadeIn 3s ease-in-out 1s forwards;
+        }
+        .subtitle {
+            position: absolute;
+            bottom: 30px;
+            right: 30px;
+            color: #666;
+            font-size: 14px;
+            z-index: 100;
+            opacity: 0;
+            animation: fadeIn 3s ease-in-out 2s forwards;
+        }
+        @keyframes fadeIn {
+            to { opacity: 1; }
+        }
+    </style>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+</head>
+<body>
+    <a href="gallery.html" class="back-btn">← GALLERY</a>
+    <div class="title">Infinity Loop</div>
+    <div class="subtitle">Eternal cycle of beings</div>
+    
+    <script>
+        let scene, camera, renderer;
+        let infinityFigures = [];
+        let pathParticles, cycleFields;
+        let time = 0;
+        let infinityPhase = 0;
+        
+        function init() {
+            scene = new THREE.Scene();
+            scene.fog = new THREE.Fog(0xf8f8f8, 12, 35);
+            
+            camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+            camera.position.set(0, 10, 25);
+            
+            renderer = new THREE.WebGLRenderer({ antialias: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.setClearColor(0xf8f8f8);
+            renderer.shadowMap.enabled = true;
+            renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+            document.body.appendChild(renderer.domElement);
+            
+            // Ethereal lighting for infinity
+            const ambientLight = new THREE.AmbientLight(0x404040, 0.6);
+            scene.add(ambientLight);
+            
+            const mainLight = new THREE.DirectionalLight(0xffffff, 0.7);
+            mainLight.position.set(-10, 15, 8);
+            mainLight.castShadow = true;
+            mainLight.shadow.mapSize.width = 2048;
+            mainLight.shadow.mapSize.height = 2048;
+            scene.add(mainLight);
+            
+            const backLight = new THREE.DirectionalLight(0xffffff, 0.3);
+            backLight.position.set(10, 8, -8);
+            scene.add(backLight);
+            
+            createInfinityPath();
+            createPathParticles();
+            createCycleFields();
+            
+            animate();
+        }
+        
+        function createInfinityPath() {
+            // Create figures moving along infinity symbol (∞) path
+            const figureCount = 16;
+            
+            for (let i = 0; i < figureCount; i++) {
+                const figure = createEternalBeing(i / figureCount);
+                
+                // Position on infinity curve initially
+                const t = (i / figureCount) * Math.PI * 2;
+                const infinityPos = getInfinityPosition(t);
+                figure.position.copy(infinityPos);
+                
+                figure.castShadow = true;
+                scene.add(figure);
+                
+                infinityFigures.push({
+                    mesh: figure,
+                    pathParameter: t,
+                    speed: 0.8 + Math.random() * 0.4, // Different speeds for organic flow
+                    phase: i / figureCount,
+                    transformationLevel: Math.random(),
+                    eternityState: Math.floor(Math.random() * 4), // 0=birth, 1=growth, 2=peak, 3=return
+                    lastPosition: infinityPos.clone(),
+                    trailPoints: []
+                });
+            }
+        }
+        
+        function createEternalBeing(variation) {
+            const group = new THREE.Group();
+            const material = new THREE.MeshLambertMaterial({ 
+                color: 0x1a1a1a,
+                transparent: true,
+                opacity: 0.7 + variation * 0.2
+            });
+            
+            // Core essence (always present)
+            const coreGeometry = new THREE.SphereGeometry(0.06, 10, 8);
+            const core = new THREE.Mesh(coreGeometry, material);
+            core.userData = { type: 'core', baseScale: 1 };
+            group.add(core);
+            
+            // Primary form - humanoid
+            const headGeometry = new THREE.SphereGeometry(0.08, 12, 8);
+            const head = new THREE.Mesh(headGeometry, material);
+            head.position.y = 0.5;
+            head.userData = { type: 'head', baseScale: 1 };
+            group.add(head);
+            
+            const bodyGeometry = new THREE.CylinderGeometry(0.06, 0.08, 0.4, 8);
+            const body = new THREE.Mesh(bodyGeometry, material);
+            body.position.y = 0.2;
+            body.userData = { type: 'body', baseScale: 1 };
+            group.add(body);
+            
+            // Transforming limbs
+            for (let i = 0; i < 4; i++) {
+                const limbGeometry = new THREE.CylinderGeometry(0.02, 0.03, 0.25, 6);
+                const limb = new THREE.Mesh(limbGeometry, material);
+                
+                const angle = (i / 4) * Math.PI * 2;
+                limb.position.set(
+                    Math.cos(angle) * 0.12,
+                    0.25,
+                    Math.sin(angle) * 0.12
+                );
+                limb.rotation.z = Math.cos(angle) * 0.5;
+                limb.rotation.x = Math.sin(angle) * 0.5;
+                limb.userData = { type: 'limb', angle: angle, baseScale: 1 };
+                group.add(limb);
+            }
+            
+            // Energy tendrils (will flow and change)
+            for (let i = 0; i < 8; i++) {
+                const tendrilGeometry = new THREE.CylinderGeometry(0.01, 0.015, 0.15, 4);
+                const tendril = new THREE.Mesh(tendrilGeometry, material);
+                
+                const tendrilAngle = (i / 8) * Math.PI * 2;
+                const tendrilRadius = 0.15 + Math.random() * 0.05;
+                tendril.position.set(
+                    Math.cos(tendrilAngle) * tendrilRadius,
+                    0.3 + Math.random() * 0.2,
+                    Math.sin(tendrilAngle) * tendrilRadius
+                );
+                tendril.userData = { 
+                    type: 'tendril', 
+                    angle: tendrilAngle, 
+                    radius: tendrilRadius,
+                    baseScale: 0.5 + Math.random() * 0.5,
+                    flowPhase: Math.random() * Math.PI * 2
+                };
+                group.add(tendril);
+            }
+            
+            return group;
+        }
+        
+        function getInfinityPosition(t) {
+            // Parametric infinity symbol (lemniscate)
+            const scale = 8;
+            const x = scale * Math.cos(t) / (1 + Math.sin(t) * Math.sin(t));
+            const z = scale * Math.sin(t) * Math.cos(t) / (1 + Math.sin(t) * Math.sin(t));
+            const y = 3 + Math.sin(t * 2) * 1.5; // Add vertical movement
+            
+            return new THREE.Vector3(x, y, z);
+        }
+        
+        function createPathParticles() {
+            // Particles that trace the infinity path
+            const particleCount = 500;
+            const geometry = new THREE.BufferGeometry();
+            const positions = new Float32Array(particleCount * 3);
+            const pathParams = new Float32Array(particleCount);
+            const life = new Float32Array(particleCount);
+            const intensity = new Float32Array(particleCount);
+            
+            for (let i = 0; i < particleCount; i++) {
+                const t = (i / particleCount) * Math.PI * 2;
+                const pos = getInfinityPosition(t);
+                
+                positions[i * 3] = pos.x;
+                positions[i * 3 + 1] = pos.y;
+                positions[i * 3 + 2] = pos.z;
+                
+                pathParams[i] = t;
+                life[i] = Math.random();
+                intensity[i] = Math.random() * 0.5 + 0.5;
+            }
+            
+            geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+            geometry.setAttribute('pathParam', new THREE.BufferAttribute(pathParams, 1));
+            geometry.setAttribute('life', new THREE.BufferAttribute(life, 1));
+            geometry.setAttribute('intensity', new THREE.BufferAttribute(intensity, 1));
+            
+            const material = new THREE.PointsMaterial({
+                color: 0x1a1a1a,
+                size: 0.015,
+                transparent: true,
+                opacity: 0.4,
+                blending: THREE.AdditiveBlending
+            });
+            
+            pathParticles = new THREE.Points(geometry, material);
+            scene.add(pathParticles);
+        }
+        
+        function createCycleFields() {
+            // Fields showing eternal cycles and transformations
+            const fieldCount = 300;
+            const geometry = new THREE.BufferGeometry();
+            const positions = new Float32Array(fieldCount * 3);
+            const cycles = new Float32Array(fieldCount);
+            const radii = new Float32Array(fieldCount);
+            
+            for (let i = 0; i < fieldCount; i++) {
+                const radius = Math.random() * 20;
+                const angle = Math.random() * Math.PI * 2;
+                const height = Math.random() * 8;
+                
+                positions[i * 3] = Math.cos(angle) * radius;
+                positions[i * 3 + 1] = height;
+                positions[i * 3 + 2] = Math.sin(angle) * radius;
+                
+                cycles[i] = Math.random() * Math.PI * 2;
+                radii[i] = radius;
+            }
+            
+            geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+            geometry.setAttribute('cycle', new THREE.BufferAttribute(cycles, 1));
+            geometry.setAttribute('radius', new THREE.BufferAttribute(radii, 1));
+            
+            const material = new THREE.PointsMaterial({
+                color: 0x1a1a1a,
+                size: 0.02,
+                transparent: true,
+                opacity: 0.3,
+                blending: THREE.NormalBlending
+            });
+            
+            cycleFields = new THREE.Points(geometry, material);
+            scene.add(cycleFields);
+        }
+        
+        function animate() {
+            requestAnimationFrame(animate);
+            
+            time += 0.016;
+            
+            // Infinity cycle phases
+            infinityPhase = time * 0.5;
+            const eternityPulse = Math.sin(infinityPhase) * 0.5 + 0.5;
+            const transformationWave = Math.sin(infinityPhase * 0.7) * 0.5 + 0.5;
+            
+            // Animate figures along infinity path
+            infinityFigures.forEach((figure, index) => {
+                // Update path parameter
+                figure.pathParameter += 0.01 * figure.speed;
+                if (figure.pathParameter > Math.PI * 2) {
+                    figure.pathParameter -= Math.PI * 2;
+                }
+                
+                // Get new position on infinity curve
+                const newPos = getInfinityPosition(figure.pathParameter);
+                
+                // Add some perpendicular offset for organic movement
+                const tangentAngle = figure.pathParameter + Math.PI / 2;
+                const offset = Math.sin(time * 2 + figure.phase * 10) * 0.3;
+                newPos.x += Math.cos(tangentAngle) * offset;
+                newPos.z += Math.sin(tangentAngle) * offset;
+                
+                figure.mesh.position.copy(newPos);
+                
+                // Face direction of movement
+                const direction = newPos.clone().sub(figure.lastPosition);
+                if (direction.length() > 0) {
+                    figure.mesh.lookAt(newPos.clone().add(direction));
+                }
+                figure.lastPosition.copy(newPos);
+                
+                // Transformation states cycling
+                const stateProgress = (infinityPhase + figure.phase * Math.PI) % (Math.PI * 2);
+                figure.eternityState = Math.floor((stateProgress / (Math.PI * 2)) * 4);
+                const stateTransition = ((stateProgress / (Math.PI * 2)) * 4) % 1;
+                
+                // Apply transformations based on state
+                figure.mesh.children.forEach((part, partIndex) => {
+                    const userData = part.userData;
+                    
+                    if (userData.type === 'core') {
+                        // Core always pulses with eternity
+                        const coreScale = userData.baseScale * (1 + eternityPulse * 0.3);
+                        part.scale.setScalar(coreScale);
+                        part.material.opacity = 0.6 + eternityPulse * 0.4;
+                    }
+                    
+                    if (userData.type === 'head') {
+                        // Head awareness changes with transformation
+                        const headScale = userData.baseScale * (1 + transformationWave * 0.2);
+                        part.scale.setScalar(headScale);
+                        part.rotation.y = Math.sin(time * 1.5 + figure.phase) * 0.2;
+                    }
+                    
+                    if (userData.type === 'body') {
+                        // Body form shifts through states
+                        let bodyScale = userData.baseScale;
+                        if (figure.eternityState === 0) { // birth
+                            bodyScale *= 0.6 + stateTransition * 0.4;
+                        } else if (figure.eternityState === 1) { // growth
+                            bodyScale *= 1 + stateTransition * 0.5;
+                        } else if (figure.eternityState === 2) { // peak
+                            bodyScale *= 1.5 - stateTransition * 0.3;
+                        } else { // return
+                            bodyScale *= 1.2 - stateTransition * 0.6;
+                        }
+                        part.scale.setScalar(bodyScale);
+                    }
+                    
+                    if (userData.type === 'limb') {
+                        // Limbs flow and gesture
+                        const limbFlow = Math.sin(time * 2 + userData.angle + figure.phase);
+                        part.rotation.z = Math.cos(userData.angle) * 0.5 + limbFlow * 0.3;
+                        part.rotation.x = Math.sin(userData.angle) * 0.5 + limbFlow * 0.2;
+                        
+                        // Scale with transformation
+                        const limbScale = userData.baseScale * (1 + transformationWave * 0.4);
+                        part.scale.setScalar(limbScale);
+                    }
+                    
+                    if (userData.type === 'tendril') {
+                        // Tendrils flow with eternal energy
+                        const tendrilFlow = Math.sin(time * 3 + userData.flowPhase);
+                        const flowRadius = userData.radius * (1 + tendrilFlow * 0.3);
+                        
+                        part.position.x = Math.cos(userData.angle) * flowRadius;
+                        part.position.z = Math.sin(userData.angle) * flowRadius;
+                        part.position.y += Math.sin(time * 4 + userData.flowPhase) * 0.05;
+                        
+                        // Tendril scale and opacity
+                        const tendrilScale = userData.baseScale * (1 + eternityPulse * 0.8);
+                        part.scale.setScalar(tendrilScale);
+                        part.material.opacity = 0.4 + Math.abs(tendrilFlow) * 0.5;
+                        
+                        // Rotation following energy flow
+                        part.rotation.y = userData.angle + time * 2;
+                        part.rotation.x = tendrilFlow * 0.5;
+                    }
+                });
+                
+                // Overall figure rotation in harmony with path
+                figure.mesh.rotation.y += 0.01;
+            });
+            
+            // Animate path particles
+            const pathPositions = pathParticles.geometry.attributes.position.array;
+            const pathParams = pathParticles.geometry.attributes.pathParam.array;
+            const pathLife = pathParticles.geometry.attributes.life.array;
+            const pathIntensity = pathParticles.geometry.attributes.intensity.array;
+            
+            for (let i = 0; i < pathParams.length; i++) {
+                // Move along path
+                pathParams[i] += 0.005 * pathIntensity[i];
+                if (pathParams[i] > Math.PI * 2) {
+                    pathParams[i] -= Math.PI * 2;
+                }
+                
+                // Update position
+                const pos = getInfinityPosition(pathParams[i]);
+                pathPositions[i * 3] = pos.x;
+                pathPositions[i * 3 + 1] = pos.y;
+                pathPositions[i * 3 + 2] = pos.z;
+                
+                // Life cycle
+                pathLife[i] += 0.002;
+                if (pathLife[i] > 1) {
+                    pathLife[i] = 0;
+                    pathIntensity[i] = Math.random() * 0.5 + 0.5;
+                }
+            }
+            pathParticles.geometry.attributes.position.needsUpdate = true;
+            pathParticles.geometry.attributes.pathParam.needsUpdate = true;
+            pathParticles.geometry.attributes.life.needsUpdate = true;
+            pathParticles.geometry.attributes.intensity.needsUpdate = true;
+            
+            // Path particle visibility
+            pathParticles.material.opacity = 0.3 + eternityPulse * 0.3;
+            
+            // Animate cycle fields
+            const fieldPositions = cycleFields.geometry.attributes.position.array;
+            const fieldCycles = cycleFields.geometry.attributes.cycle.array;
+            const fieldRadii = cycleFields.geometry.attributes.radius.array;
+            
+            for (let i = 0; i < fieldCycles.length; i++) {
+                // Orbital motion with cycles
+                fieldCycles[i] += 0.001 * (1 + fieldRadii[i] * 0.05);
+                
+                const radius = fieldRadii[i] * (1 + Math.sin(fieldCycles[i] * 3) * 0.1);
+                const angle = fieldCycles[i];
+                
+                fieldPositions[i * 3] = Math.cos(angle) * radius;
+                fieldPositions[i * 3 + 1] += Math.sin(time * 1.5 + fieldCycles[i]) * 0.005;
+                fieldPositions[i * 3 + 2] = Math.sin(angle) * radius;
+            }
+            cycleFields.geometry.attributes.position.needsUpdate = true;
+            cycleFields.geometry.attributes.cycle.needsUpdate = true;
+            
+            // Field opacity with transformation wave
+            cycleFields.material.opacity = 0.2 + transformationWave * 0.3;
+            
+            // Camera movement - following the infinity pattern
+            const cameraT = time * 0.1;
+            const cameraPos = getInfinityPosition(cameraT);
+            camera.position.x = cameraPos.x * 1.5;
+            camera.position.y = 10 + Math.sin(time * 0.08) * 3;
+            camera.position.z = cameraPos.z * 1.5 + 15;
+            
+            // Look ahead on the path
+            const lookAheadT = cameraT + 0.5;
+            const lookAheadPos = getInfinityPosition(lookAheadT);
+            camera.lookAt(lookAheadPos.x, lookAheadPos.y, lookAheadPos.z);
+            
+            renderer.render(scene, camera);
+        }
+        
+        function onWindowResize() {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        }
+        
+        window.addEventListener('resize', onWindowResize, false);
+        
+        init();
+    </script>
+</body>
+</html>

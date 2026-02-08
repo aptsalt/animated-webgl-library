@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ripple Effect - Mindful Journey</title>
+    <style>
+        body { 
+            margin: 0; 
+            overflow: hidden; 
+            background: #f5f5f5;
+            font-family: 'Inter', system-ui, sans-serif;
+        }
+        canvas { display: block; }
+        
+        .instruction {
+            position: absolute;
+            bottom: 40px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: rgba(26, 26, 26, 0.6);
+            font-size: 14px;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            pointer-events: none;
+            transition: opacity 0.5s ease;
+        }
+        
+        .back-btn {
+            position: absolute;
+            top: 40px;
+            left: 40px;
+            padding: 10px 20px;
+            background: transparent;
+            border: 1px solid rgba(26, 26, 26, 0.2);
+            color: #1a1a1a;
+            text-decoration: none;
+            font-size: 14px;
+            letter-spacing: 1px;
+            border-radius: 20px;
+            transition: all 0.3s ease;
+        }
+        
+        .back-btn:hover {
+            background: rgba(26, 26, 26, 0.05);
+            border-color: rgba(26, 26, 26, 0.4);
+        }
+    </style>
+</head>
+<body>
+    <a href="index.html" class="back-btn">← Back</a>
+    <div class="instruction">Click to create wavy ripples</div>
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script>
+        let scene, camera, renderer;
+        let time = 0;
+        let activeRipples = [];
+
+        function init() {
+            scene = new THREE.Scene();
+            scene.background = new THREE.Color(0xf5f5f5);
+
+            camera = new THREE.PerspectiveCamera(
+                75, window.innerWidth / window.innerHeight, 0.1, 1000
+            );
+            camera.position.z = 30;
+
+            renderer = new THREE.WebGLRenderer({ antialias: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            document.body.appendChild(renderer.domElement);
+
+            animate();
+        }
+
+        function createClickRipple(x, y) {
+            const ripple = {
+                circles: [],
+                center: new THREE.Vector2(x, y),
+                age: 0
+            };
+            
+            // Only create 2 circles per click
+            for (let i = 0; i < 2; i++) {
+                const geometry = new THREE.RingGeometry(0.1, 0.2, 64);
+                const material = new THREE.MeshBasicMaterial({
+                    color: 0x1a1a1a,
+                    transparent: true,
+                    opacity: 0.4 - i * 0.1,
+                    side: THREE.DoubleSide
+                });
+                
+                const circle = new THREE.Mesh(geometry, material);
+                circle.position.set(x, y, 0);
+                circle.userData = {
+                    delay: i * 0.4,
+                    maxRadius: 20 + i * 8,
+                    waveFreq: 8 + i * 2,  // Wave frequency for ripple effect
+                    waveAmp: 0.3 + i * 0.1  // Wave amplitude
+                };
+                
+                scene.add(circle);
+                ripple.circles.push(circle);
+            }
+            
+            activeRipples.push(ripple);
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+            time += 0.01;
+
+            // Update click ripples
+            activeRipples = activeRipples.filter(ripple => {
+                ripple.age += 0.008;  // Slower ripple expansion
+                let allExpanded = true;
+                
+                ripple.circles.forEach(circle => {
+                    const activeAge = ripple.age - circle.userData.delay;
+                    if (activeAge > 0) {
+                        const baseRadius = activeAge * 2.5;
+                        
+                        if (baseRadius < circle.userData.maxRadius) {
+                            allExpanded = false;
+                            
+                            // Create wavy ripple effect by varying radius
+                            const segments = 64;
+                            const positions = new Float32Array(segments * 6 * 3); // 6 vertices per segment, 3 coords each
+                            let posIndex = 0;
+                            
+                            for (let i = 0; i < segments; i++) {
+                                const angle1 = (i / segments) * Math.PI * 2;
+                                const angle2 = ((i + 1) / segments) * Math.PI * 2;
+                                
+                                // Add wave distortion to radius
+                                const wave1 = Math.sin(angle1 * circle.userData.waveFreq + time * 3) * circle.userData.waveAmp;
+                                const wave2 = Math.sin(angle2 * circle.userData.waveFreq + time * 3) * circle.userData.waveAmp;
+                                
+                                // Calculate thickness based on expansion progress (0 to 1)
+                                const expansionProgress = baseRadius / circle.userData.maxRadius;
+                                // At 0% expansion: super thin (0.02), at 50% expansion: current thickness (0.3), at 100% expansion: fade out
+                                let thickness;
+                                if (expansionProgress <= 0.5) {
+                                    // From 0% to 50%: grow from super thin to full thickness
+                                    thickness = 0.02 + (0.28 * (expansionProgress / 0.5));
+                                } else {
+                                    // From 50% to 100%: maintain thickness then fade
+                                    thickness = 0.3;
+                                }
+                                
+                                const innerRadius = baseRadius + wave1;
+                                const outerRadius = baseRadius + thickness + wave1;
+                                const innerRadius2 = baseRadius + wave2;
+                                const outerRadius2 = baseRadius + thickness + wave2;
+                                
+                                // Create quad (2 triangles) for each segment
+                                const x1 = Math.cos(angle1);
+                                const y1 = Math.sin(angle1);
+                                const x2 = Math.cos(angle2);
+                                const y2 = Math.sin(angle2);
+                                
+                                // Triangle 1
+                                positions[posIndex++] = x1 * innerRadius;
+                                positions[posIndex++] = y1 * innerRadius;
+                                positions[posIndex++] = 0;
+                                
+                                positions[posIndex++] = x1 * outerRadius;
+                                positions[posIndex++] = y1 * outerRadius;
+                                positions[posIndex++] = 0;
+                                
+                                positions[posIndex++] = x2 * innerRadius2;
+                                positions[posIndex++] = y2 * innerRadius2;
+                                positions[posIndex++] = 0;
+                                
+                                // Triangle 2
+                                positions[posIndex++] = x1 * outerRadius;
+                                positions[posIndex++] = y1 * outerRadius;
+                                positions[posIndex++] = 0;
+                                
+                                positions[posIndex++] = x2 * outerRadius2;
+                                positions[posIndex++] = y2 * outerRadius2;
+                                positions[posIndex++] = 0;
+                                
+                                positions[posIndex++] = x2 * innerRadius2;
+                                positions[posIndex++] = y2 * innerRadius2;
+                                positions[posIndex++] = 0;
+                            }
+                            
+                            // Update geometry
+                            const newGeometry = new THREE.BufferGeometry();
+                            newGeometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+                            
+                            circle.geometry.dispose();
+                            circle.geometry = newGeometry;
+                            
+                            // Fade out
+                            circle.material.opacity = (0.4 - circle.userData.delay * 0.1) * (1 - baseRadius / circle.userData.maxRadius);
+                        }
+                    }
+                });
+                
+                if (allExpanded) {
+                    ripple.circles.forEach(circle => {
+                        scene.remove(circle);
+                        circle.geometry.dispose();
+                        circle.material.dispose();
+                    });
+                    return false;
+                }
+                return true;
+            });
+
+            renderer.render(scene, camera);
+        }
+
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+
+        window.addEventListener('click', (event) => {
+            const x = (event.clientX / window.innerWidth) * 2 - 1;
+            const y = -(event.clientY / window.innerHeight) * 2 + 1;
+            createClickRipple(x * 20, y * 20);
+        });
+
+        init();
+    </script>
+</body>
+</html>

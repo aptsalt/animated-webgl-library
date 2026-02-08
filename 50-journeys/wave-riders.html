@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Wave Riders - Surfing Energy Flows</title>
+    <style>
+        body {
+            margin: 0;
+            background: #f8f8f8;
+            overflow: hidden;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        }
+        canvas { display: block; }
+        .back-btn {
+            position: absolute;
+            top: 30px;
+            left: 30px;
+            background: rgba(26, 26, 26, 0.1);
+            border: 1px solid rgba(26, 26, 26, 0.2);
+            color: #1a1a1a;
+            padding: 12px 24px;
+            text-decoration: none;
+            border-radius: 4px;
+            font-size: 14px;
+            font-weight: 300;
+            letter-spacing: 1px;
+            z-index: 1000;
+            transition: all 0.3s ease;
+            opacity: 0;
+            animation: fadeIn 3s ease-in-out 1s forwards;
+        }
+        .back-btn:hover {
+            background: rgba(26, 26, 26, 0.2);
+            transform: translateY(-1px);
+        }
+        .title {
+            position: absolute;
+            top: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: #333;
+            font-size: 24px;
+            font-weight: 300;
+            z-index: 100;
+            opacity: 0;
+            animation: fadeIn 3s ease-in-out 1s forwards;
+        }
+        .subtitle {
+            position: absolute;
+            bottom: 30px;
+            right: 30px;
+            color: #666;
+            font-size: 14px;
+            z-index: 100;
+            opacity: 0;
+            animation: fadeIn 3s ease-in-out 2s forwards;
+        }
+        @keyframes fadeIn {
+            to { opacity: 1; }
+        }
+    </style>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+</head>
+<body>
+    <a href="gallery.html" class="back-btn">← GALLERY</a>
+    <div class="title">Wave Riders</div>
+    <div class="subtitle">Beings flowing with invisible currents</div>
+    
+    <script>
+        let scene, camera, renderer;
+        let riders = [];
+        let waves = [];
+        let time = 0;
+        
+        function init() {
+            scene = new THREE.Scene();
+            scene.fog = new THREE.Fog(0xf8f8f8, 5, 30);
+            
+            camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+            camera.position.set(0, 8, 15);
+            
+            renderer = new THREE.WebGLRenderer({ antialias: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.setClearColor(0xf8f8f8);
+            renderer.shadowMap.enabled = true;
+            renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+            document.body.appendChild(renderer.domElement);
+            
+            // Ambient light
+            const ambientLight = new THREE.AmbientLight(0x404040, 0.3);
+            scene.add(ambientLight);
+            
+            // Main directional light
+            const mainLight = new THREE.DirectionalLight(0xffffff, 0.7);
+            mainLight.position.set(-8, 12, 5);
+            mainLight.castShadow = true;
+            mainLight.shadow.mapSize.width = 2048;
+            mainLight.shadow.mapSize.height = 2048;
+            scene.add(mainLight);
+            
+            // Secondary light for rim lighting
+            const rimLight = new THREE.DirectionalLight(0xffffff, 0.4);
+            rimLight.position.set(8, 5, -5);
+            scene.add(rimLight);
+            
+            createWaves();
+            createRiders();
+            
+            animate();
+        }
+        
+        function createWaves() {
+            const waveConfigs = [
+                { amplitude: 1.5, frequency: 0.8, speed: 1.2, offset: 0 },
+                { amplitude: 1.0, frequency: 1.2, speed: 0.8, offset: Math.PI },
+                { amplitude: 2.0, frequency: 0.5, speed: 1.5, offset: Math.PI * 0.5 },
+                { amplitude: 1.3, frequency: 1.0, speed: 1.0, offset: Math.PI * 1.5 }
+            ];
+            
+            waveConfigs.forEach((config, index) => {
+                const waveGeometry = new THREE.PlaneGeometry(40, 2, 100, 10);
+                const waveMaterial = new THREE.MeshLambertMaterial({ 
+                    color: 0xdddddd,
+                    transparent: true,
+                    opacity: 0.6,
+                    wireframe: false
+                });
+                
+                const wave = new THREE.Mesh(waveGeometry, waveMaterial);
+                wave.rotation.x = -Math.PI / 2;
+                wave.position.y = index * 0.5;
+                wave.position.z = index * 2 - 3;
+                wave.receiveShadow = true;
+                
+                scene.add(wave);
+                waves.push({
+                    mesh: wave,
+                    config: config,
+                    originalPositions: waveGeometry.attributes.position.array.slice()
+                });
+            });
+        }
+        
+        function createRiders() {
+            for (let i = 0; i < 5; i++) {
+                const rider = createRiderFigure();
+                rider.position.set(
+                    (Math.random() - 0.5) * 20,
+                    2,
+                    (Math.random() - 0.5) * 10
+                );
+                rider.castShadow = true;
+                scene.add(rider);
+                
+                riders.push({
+                    mesh: rider,
+                    waveIndex: Math.floor(Math.random() * waves.length),
+                    xOffset: (Math.random() - 0.5) * 20,
+                    phase: Math.random() * Math.PI * 2,
+                    surfStyle: Math.random(), // Different riding styles
+                    balance: 0
+                });
+            }
+        }
+        
+        function createRiderFigure() {
+            const group = new THREE.Group();
+            const material = new THREE.MeshLambertMaterial({ 
+                color: 0x1a1a1a,
+                transparent: true,
+                opacity: 0.9
+            });
+            
+            // Head
+            const headGeometry = new THREE.SphereGeometry(0.08, 8, 6);
+            const head = new THREE.Mesh(headGeometry, material);
+            head.position.y = 0.5;
+            group.add(head);
+            
+            // Torso
+            const torsoGeometry = new THREE.CylinderGeometry(0.06, 0.08, 0.35, 8);
+            const torso = new THREE.Mesh(torsoGeometry, material);
+            torso.position.y = 0.2;
+            group.add(torso);
+            
+            // Arms in surfing position
+            const armGeometry = new THREE.CylinderGeometry(0.025, 0.03, 0.25, 6);
+            const leftArm = new THREE.Mesh(armGeometry, material);
+            const rightArm = new THREE.Mesh(armGeometry, material);
+            leftArm.position.set(-0.12, 0.25, 0);
+            rightArm.position.set(0.12, 0.25, 0);
+            leftArm.rotation.z = 0.8;
+            rightArm.rotation.z = -0.8;
+            group.add(leftArm);
+            group.add(rightArm);
+            
+            // Forearms
+            const forearmGeometry = new THREE.CylinderGeometry(0.02, 0.025, 0.2, 6);
+            const leftForearm = new THREE.Mesh(forearmGeometry, material);
+            const rightForearm = new THREE.Mesh(forearmGeometry, material);
+            leftForearm.position.set(-0.2, 0.15, 0);
+            rightForearm.position.set(0.2, 0.15, 0);
+            leftForearm.rotation.z = 1.2;
+            rightForearm.rotation.z = -1.2;
+            group.add(leftForearm);
+            group.add(rightForearm);
+            
+            // Legs in surfing stance
+            const legGeometry = new THREE.CylinderGeometry(0.04, 0.05, 0.3, 6);
+            const leftLeg = new THREE.Mesh(legGeometry, material);
+            const rightLeg = new THREE.Mesh(legGeometry, material);
+            leftLeg.position.set(-0.08, -0.1, 0.1);
+            rightLeg.position.set(0.08, -0.1, -0.1);
+            leftLeg.rotation.x = 0.3;
+            rightLeg.rotation.x = -0.3;
+            group.add(leftLeg);
+            group.add(rightLeg);
+            
+            // Lower legs
+            const calfGeometry = new THREE.CylinderGeometry(0.035, 0.04, 0.25, 6);
+            const leftCalf = new THREE.Mesh(calfGeometry, material);
+            const rightCalf = new THREE.Mesh(calfGeometry, material);
+            leftCalf.position.set(-0.08, -0.35, 0.15);
+            rightCalf.position.set(0.08, -0.35, -0.15);
+            group.add(leftCalf);
+            group.add(rightCalf);
+            
+            return group;
+        }
+        
+        function getWaveHeight(x, z, waveConfig, time) {
+            const distance = Math.sqrt(x * x + z * z);
+            const wave1 = Math.sin(distance * waveConfig.frequency + time * waveConfig.speed + waveConfig.offset);
+            const wave2 = Math.sin(x * waveConfig.frequency * 0.7 + time * waveConfig.speed * 1.3);
+            return (wave1 + wave2 * 0.5) * waveConfig.amplitude;
+        }
+        
+        function animate() {
+            requestAnimationFrame(animate);
+            
+            time += 0.016;
+            
+            // Update wave geometry
+            waves.forEach((wave, waveIndex) => {
+                const positions = wave.mesh.geometry.attributes.position.array;
+                const originalPositions = wave.originalPositions;
+                
+                for (let i = 0; i < positions.length; i += 3) {
+                    const x = originalPositions[i];
+                    const z = originalPositions[i + 2];
+                    
+                    positions[i + 1] = getWaveHeight(x, z, wave.config, time);
+                }
+                
+                wave.mesh.geometry.attributes.position.needsUpdate = true;
+                wave.mesh.geometry.computeVertexNormals();
+            });
+            
+            // Update riders
+            riders.forEach((rider, index) => {
+                const wave = waves[rider.waveIndex];
+                const waveConfig = wave.config;
+                
+                // Calculate position on wave
+                const riderX = rider.xOffset + Math.sin(time * 0.5 + rider.phase) * 8;
+                const riderZ = wave.mesh.position.z + Math.cos(time * 0.3 + rider.phase) * 2;
+                
+                // Get wave height at rider position
+                const waveHeight = getWaveHeight(riderX, riderZ - wave.mesh.position.z, waveConfig, time);
+                const riderY = wave.mesh.position.y + waveHeight + 1.0;
+                
+                rider.mesh.position.set(riderX, riderY, riderZ);
+                
+                // Calculate wave slope for surfing angle
+                const sampleDistance = 0.1;
+                const heightBefore = getWaveHeight(riderX - sampleDistance, riderZ - wave.mesh.position.z, waveConfig, time);
+                const heightAfter = getWaveHeight(riderX + sampleDistance, riderZ - wave.mesh.position.z, waveConfig, time);
+                const slope = (heightAfter - heightBefore) / (sampleDistance * 2);
+                
+                // Rider balance and orientation
+                rider.balance += (slope - rider.balance) * 0.1;
+                rider.mesh.rotation.z = rider.balance * 0.3;
+                rider.mesh.rotation.x = Math.sin(time * 2 + rider.phase) * 0.1;
+                
+                // Surfing movements
+                const surfIntensity = Math.abs(slope) + 0.5;
+                
+                // Arms for balance
+                const armBalance = Math.sin(time * 3 + rider.phase) * surfIntensity;
+                rider.mesh.children[2].rotation.z = 0.8 + armBalance * 0.4; // Left arm
+                rider.mesh.children[3].rotation.z = -0.8 - armBalance * 0.4; // Right arm
+                rider.mesh.children[2].rotation.x = slope * 0.5;
+                rider.mesh.children[3].rotation.x = -slope * 0.5;
+                
+                // Forearms follow
+                rider.mesh.children[4].rotation.z = 1.2 + armBalance * 0.3;
+                rider.mesh.children[5].rotation.z = -1.2 - armBalance * 0.3;
+                
+                // Legs adjusting to wave
+                const legAdjust = Math.sin(time * 4 + rider.phase) * 0.2;
+                rider.mesh.children[6].rotation.x = 0.3 + slope * 0.3 + legAdjust; // Left leg
+                rider.mesh.children[7].rotation.x = -0.3 - slope * 0.3 - legAdjust; // Right leg
+                
+                // Lower legs follow
+                rider.mesh.children[8].rotation.x = -slope * 0.4;
+                rider.mesh.children[9].rotation.x = slope * 0.4;
+                
+                // Body lean into the wave
+                rider.mesh.children[1].rotation.x = slope * 0.2;
+                
+                // Head tracking
+                rider.mesh.children[0].rotation.y = Math.sin(time + rider.phase) * 0.1;
+                
+                // Vertical body movement with wave intensity
+                rider.mesh.children[1].position.y = 0.2 + Math.sin(time * 6 + rider.phase) * surfIntensity * 0.02;
+            });
+            
+            // Camera movement following the action
+            camera.position.x = Math.sin(time * 0.2) * 5;
+            camera.position.y = 8 + Math.sin(time * 0.3) * 2;
+            camera.position.z = 15 + Math.cos(time * 0.4) * 3;
+            
+            // Look at the center of action
+            const avgRiderX = riders.reduce((sum, rider) => sum + rider.mesh.position.x, 0) / riders.length;
+            const avgRiderZ = riders.reduce((sum, rider) => sum + rider.mesh.position.z, 0) / riders.length;
+            camera.lookAt(avgRiderX, 3, avgRiderZ);
+            
+            renderer.render(scene, camera);
+        }
+        
+        function onWindowResize() {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        }
+        
+        window.addEventListener('resize', onWindowResize, false);
+        
+        init();
+    </script>
+</body>
+</html>

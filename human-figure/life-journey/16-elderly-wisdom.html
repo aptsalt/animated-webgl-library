@@ -1,0 +1,511 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Life Journey - Elderly Wisdom</title>
+    <style>
+        body { 
+            margin: 0; overflow: hidden; 
+            background: linear-gradient(135deg, #2c1810, #8b7355, #d4af37);
+            filter: sepia(0.3);
+        }
+        canvas { display: block; }
+        .title { 
+            position: absolute; top: 30px; left: 50%; transform: translateX(-50%); 
+            color: #d4af37; font-family: 'Times New Roman', serif; font-size: 38px; 
+            letter-spacing: 3px; text-shadow: 2px 2px 4px rgba(0,0,0,0.8);
+            font-weight: bold;
+        }
+        .wisdom-phase {
+            position: absolute; top: 75px; left: 50%; transform: translateX(-50%);
+            color: #cdaa3d; font-family: serif; font-size: 16px; 
+            font-style: italic; letter-spacing: 2px;
+        }
+        .quote {
+            position: absolute; bottom: 40px; left: 50%; transform: translateX(-50%);
+            color: rgba(212, 175, 55, 0.8); font-family: serif; font-size: 14px;
+            text-align: center; max-width: 400px; line-height: 1.6;
+            font-style: italic;
+        }
+    </style>
+</head>
+<body>
+    <div class="title">ELDERLY WISDOM</div>
+    <div class="wisdom-phase" id="wisdomPhase">REFLECTING ON LIFE</div>
+    <div class="quote" id="quote">"With age comes wisdom, and with wisdom comes peace."</div>
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="../particle-being-library.js"></script>
+    <script>
+        let scene, camera, renderer, particleSystem;
+        let time = 0;
+        let currentPhase = 0;
+        let phaseTimer = 0;
+        let memoryOrbs = [];
+        let wisdomAura = [];
+        let lifeStories = [];
+        
+        const wisdomPhases = [
+            'REFLECTING ON LIFE', 'SHARING STORIES', 'GENTLE GUIDANCE', 'PEACEFUL MEDITATION',
+            'FAMILY MEMORIES', 'LIFE LESSONS', 'SERENE ACCEPTANCE'
+        ];
+
+        const quotes = [
+            "With age comes wisdom, and with wisdom comes peace.",
+            "Every wrinkle tells a story of laughter and tears.",
+            "Time is the greatest teacher of all.",
+            "In stillness, we find our deepest truths.",
+            "Love multiplies when shared across generations.",
+            "Experience is the mother of knowledge.",
+            "Acceptance brings the greatest freedom."
+        ];
+
+        function init() {
+            scene = new THREE.Scene();
+            camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+            camera.position.set(0, 8, 25);
+
+            renderer = new THREE.WebGLRenderer({ antialias: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            document.body.appendChild(renderer.domElement);
+
+            // Create wise elderly particle system
+            particleSystem = new ParticleBeingSystem(scene, {
+                particleCount: 180, // Fewer particles, more deliberate
+                particleSize: 0.09, // Slightly larger, more presence
+                speedMultiplier: 0.15, // Very slow, contemplative
+                colorRange: { h: 0.1, s: 0.3, lMin: 0.4, lMax: 0.7 }
+            });
+
+            createElderlyFigure();
+            createWisdomEnvironment();
+            animate();
+        }
+
+        function createElderlyFigure() {
+            const elderly = particleSystem.convertToParticleBeing(
+                null,
+                { x: 0, y: -1, z: 0 },
+                {
+                    particleCount: 200,
+                    states: ['contemplating', 'remembering', 'sharing', 'meditating'],
+                    stateTimings: { contemplating: 6, remembering: 5, sharing: 4, meditating: 7 },
+                    attractionForces: { contemplating: 0.01, remembering: 0.012, sharing: 0.015, meditating: 0.008 }
+                }
+            );
+
+            // 7 distinct wisdom manifestations with unique characteristics
+            const originalUpdate = particleSystem.updateBeing.bind(particleSystem);
+            particleSystem.updateBeing = function(being, deltaTime) {
+                originalUpdate(being, deltaTime);
+                
+                phaseTimer += deltaTime;
+                if (phaseTimer > 7) {
+                    currentPhase = (currentPhase + 1) % wisdomPhases.length;
+                    phaseTimer = 0;
+                    document.getElementById('wisdomPhase').textContent = wisdomPhases[currentPhase];
+                    document.getElementById('quote').textContent = quotes[currentPhase];
+                }
+                
+                // Apply aging characteristics to all phases
+                being.particles.forEach((particle, i) => {
+                    // Hunched posture
+                    if (particle.userData.targetPosition.y > 2) {
+                        particle.userData.targetPosition.y *= 0.9;
+                        particle.userData.targetPosition.z += 0.5; // Forward lean
+                    }
+                    
+                    // Slower, more deliberate movements
+                    particle.userData.velocity.multiplyScalar(0.8);
+                });
+                
+                switch(currentPhase) {
+                    case 0: // REFLECTING ON LIFE - Small, inward-looking
+                        being.particles.forEach((particle, i) => {
+                            particle.scale.setScalar(0.6); // Smaller, more fragile
+                            
+                            // Inward contemplation
+                            const inward = being.userData.basePosition.clone().sub(particle.position);
+                            inward.normalize().multiplyScalar(0.001);
+                            particle.userData.velocity.add(inward);
+                            
+                            // Gentle swaying like sitting in chair
+                            particle.position.x += Math.sin(time * 0.5 + i * 0.1) * 0.01;
+                            
+                            // Dimmed, thoughtful glow
+                            particle.material.opacity = 0.6 + Math.sin(time * 2 + i * 0.1) * 0.1;
+                        });
+                        
+                        being.userData.basePosition.y = -2; // Seated position
+                        camera.position.set(3, 5, 15); // Close, intimate view
+                        break;
+                        
+                    case 1: // SHARING STORIES - Animated gestures, larger presence
+                        being.particles.forEach((particle, i) => {
+                            particle.scale.setScalar(0.8);
+                            
+                            // Storytelling gestures
+                            if (i > 80 && i < 120) { // Hands/arms
+                                particle.userData.targetPosition.x += Math.sin(time * 3) * 0.8;
+                                particle.userData.targetPosition.y += Math.cos(time * 4) * 0.5;
+                                particle.scale.setScalar(1.2); // Emphasizing gestures
+                            }
+                            
+                            // Head nodding while speaking
+                            if (i < 40) {
+                                particle.userData.targetPosition.y += Math.sin(time * 5) * 0.1;
+                            }
+                            
+                            // More vibrant during storytelling
+                            particle.material.color.setHSL(0.1, 0.4, 0.6 + Math.sin(time * 3) * 0.1);
+                        });
+                        
+                        // Create story particles
+                        if (Math.random() < 0.05) {
+                            createStoryMemory(being.userData.basePosition);
+                        }
+                        
+                        being.userData.basePosition.y = -1;
+                        camera.position.set(-5, 6, 20);
+                        break;
+                        
+                    case 2: // GENTLE GUIDANCE - Reaching out, nurturing poses
+                        being.particles.forEach((particle, i) => {
+                            particle.scale.setScalar(0.9);
+                            
+                            // Reaching/guiding gestures
+                            if (i > 100 && i < 140) {
+                                particle.userData.targetPosition.x += 2;
+                                particle.userData.targetPosition.y += 1;
+                                particle.userData.targetPosition.z += 1;
+                                
+                                // Gentle pulsing
+                                particle.scale.setScalar(0.9 + Math.sin(time * 6) * 0.2);
+                            }
+                            
+                            // Warm, guiding glow
+                            particle.material.color.setHSL(0.08, 0.5, 0.7);
+                            particle.material.opacity = 0.8 + Math.sin(time * 4 + i * 0.05) * 0.2;
+                        });
+                        
+                        // Create guidance energy
+                        if (Math.random() < 0.03) {
+                            createGuidanceLight(being.userData.basePosition);
+                        }
+                        
+                        camera.position.set(8, 4, 18);
+                        break;
+                        
+                    case 3: // PEACEFUL MEDITATION - Very still, luminous
+                        being.particles.forEach((particle, i) => {
+                            particle.scale.setScalar(0.7);
+                            
+                            // Extremely still, minimal movement
+                            particle.userData.velocity.multiplyScalar(0.3);
+                            
+                            // Lotus/meditation posture
+                            if (i > 200) { // Legs
+                                particle.userData.targetPosition.y = -2;
+                                particle.userData.targetPosition.x *= 0.8;
+                            }
+                            
+                            // Hands in meditation pose
+                            if (i > 120 && i < 160) {
+                                particle.userData.targetPosition.x = 0;
+                                particle.userData.targetPosition.y = 0;
+                                particle.userData.targetPosition.z += 0.5;
+                            }
+                            
+                            // Inner peace glow
+                            particle.material.color.setHSL(0.15, 0.2, 0.8 + Math.sin(time * 1 + i * 0.01) * 0.2);
+                        });
+                        
+                        // Create meditation aura
+                        if (Math.random() < 0.02) {
+                            createMeditationAura(being.userData.basePosition);
+                        }
+                        
+                        camera.position.set(0, 10, 30); // Distant, respectful view
+                        break;
+                        
+                    case 4: // FAMILY MEMORIES - Surrounded by memory orbs
+                        being.particles.forEach((particle, i) => {
+                            particle.scale.setScalar(0.8);
+                            
+                            // Gentle reminiscing movement
+                            particle.position.x += Math.sin(time * 0.8 + i * 0.2) * 0.005;
+                            particle.position.y += Math.cos(time * 0.6 + i * 0.1) * 0.003;
+                            
+                            // Nostalgic golden tint
+                            particle.material.color.setHSL(0.12, 0.6, 0.6);
+                            
+                            // Looking at different memory orbs
+                            if (i < 40 && memoryOrbs.length > 0) { // Head
+                                const nearestMemory = memoryOrbs[i % memoryOrbs.length];
+                                if (nearestMemory) {
+                                    const lookDirection = nearestMemory.position.clone().sub(particle.position);
+                                    lookDirection.normalize().multiplyScalar(0.02);
+                                    particle.userData.velocity.add(lookDirection);
+                                }
+                            }
+                        });
+                        
+                        // Create floating family memories
+                        if (Math.random() < 0.08) {
+                            createFamilyMemory(being.userData.basePosition);
+                        }
+                        
+                        camera.position.set(5, 8, 25);
+                        break;
+                        
+                    case 5: // LIFE LESSONS - Teaching posture, wise emanations
+                        being.particles.forEach((particle, i) => {
+                            particle.scale.setScalar(1.0); // Fuller presence for teaching
+                            
+                            // Teaching posture - upright, authoritative
+                            if (particle.userData.targetPosition.y > 1) {
+                                particle.userData.targetPosition.y *= 1.1; // Taller
+                                particle.userData.targetPosition.z -= 0.2; // Straighter
+                            }
+                            
+                            // Wisdom emanations
+                            if (i % 20 === 0) {
+                                particle.material.color.setHSL(0.1, 0.7, 0.9);
+                                particle.scale.setScalar(1.3);
+                                
+                                // Create wisdom particles
+                                if (Math.random() < 0.1) {
+                                    createWisdomParticle(particle.position);
+                                }
+                            }
+                            
+                            // Pointing/teaching gesture
+                            if (i > 90 && i < 110) {
+                                particle.userData.targetPosition.x += 1.5;
+                                particle.userData.targetPosition.y += 0.5;
+                            }
+                        });
+                        
+                        camera.position.set(-8, 6, 22);
+                        break;
+                        
+                    case 6: // SERENE ACCEPTANCE - Expanded, peaceful, transcendent
+                        being.particles.forEach((particle, i) => {
+                            // Gradually expanding form
+                            const expansion = 1 + phaseTimer * 0.1;
+                            particle.scale.setScalar(0.5 + expansion * 0.3);
+                            
+                            // Transcendent positioning
+                            particle.userData.targetPosition.multiplyScalar(expansion);
+                            
+                            // Rising slightly
+                            particle.userData.velocity.y += 0.0005;
+                            
+                            // Transcendent light
+                            particle.material.color.setHSL(
+                                0.1 + Math.sin(time * 0.5) * 0.05,
+                                0.2,
+                                0.9 + Math.sin(time * 2 + i * 0.01) * 0.1
+                            );
+                            
+                            // Gentle dispersal effect
+                            if (phaseTimer > 5) {
+                                particle.material.opacity = Math.max(0.3, 1 - (phaseTimer - 5) * 0.1);
+                            }
+                        });
+                        
+                        being.userData.basePosition.y = phaseTimer * 0.5; // Slowly rising
+                        
+                        // Ascending camera view
+                        camera.position.set(0, 12 + phaseTimer, 35);
+                        camera.lookAt(being.userData.basePosition);
+                        break;
+                }
+                
+                updateWisdomElements();
+            };
+
+            particleSystem.createAmbientParticles(60); // Fewer, more contemplative
+        }
+
+        function createWisdomEnvironment() {
+            // Create rocking chair
+            const chair = new THREE.Mesh(
+                new THREE.BoxGeometry(2, 3, 2),
+                new THREE.MeshBasicMaterial({
+                    color: 0x8b4513,
+                    transparent: true,
+                    opacity: 0.4
+                })
+            );
+            chair.position.set(0, -2, 1);
+            scene.add(chair);
+        }
+
+        function createStoryMemory(position) {
+            const story = new THREE.Mesh(
+                new THREE.SphereGeometry(0.3, 8, 8),
+                new THREE.MeshBasicMaterial({
+                    color: new THREE.Color().setHSL(0.08 + Math.random() * 0.1, 0.4, 0.7),
+                    transparent: true,
+                    opacity: 0.6
+                })
+            );
+            story.position.copy(position);
+            story.position.add(new THREE.Vector3(
+                (Math.random() - 0.5) * 8,
+                2 + Math.random() * 3,
+                (Math.random() - 0.5) * 8
+            ));
+            story.userData = { 
+                life: 0, 
+                drift: new THREE.Vector3(
+                    (Math.random() - 0.5) * 0.02,
+                    0.01,
+                    (Math.random() - 0.5) * 0.02
+                )
+            };
+            scene.add(story);
+            lifeStories.push(story);
+        }
+
+        function createFamilyMemory(position) {
+            const memory = new THREE.Mesh(
+                new THREE.SphereGeometry(0.4, 12, 12),
+                new THREE.MeshBasicMaterial({
+                    color: 0xffd700,
+                    transparent: true,
+                    opacity: 0.5
+                })
+            );
+            memory.position.copy(position);
+            memory.position.add(new THREE.Vector3(
+                (Math.random() - 0.5) * 10,
+                3 + Math.random() * 4,
+                (Math.random() - 0.5) * 10
+            ));
+            memory.userData = { life: 0, rotation: Math.random() * 0.02 };
+            scene.add(memory);
+            memoryOrbs.push(memory);
+        }
+
+        function createGuidanceLight(position) {
+            const light = new THREE.Mesh(
+                new THREE.SphereGeometry(0.1, 6, 6),
+                new THREE.MeshBasicMaterial({
+                    color: 0xffeb3b,
+                    transparent: true,
+                    opacity: 0.8
+                })
+            );
+            light.position.copy(position);
+            light.userData = { 
+                life: 0,
+                direction: new THREE.Vector3(1, 0.5, 0).normalize()
+            };
+            scene.add(light);
+            wisdomAura.push(light);
+        }
+
+        function createMeditationAura(position) {
+            const aura = new THREE.Mesh(
+                new THREE.RingGeometry(0.1, 3, 16),
+                new THREE.MeshBasicMaterial({
+                    color: 0x87ceeb,
+                    transparent: true,
+                    opacity: 0.3,
+                    side: THREE.DoubleSide
+                })
+            );
+            aura.position.copy(position);
+            aura.rotation.x = Math.PI / 2;
+            aura.userData = { life: 0 };
+            scene.add(aura);
+            wisdomAura.push(aura);
+        }
+
+        function createWisdomParticle(position) {
+            const wisdom = new THREE.Mesh(
+                new THREE.SphereGeometry(0.05, 4, 4),
+                new THREE.MeshBasicMaterial({
+                    color: 0xd4af37,
+                    transparent: true,
+                    opacity: 1
+                })
+            );
+            wisdom.position.copy(position);
+            wisdom.userData = { 
+                life: 0,
+                velocity: new THREE.Vector3(0, 0.05, 0)
+            };
+            scene.add(wisdom);
+            wisdomAura.push(wisdom);
+        }
+
+        function updateWisdomElements() {
+            // Update memory orbs
+            memoryOrbs = memoryOrbs.filter(memory => {
+                memory.userData.life += 0.016;
+                memory.rotation.y += memory.userData.rotation;
+                memory.material.opacity = Math.max(0, 0.5 - memory.userData.life * 0.02);
+                
+                if (memory.material.opacity <= 0) {
+                    scene.remove(memory);
+                    return false;
+                }
+                return true;
+            });
+
+            // Update life stories
+            lifeStories = lifeStories.filter(story => {
+                story.userData.life += 0.016;
+                story.position.add(story.userData.drift);
+                story.material.opacity = Math.max(0, 0.6 - story.userData.life * 0.03);
+                
+                if (story.material.opacity <= 0) {
+                    scene.remove(story);
+                    return false;
+                }
+                return true;
+            });
+
+            // Update wisdom aura
+            wisdomAura = wisdomAura.filter(element => {
+                element.userData.life += 0.016;
+                
+                if (element.userData.direction) {
+                    element.position.add(element.userData.direction.clone().multiplyScalar(0.1));
+                } else if (element.userData.velocity) {
+                    element.position.add(element.userData.velocity);
+                }
+                
+                element.material.opacity = Math.max(0, element.material.opacity - 0.01);
+                
+                if (element.material.opacity <= 0) {
+                    scene.remove(element);
+                    return false;
+                }
+                return true;
+            });
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+            time += 0.016;
+
+            particleSystem.update(0.016);
+            
+            renderer.render(scene, camera);
+        }
+
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+
+        init();
+    </script>
+</body>
+</html>

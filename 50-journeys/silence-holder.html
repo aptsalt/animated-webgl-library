@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Silence Holder - Mindful Journey</title>
+    <style>
+        body { 
+            margin: 0; 
+            overflow: hidden; 
+            background: #f8f8f8;
+            font-family: 'Inter', system-ui, sans-serif;
+        }
+        canvas { display: block; }
+        
+        .instruction {
+            position: absolute;
+            bottom: 40px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: rgba(26, 26, 26, 0.6);
+            font-size: 14px;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            pointer-events: none;
+            transition: opacity 0.5s ease;
+        }
+        
+        .back-btn {
+            position: absolute;
+            top: 40px;
+            left: 40px;
+            padding: 10px 20px;
+            background: transparent;
+            border: 1px solid rgba(26, 26, 26, 0.2);
+            color: #1a1a1a;
+            text-decoration: none;
+            font-size: 14px;
+            letter-spacing: 1px;
+            border-radius: 20px;
+            transition: all 0.3s ease;
+        }
+        
+        .back-btn:hover {
+            background: rgba(26, 26, 26, 0.05);
+            border-color: rgba(26, 26, 26, 0.4);
+        }
+    </style>
+</head>
+<body>
+    <a href="gallery.html" class="back-btn">← Back</a>
+    <div class="instruction">Quiet meditative presence in infinite stillness</div>
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script>
+        let scene, camera, renderer;
+        let holder;
+        let silenceRipples = [];
+        let time = 0;
+
+        function init() {
+            scene = new THREE.Scene();
+            scene.background = new THREE.Color(0xf8f8f8);
+
+            camera = new THREE.PerspectiveCamera(
+                75, window.innerWidth / window.innerHeight, 0.1, 1000
+            );
+            camera.position.set(0, 2, 12);
+
+            renderer = new THREE.WebGLRenderer({ antialias: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            document.body.appendChild(renderer.domElement);
+
+            createHolder();
+            animate();
+        }
+
+        function createHolder() {
+            const holderGroup = new THREE.Group();
+            
+            // Body (deep meditation pose)
+            const bodyGeometry = new THREE.CylinderGeometry(0.7, 0.9, 3, 8);
+            const holderMaterial = new THREE.MeshBasicMaterial({ 
+                color: 0x1a1a1a,
+                transparent: true,
+                opacity: 0.7
+            });
+            const body = new THREE.Mesh(bodyGeometry, holderMaterial);
+            holderGroup.add(body);
+            
+            // Head (slightly bowed)
+            const headGeometry = new THREE.SphereGeometry(0.8, 8, 8);
+            const head = new THREE.Mesh(headGeometry, holderMaterial);
+            head.position.y = 2.4;
+            head.rotation.x = 0.2; // Slight bow
+            holderGroup.add(head);
+            
+            // Arms (hands together in lap)
+            const armGeometry = new THREE.CylinderGeometry(0.12, 0.12, 2, 6);
+            const leftArm = new THREE.Mesh(armGeometry, holderMaterial);
+            leftArm.position.set(-0.8, -0.5, 0.8);
+            leftArm.rotation.z = 0.8;
+            leftArm.rotation.x = -0.8;
+            holderGroup.add(leftArm);
+            
+            const rightArm = new THREE.Mesh(armGeometry, holderMaterial);
+            rightArm.position.set(0.8, -0.5, 0.8);
+            rightArm.rotation.z = -0.8;
+            rightArm.rotation.x = -0.8;
+            holderGroup.add(rightArm);
+            
+            // Legs (lotus position)
+            const legGeometry = new THREE.CylinderGeometry(0.18, 0.18, 2.5, 6);
+            const leftLeg = new THREE.Mesh(legGeometry, holderMaterial);
+            leftLeg.position.set(-1, -2.5, 1);
+            leftLeg.rotation.z = 1.2;
+            leftLeg.rotation.x = -0.6;
+            holderGroup.add(leftLeg);
+            
+            const rightLeg = new THREE.Mesh(legGeometry, holderMaterial);
+            rightLeg.position.set(1, -2.5, 1);
+            rightLeg.rotation.z = -1.2;
+            rightLeg.rotation.x = -0.6;
+            holderGroup.add(rightLeg);
+
+            // Meditation cushion
+            const cushionGeometry = new THREE.CylinderGeometry(2, 2, 0.3, 16);
+            const cushionMaterial = new THREE.MeshBasicMaterial({ 
+                color: 0x1a1a1a,
+                transparent: true,
+                opacity: 0.3
+            });
+            const cushion = new THREE.Mesh(cushionGeometry, cushionMaterial);
+            cushion.position.y = -1.8;
+            holderGroup.add(cushion);
+
+            holderGroup.position.set(0, 2, 0);
+            holderGroup.scale.setScalar(0.8);
+            scene.add(holderGroup);
+            holder = holderGroup;
+        }
+
+        function createSilenceRipple() {
+            const rippleGeometry = new THREE.RingGeometry(0.1, 0.2, 32);
+            const rippleMaterial = new THREE.MeshBasicMaterial({
+                color: 0x1a1a1a,
+                transparent: true,
+                opacity: 0.1
+            });
+            const ripple = new THREE.Mesh(rippleGeometry, rippleMaterial);
+            ripple.position.copy(holder.position);
+            ripple.position.y += 1;
+            ripple.rotation.x = -Math.PI / 2;
+            ripple.userData = {
+                life: 1.0,
+                maxRadius: 15 + Math.random() * 10,
+                speed: 0.02 + Math.random() * 0.01
+            };
+            scene.add(ripple);
+            silenceRipples.push(ripple);
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+            time += 0.016;
+
+            if (holder) {
+                // Very subtle breathing (deep meditation)
+                const breath = Math.sin(time * 0.4) * 0.5 + 0.5;
+                holder.children[0].scale.y = 1 + breath * 0.03;
+                
+                // Absolute stillness with micro-movements
+                holder.rotation.z = Math.sin(time * 0.1) * 0.005;
+                holder.rotation.x = Math.cos(time * 0.08) * 0.003;
+                
+                // Head very slightly moving (awareness)
+                holder.children[1].rotation.y = Math.sin(time * 0.05) * 0.02;
+                
+                // Create silence ripples occasionally
+                if (Math.random() < 0.005) { // Very rare ripples
+                    createSilenceRipple();
+                }
+                
+                // Meditation aura effect
+                const aura = Math.sin(time * 0.3) * 0.5 + 0.5;
+                holder.children.forEach((child, index) => {
+                    if (index < 6) { // Body parts
+                        child.material.opacity = 0.6 + aura * 0.2;
+                    }
+                });
+            }
+
+            // Update silence ripples
+            silenceRipples = silenceRipples.filter(ripple => {
+                ripple.userData.life -= ripple.userData.speed;
+                
+                // Expand ripple
+                const currentRadius = (1 - ripple.userData.life) * ripple.userData.maxRadius;
+                ripple.geometry.dispose();
+                ripple.geometry = new THREE.RingGeometry(
+                    currentRadius,
+                    currentRadius + 0.2,
+                    32
+                );
+                
+                // Fade out
+                ripple.material.opacity = ripple.userData.life * 0.1;
+                
+                if (ripple.userData.life <= 0) {
+                    scene.remove(ripple);
+                    ripple.geometry.dispose();
+                    ripple.material.dispose();
+                    return false;
+                }
+                return true;
+            });
+
+            // Camera very slow, almost imperceptible movement
+            const cameraRadius = 12;
+            const cameraAngle = time * 0.005; // Very slow
+            const cameraHeight = Math.sin(time * 0.003) * 0.5;
+            
+            camera.position.x = Math.cos(cameraAngle) * cameraRadius * 0.1;
+            camera.position.y = 2 + cameraHeight;
+            camera.position.z = 12 + Math.sin(cameraAngle) * 0.5;
+            camera.lookAt(0, 2, 0);
+
+            renderer.render(scene, camera);
+        }
+
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+
+        init();
+    </script>
+</body>
+</html>

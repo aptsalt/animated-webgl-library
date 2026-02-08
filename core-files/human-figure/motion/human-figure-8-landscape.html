@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Human Figure Landscape - Mindful Journey</title>
+    <style>
+        body { 
+            margin: 0; 
+            overflow: hidden; 
+            background: #f8f8f8;
+            font-family: 'Inter', system-ui, sans-serif;
+        }
+        canvas { display: block; }
+        
+        .back-btn {
+            position: absolute;
+            top: 40px;
+            left: 40px;
+            padding: 10px 20px;
+            background: transparent;
+            border: 1px solid rgba(26, 26, 26, 0.2);
+            color: #1a1a1a;
+            text-decoration: none;
+            font-size: 14px;
+            letter-spacing: 1px;
+            border-radius: 20px;
+            transition: all 0.3s ease;
+            z-index: 10;
+        }
+        
+        .back-btn:hover {
+            background: rgba(26, 26, 26, 0.05);
+            border-color: rgba(26, 26, 26, 0.4);
+        }
+        
+        .instruction {
+            position: absolute;
+            bottom: 40px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: rgba(26, 26, 26, 0.4);
+            font-size: 12px;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            pointer-events: none;
+        }
+    </style>
+</head>
+<body>
+    <a href="../index.html" class="back-btn">← Back</a>
+    <div class="instruction">Click to transform into landscape</div>
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script>
+        let scene, camera, renderer;
+        let humanFigure, landscape;
+        let time = 0;
+        let transforming = false;
+        let transformProgress = 0;
+
+        function init() {
+            scene = new THREE.Scene();
+            scene.background = new THREE.Color(0xf0f8ff);
+
+            camera = new THREE.PerspectiveCamera(
+                75, window.innerWidth / window.innerHeight, 0.1, 1000
+            );
+            camera.position.z = 10;
+
+            renderer = new THREE.WebGLRenderer({ antialias: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            document.body.appendChild(renderer.domElement);
+
+            createHumanFigure();
+            createLandscape();
+            animate();
+        }
+
+        function createHumanFigure() {
+            const group = new THREE.Group();
+            
+            const material = new THREE.MeshBasicMaterial({
+                color: 0x1a1a1a,
+                transparent: true,
+                opacity: 0.8,
+                side: THREE.DoubleSide
+            });
+            
+            // Head
+            const headGeometry = new THREE.SphereGeometry(0.4, 8, 6);
+            const head = new THREE.Mesh(headGeometry, material.clone());
+            head.position.y = 2.2;
+            
+            // Torso
+            const torsoGeometry = new THREE.CylinderGeometry(0.4, 0.6, 1.8, 8);
+            const torso = new THREE.Mesh(torsoGeometry, material.clone());
+            torso.position.y = 1;
+            
+            // Arms
+            const armGeometry = new THREE.CylinderGeometry(0.15, 0.18, 1.0, 6);
+            const leftArm = new THREE.Mesh(armGeometry, material.clone());
+            leftArm.position.set(-0.6, 1.5, 0);
+            leftArm.rotation.z = 0.3;
+            
+            const rightArm = new THREE.Mesh(armGeometry, material.clone());
+            rightArm.position.set(0.6, 1.5, 0);
+            rightArm.rotation.z = -0.3;
+            
+            // Legs
+            const legGeometry = new THREE.CylinderGeometry(0.22, 0.3, 1.8, 6);
+            const leftLeg = new THREE.Mesh(legGeometry, material.clone());
+            leftLeg.position.set(-0.4, -0.5, 0);
+            
+            const rightLeg = new THREE.Mesh(legGeometry, material.clone());
+            rightLeg.position.set(0.4, -0.5, 0);
+            
+            group.add(head, torso, leftArm, rightArm, leftLeg, rightLeg);
+            
+            scene.add(group);
+            humanFigure = group;
+        }
+
+        function createLandscape() {
+            const group = new THREE.Group();
+            
+            // Mountains (from head)
+            const mountainMaterial = new THREE.MeshBasicMaterial({
+                color: 0x8b9dc3,
+                transparent: true,
+                opacity: 0
+            });
+            
+            const mountainGeometry = new THREE.ConeGeometry(1.5, 3, 8);
+            const mountain1 = new THREE.Mesh(mountainGeometry, mountainMaterial.clone());
+            mountain1.position.set(0, 3, 0);
+            
+            const mountain2 = new THREE.Mesh(mountainGeometry, mountainMaterial.clone());
+            mountain2.position.set(-1.5, 2.5, 0);
+            mountain2.scale.set(0.7, 0.7, 0.7);
+            
+            const mountain3 = new THREE.Mesh(mountainGeometry, mountainMaterial.clone());
+            mountain3.position.set(1.5, 2.5, 0);
+            mountain3.scale.set(0.8, 0.8, 0.8);
+            
+            // Hills (from torso)
+            const hillMaterial = new THREE.MeshBasicMaterial({
+                color: 0x90c695,
+                transparent: true,
+                opacity: 0
+            });
+            
+            const hillGeometry = new THREE.SphereGeometry(1.2, 8, 6);
+            const hill1 = new THREE.Mesh(hillGeometry, hillMaterial.clone());
+            hill1.position.set(-2, 0.5, 0);
+            hill1.scale.y = 0.5;
+            
+            const hill2 = new THREE.Mesh(hillGeometry, hillMaterial.clone());
+            hill2.position.set(2, 0.8, 0);
+            hill2.scale.set(0.8, 0.4, 0.8);
+            
+            // Trees (from arms)
+            const treeMaterial = new THREE.MeshBasicMaterial({
+                color: 0x4a7c59,
+                transparent: true,
+                opacity: 0
+            });
+            
+            const treeGeometry = new THREE.ConeGeometry(0.3, 1.5, 6);
+            const tree1 = new THREE.Mesh(treeGeometry, treeMaterial.clone());
+            tree1.position.set(-3, 1, 0);
+            
+            const tree2 = new THREE.Mesh(treeGeometry, treeMaterial.clone());
+            tree2.position.set(3, 1.2, 0);
+            
+            // Ground (from legs)
+            const groundMaterial = new THREE.MeshBasicMaterial({
+                color: 0xd4b896,
+                transparent: true,
+                opacity: 0
+            });
+            
+            const groundGeometry = new THREE.PlaneGeometry(8, 4);
+            const ground = new THREE.Mesh(groundGeometry, groundMaterial);
+            ground.position.y = -2;
+            ground.rotation.x = -Math.PI / 2;
+            
+            group.add(mountain1, mountain2, mountain3, hill1, hill2, tree1, tree2, ground);
+            scene.add(group);
+            landscape = group;
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+            time += 0.01;
+
+            if (transforming) {
+                transformProgress += 0.006;
+                if (transformProgress >= 1) {
+                    transformProgress = 1;
+                }
+            }
+
+            // Fade out human figure
+            humanFigure.children.forEach(child => {
+                child.material.opacity = 0.8 * (1 - transformProgress);
+                
+                // Stretch and morph body parts
+                if (child === humanFigure.children[0]) { // head -> mountains
+                    child.scale.y = 1 + transformProgress * 2;
+                    child.position.y = 2.2 + transformProgress * 0.8;
+                }
+                if (child === humanFigure.children[1]) { // torso -> hills
+                    child.scale.set(
+                        1 + transformProgress * 2,
+                        1 - transformProgress * 0.5,
+                        1 + transformProgress * 2
+                    );
+                }
+                if (child === humanFigure.children[2] || child === humanFigure.children[3]) { // arms -> trees
+                    child.scale.y = 1 + transformProgress * 1.5;
+                    child.position.y += transformProgress * 0.5;
+                }
+            });
+
+            // Fade in landscape
+            landscape.children.forEach((child, index) => {
+                const delay = index * 0.1;
+                const progress = Math.max(0, Math.min(1, (transformProgress - delay) / 0.8));
+                child.material.opacity = progress * 0.8;
+                
+                // Gentle swaying for trees
+                if (index >= 5 && index <= 6) {
+                    child.rotation.z = Math.sin(time + index) * 0.05 * progress;
+                }
+            });
+
+            // Color transition in background
+            const skyR = 0.94 + transformProgress * 0.06;
+            const skyG = 0.97 + transformProgress * 0.03;
+            const skyB = 1.0;
+            scene.background.setRGB(skyR, skyG, skyB);
+
+            // Camera slowly pulls back to show full landscape
+            camera.position.z = 10 + transformProgress * 5;
+            camera.position.y = transformProgress * 2;
+
+            renderer.render(scene, camera);
+        }
+
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+
+        window.addEventListener('click', () => {
+            if (!transforming) {
+                transforming = true;
+            } else {
+                // Reset
+                transformProgress = 0;
+                transforming = false;
+                
+                // Reset human figure
+                humanFigure.children.forEach(child => {
+                    child.scale.set(1, 1, 1);
+                    if (child === humanFigure.children[0]) child.position.y = 2.2;
+                });
+                
+                scene.background.setRGB(0.94, 0.97, 1.0);
+                camera.position.set(0, 0, 10);
+            }
+        });
+
+        init();
+    </script>
+</body>
+</html>

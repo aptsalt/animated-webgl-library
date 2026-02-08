@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>River Flow - Flowing with Life's Current</title>
+    <style>
+        body {
+            margin: 0;
+            background: #f8f8f8;
+            overflow: hidden;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        }
+        canvas { display: block; }
+        .back-btn {
+            position: absolute;
+            top: 30px;
+            left: 30px;
+            background: rgba(26, 26, 26, 0.1);
+            border: 1px solid rgba(26, 26, 26, 0.2);
+            color: #1a1a1a;
+            padding: 12px 24px;
+            text-decoration: none;
+            border-radius: 4px;
+            font-size: 14px;
+            font-weight: 300;
+            letter-spacing: 1px;
+            z-index: 1000;
+            transition: all 0.3s ease;
+            opacity: 0;
+            animation: fadeIn 3s ease-in-out 1s forwards;
+        }
+        .back-btn:hover {
+            background: rgba(26, 26, 26, 0.2);
+            transform: translateY(-1px);
+        }
+        .title {
+            position: absolute;
+            top: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: #333;
+            font-size: 24px;
+            font-weight: 300;
+            z-index: 100;
+            opacity: 0;
+            animation: fadeIn 3s ease-in-out 1s forwards;
+        }
+        .subtitle {
+            position: absolute;
+            bottom: 30px;
+            right: 30px;
+            color: #666;
+            font-size: 14px;
+            z-index: 100;
+            opacity: 0;
+            animation: fadeIn 3s ease-in-out 2s forwards;
+        }
+        @keyframes fadeIn {
+            to { opacity: 1; }
+        }
+    </style>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+</head>
+<body>
+    <a href="gallery.html" class="back-btn">← GALLERY</a>
+    <div class="title">River Flow</div>
+    <div class="subtitle">Souls carried by life's eternal current</div>
+    
+    <script>
+        let scene, camera, renderer;
+        let riverBeings = [];
+        let riverPath = [];
+        let time = 0;
+        
+        function init() {
+            scene = new THREE.Scene();
+            scene.fog = new THREE.Fog(0xf8f8f8, 20, 60);
+            
+            camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+            camera.position.set(0, 15, 25);
+            
+            renderer = new THREE.WebGLRenderer({ antialias: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.setClearColor(0xf8f8f8);
+            renderer.shadowMap.enabled = true;
+            renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+            document.body.appendChild(renderer.domElement);
+            
+            // Ambient light
+            const ambientLight = new THREE.AmbientLight(0x404040, 0.5);
+            scene.add(ambientLight);
+            
+            // Main directional light
+            const mainLight = new THREE.DirectionalLight(0xffffff, 0.7);
+            mainLight.position.set(-15, 25, 10);
+            mainLight.castShadow = true;
+            mainLight.shadow.mapSize.width = 2048;
+            mainLight.shadow.mapSize.height = 2048;
+            scene.add(mainLight);
+            
+            // Secondary light for depth
+            const rimLight = new THREE.DirectionalLight(0xffffff, 0.3);
+            rimLight.position.set(15, 10, -12);
+            scene.add(rimLight);
+            
+            createRiver();
+            createRiverBeings();
+            
+            animate();
+        }
+        
+        function createRiver() {
+            // Create a winding river path
+            const riverCurve = new THREE.CatmullRomCurve3([
+                new THREE.Vector3(-30, 0, -15),
+                new THREE.Vector3(-20, 0, -8),
+                new THREE.Vector3(-10, 0, 5),
+                new THREE.Vector3(-2, 0, 12),
+                new THREE.Vector3(8, 0, 8),
+                new THREE.Vector3(18, 0, -2),
+                new THREE.Vector3(25, 0, -12),
+                new THREE.Vector3(35, 0, -20)
+            ]);
+            
+            // Create river surface
+            const riverGeometry = new THREE.PlaneGeometry(80, 8, 100, 20);
+            const riverMaterial = new THREE.MeshLambertMaterial({
+                color: 0xdddddd,
+                transparent: true,
+                opacity: 0.4,
+                wireframe: false
+            });
+            
+            const river = new THREE.Mesh(riverGeometry, riverMaterial);
+            river.rotation.x = -Math.PI / 2;
+            river.receiveShadow = true;
+            scene.add(river);
+            
+            // Store the curve for beings to follow
+            riverPath = riverCurve;
+            
+            // Create river bank visualization
+            const bankGeometry = new THREE.PlaneGeometry(80, 12, 50, 10);
+            const bankMaterial = new THREE.MeshLambertMaterial({
+                color: 0xe8e8e8,
+                transparent: true,
+                opacity: 0.3
+            });
+            
+            const riverBank = new THREE.Mesh(bankGeometry, bankMaterial);
+            riverBank.rotation.x = -Math.PI / 2;
+            riverBank.position.y = -0.1;
+            riverBank.receiveShadow = true;
+            scene.add(riverBank);
+        }
+        
+        function createRiverBeings() {
+            const beingConfigs = [
+                { progress: 0.1, speed: 0.3, crossFlow: 0, size: 1.0 },
+                { progress: 0.2, speed: 0.4, crossFlow: 1.2, size: 0.9 },
+                { progress: 0.35, speed: 0.25, crossFlow: -0.8, size: 1.1 },
+                { progress: 0.5, speed: 0.35, crossFlow: 0.5, size: 0.95 },
+                { progress: 0.65, speed: 0.45, crossFlow: -1.5, size: 1.05 },
+                { progress: 0.8, speed: 0.3, crossFlow: 0.8, size: 0.85 },
+                { progress: 0.15, speed: 0.5, crossFlow: -0.3, size: 1.15 },
+                { progress: 0.45, speed: 0.28, crossFlow: 1.8, size: 0.9 },
+                { progress: 0.75, speed: 0.4, crossFlow: -1.2, size: 1.0 }
+            ];
+            
+            beingConfigs.forEach((config, index) => {
+                const being = createRiverBeing(config.size);
+                being.castShadow = true;
+                scene.add(being);
+                
+                riverBeings.push({
+                    mesh: being,
+                    config: config,
+                    progress: config.progress,
+                    bobPhase: Math.random() * Math.PI * 2,
+                    swayPhase: Math.random() * Math.PI * 2
+                });
+            });
+        }
+        
+        function createRiverBeing(scale = 1.0) {
+            const group = new THREE.Group();
+            const material = new THREE.MeshLambertMaterial({ 
+                color: 0x1a1a1a,
+                transparent: true,
+                opacity: 0.85
+            });
+            
+            // Scale factor for size variation
+            const s = scale;
+            
+            // Head
+            const headGeometry = new THREE.SphereGeometry(0.08 * s, 12, 8);
+            const head = new THREE.Mesh(headGeometry, material);
+            head.position.y = 0.5 * s;
+            group.add(head);
+            
+            // Torso
+            const torsoGeometry = new THREE.CylinderGeometry(0.06 * s, 0.09 * s, 0.4 * s, 12);
+            const torso = new THREE.Mesh(torsoGeometry, material);
+            torso.position.y = 0.2 * s;
+            group.add(torso);
+            
+            // Arms in swimming/flowing motion
+            const armGeometry = new THREE.CylinderGeometry(0.025 * s, 0.04 * s, 0.3 * s, 8);
+            const leftArm = new THREE.Mesh(armGeometry, material);
+            const rightArm = new THREE.Mesh(armGeometry, material);
+            leftArm.position.set(-0.1 * s, 0.28 * s, 0);
+            rightArm.position.set(0.1 * s, 0.28 * s, 0);
+            leftArm.rotation.z = 0.6;
+            rightArm.rotation.z = -0.6;
+            group.add(leftArm);
+            group.add(rightArm);
+            
+            // Forearms
+            const forearmGeometry = new THREE.CylinderGeometry(0.02 * s, 0.025 * s, 0.25 * s, 8);
+            const leftForearm = new THREE.Mesh(forearmGeometry, material);
+            const rightForearm = new THREE.Mesh(forearmGeometry, material);
+            leftForearm.position.set(-0.16 * s, 0.18 * s, 0);
+            rightForearm.position.set(0.16 * s, 0.18 * s, 0);
+            leftForearm.rotation.z = 1.0;
+            rightForearm.rotation.z = -1.0;
+            group.add(leftForearm);
+            group.add(rightForearm);
+            
+            // Legs in flowing position
+            const legGeometry = new THREE.CylinderGeometry(0.035 * s, 0.05 * s, 0.35 * s, 8);
+            const leftLeg = new THREE.Mesh(legGeometry, material);
+            const rightLeg = new THREE.Mesh(legGeometry, material);
+            leftLeg.position.set(-0.08 * s, -0.15 * s, 0);
+            rightLeg.position.set(0.08 * s, -0.15 * s, 0);
+            leftLeg.rotation.x = 0.2;
+            rightLeg.rotation.x = -0.2;
+            group.add(leftLeg);
+            group.add(rightLeg);
+            
+            // Lower legs
+            const calfGeometry = new THREE.CylinderGeometry(0.03 * s, 0.035 * s, 0.3 * s, 8);
+            const leftCalf = new THREE.Mesh(calfGeometry, material);
+            const rightCalf = new THREE.Mesh(calfGeometry, material);
+            leftCalf.position.set(-0.08 * s, -0.45 * s, 0.05 * s);
+            rightCalf.position.set(0.08 * s, -0.45 * s, -0.05 * s);
+            leftCalf.rotation.x = 0.3;
+            rightCalf.rotation.x = -0.3;
+            group.add(leftCalf);
+            group.add(rightCalf);
+            
+            return group;
+        }
+        
+        function animate() {
+            requestAnimationFrame(animate);
+            
+            time += 0.016;
+            
+            // Update river beings
+            riverBeings.forEach((beingData, index) => {
+                const config = beingData.config;
+                
+                // Update progress along river
+                beingData.progress += config.speed * 0.005;
+                if (beingData.progress > 1) {
+                    beingData.progress = 0; // Loop back to start
+                }
+                
+                // Get position along river curve
+                const riverPosition = riverPath.getPointAt(beingData.progress);
+                const riverTangent = riverPath.getTangentAt(beingData.progress);
+                
+                // Add cross-flow movement (beings swimming across current)
+                const crossDirection = new THREE.Vector3(-riverTangent.z, 0, riverTangent.x);
+                const crossOffset = crossDirection.multiplyScalar(
+                    config.crossFlow + Math.sin(time * 2 + beingData.swayPhase) * 1.5
+                );
+                
+                // Final position with bobbing motion
+                const finalPosition = riverPosition.clone().add(crossOffset);
+                finalPosition.y += Math.sin(time * 3 + beingData.bobPhase) * 0.3;
+                
+                beingData.mesh.position.copy(finalPosition);
+                
+                // Orient being along flow direction with some variation
+                const flowDirection = riverTangent.clone();
+                const lookDirection = flowDirection.add(crossOffset.clone().multiplyScalar(0.3));
+                beingData.mesh.lookAt(
+                    beingData.mesh.position.x + lookDirection.x,
+                    beingData.mesh.position.y,
+                    beingData.mesh.position.z + lookDirection.z
+                );
+                
+                // Add body movements responding to current
+                const being = beingData.mesh;
+                const currentStrength = config.speed + Math.abs(config.crossFlow) * 0.2;
+                
+                // Arms swimming motion
+                const armStroke = Math.sin(time * 4 + beingData.swayPhase) * currentStrength;
+                being.children[2].rotation.z = 0.6 + armStroke * 0.4; // Left arm
+                being.children[3].rotation.z = -0.6 - armStroke * 0.4; // Right arm
+                being.children[2].rotation.x = Math.sin(time * 3 + beingData.swayPhase) * 0.3;
+                being.children[3].rotation.x = -Math.sin(time * 3 + beingData.swayPhase + Math.PI) * 0.3;
+                
+                // Forearms follow swimming motion
+                being.children[4].rotation.z = 1.0 + armStroke * 0.3;
+                being.children[5].rotation.z = -1.0 - armStroke * 0.3;
+                
+                // Legs kicking motion
+                const legKick = Math.sin(time * 5 + beingData.swayPhase) * currentStrength;
+                being.children[6].rotation.x = 0.2 + legKick * 0.3; // Left leg
+                being.children[7].rotation.x = -0.2 - legKick * 0.3; // Right leg
+                being.children[6].rotation.z = config.crossFlow * 0.1;
+                being.children[7].rotation.z = -config.crossFlow * 0.1;
+                
+                // Lower legs follow
+                being.children[8].rotation.x = 0.3 + legKick * 0.2;
+                being.children[9].rotation.x = -0.3 - legKick * 0.2;
+                
+                // Torso movement from swimming effort
+                being.children[1].rotation.z = Math.sin(time * 2 + beingData.swayPhase) * currentStrength * 0.1;
+                being.children[1].rotation.x = armStroke * 0.1;
+                
+                // Head movement tracking flow
+                being.children[0].rotation.y = Math.sin(time * 1.5 + beingData.swayPhase) * 0.2;
+                being.children[0].rotation.x = Math.sin(time * 2 + beingData.bobPhase) * 0.1;
+                
+                // Breathing motion adjusted by effort
+                const breathScale = 1 + Math.sin(time * 6 + beingData.bobPhase) * currentStrength * 0.03;
+                being.children[1].scale.y = breathScale;
+                
+                // Tilt from water resistance
+                const resistance = currentStrength * 0.1;
+                being.rotation.z = Math.sin(time + beingData.swayPhase) * resistance;
+            });
+            
+            // Camera following the river flow
+            camera.position.x = Math.sin(time * 0.08) * 20;
+            camera.position.y = 15 + Math.sin(time * 0.12) * 5;
+            camera.position.z = 25 + Math.cos(time * 0.1) * 10;
+            
+            // Look at a point moving along the river
+            const lookProgress = (time * 0.02) % 1;
+            const lookTarget = riverPath.getPointAt(lookProgress);
+            lookTarget.y += 3;
+            camera.lookAt(lookTarget);
+            
+            renderer.render(scene, camera);
+        }
+        
+        function onWindowResize() {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        }
+        
+        window.addEventListener('resize', onWindowResize, false);
+        
+        init();
+    </script>
+</body>
+</html>

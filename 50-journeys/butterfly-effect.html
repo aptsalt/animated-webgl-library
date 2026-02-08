@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Butterfly Effect - Chaos Theory Wings</title>
+    <style>
+        body {
+            margin: 0;
+            background: #f8f8f8;
+            overflow: hidden;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        }
+        canvas { display: block; }
+        .back-btn {
+            position: absolute;
+            top: 30px;
+            left: 30px;
+            background: rgba(26, 26, 26, 0.1);
+            border: 1px solid rgba(26, 26, 26, 0.2);
+            color: #1a1a1a;
+            padding: 12px 24px;
+            text-decoration: none;
+            border-radius: 4px;
+            font-size: 14px;
+            font-weight: 300;
+            letter-spacing: 1px;
+            z-index: 1000;
+            transition: all 0.3s ease;
+            opacity: 0;
+            animation: fadeIn 3s ease-in-out 1s forwards;
+        }
+        .back-btn:hover {
+            background: rgba(26, 26, 26, 0.2);
+            transform: translateY(-1px);
+        }
+        .title {
+            position: absolute;
+            top: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: #333;
+            font-size: 24px;
+            font-weight: 300;
+            z-index: 100;
+            opacity: 0;
+            animation: fadeIn 3s ease-in-out 1s forwards;
+        }
+        .subtitle {
+            position: absolute;
+            bottom: 30px;
+            right: 30px;
+            color: #666;
+            font-size: 14px;
+            z-index: 100;
+            opacity: 0;
+            animation: fadeIn 3s ease-in-out 2s forwards;
+        }
+        @keyframes fadeIn {
+            to { opacity: 1; }
+        }
+    </style>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+</head>
+<body>
+    <a href="gallery.html" class="back-btn">← GALLERY</a>
+    <div class="title">Butterfly Effect</div>
+    <div class="subtitle">Small changes, infinite consequences</div>
+    
+    <script>
+        let scene, camera, renderer;
+        let butterflies = [];
+        let chaosTrails = [];
+        let time = 0;
+        
+        function init() {
+            scene = new THREE.Scene();
+            scene.fog = new THREE.Fog(0xf8f8f8, 15, 50);
+            
+            camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+            camera.position.set(0, 8, 20);
+            
+            renderer = new THREE.WebGLRenderer({ antialias: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.setClearColor(0xf8f8f8);
+            renderer.shadowMap.enabled = true;
+            renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+            document.body.appendChild(renderer.domElement);
+            
+            // Ambient light
+            const ambientLight = new THREE.AmbientLight(0x404040, 0.5);
+            scene.add(ambientLight);
+            
+            // Main directional light
+            const mainLight = new THREE.DirectionalLight(0xffffff, 0.7);
+            mainLight.position.set(-12, 20, 8);
+            mainLight.castShadow = true;
+            mainLight.shadow.mapSize.width = 2048;
+            mainLight.shadow.mapSize.height = 2048;
+            scene.add(mainLight);
+            
+            // Secondary light for ethereal effect
+            const rimLight = new THREE.DirectionalLight(0xffffff, 0.3);
+            rimLight.position.set(12, 5, -10);
+            scene.add(rimLight);
+            
+            createButterflies();
+            
+            animate();
+        }
+        
+        function createButterflies() {
+            const butterflyConfigs = [
+                { x: 0, y: 5, z: 0, sensitivity: 1.0, trailColor: 0x666666 },
+                { x: -3, y: 4, z: 2, sensitivity: 1.3, trailColor: 0x555555 },
+                { x: 3, y: 6, z: -2, sensitivity: 0.8, trailColor: 0x777777 },
+                { x: -1, y: 3, z: 4, sensitivity: 1.5, trailColor: 0x444444 },
+                { x: 2, y: 7, z: 1, sensitivity: 1.1, trailColor: 0x888888 }
+            ];
+            
+            butterflyConfigs.forEach((config, index) => {
+                const butterfly = createButterfly();
+                butterfly.position.set(config.x, config.y, config.z);
+                butterfly.castShadow = true;
+                scene.add(butterfly);
+                
+                // Create chaos trail for each butterfly
+                const trailPoints = [];
+                for (let i = 0; i < 50; i++) {
+                    trailPoints.push(new THREE.Vector3(config.x, config.y, config.z));
+                }
+                
+                const trailGeometry = new THREE.BufferGeometry().setFromPoints(trailPoints);
+                const trailMaterial = new THREE.LineBasicMaterial({
+                    color: config.trailColor,
+                    transparent: true,
+                    opacity: 0.4
+                });
+                const trail = new THREE.Line(trailGeometry, trailMaterial);
+                scene.add(trail);
+                
+                butterflies.push({
+                    mesh: butterfly,
+                    config: config,
+                    position: { x: config.x, y: config.y, z: config.z },
+                    velocity: { x: 0, y: 0, z: 0 },
+                    wingPhase: Math.random() * Math.PI * 2,
+                    chaosParam: Math.random() * 10, // Lorenz attractor parameter
+                    trail: trail,
+                    trailPoints: trailPoints,
+                    trailIndex: 0
+                });
+            });
+        }
+        
+        function createButterfly() {
+            const group = new THREE.Group();
+            const bodyMaterial = new THREE.MeshLambertMaterial({ 
+                color: 0x1a1a1a,
+                transparent: true,
+                opacity: 0.9
+            });
+            const wingMaterial = new THREE.MeshLambertMaterial({ 
+                color: 0x333333,
+                transparent: true,
+                opacity: 0.7,
+                side: THREE.DoubleSide
+            });
+            
+            // Body (elongated for butterfly)
+            const bodyGeometry = new THREE.CylinderGeometry(0.02, 0.03, 0.6, 8);
+            const body = new THREE.Mesh(bodyGeometry, bodyMaterial);
+            body.position.y = 0;
+            body.rotation.z = Math.PI / 2; // Horizontal
+            group.add(body);
+            
+            // Head
+            const headGeometry = new THREE.SphereGeometry(0.04, 8, 6);
+            const head = new THREE.Mesh(headGeometry, bodyMaterial);
+            head.position.set(0.3, 0, 0);
+            group.add(head);
+            
+            // Wings (4 wings in butterfly formation)
+            const wingGeometry = new THREE.PlaneGeometry(0.4, 0.6, 4, 4);
+            
+            // Left upper wing
+            const leftUpperWing = new THREE.Mesh(wingGeometry, wingMaterial);
+            leftUpperWing.position.set(0, 0.25, 0.15);
+            leftUpperWing.rotation.x = Math.PI / 6;
+            leftUpperWing.rotation.z = Math.PI / 4;
+            group.add(leftUpperWing);
+            
+            // Right upper wing
+            const rightUpperWing = new THREE.Mesh(wingGeometry, wingMaterial);
+            rightUpperWing.position.set(0, 0.25, -0.15);
+            rightUpperWing.rotation.x = -Math.PI / 6;
+            rightUpperWing.rotation.z = -Math.PI / 4;
+            group.add(rightUpperWing);
+            
+            // Left lower wing (smaller)
+            const lowerWingGeometry = new THREE.PlaneGeometry(0.3, 0.4, 3, 3);
+            const leftLowerWing = new THREE.Mesh(lowerWingGeometry, wingMaterial);
+            leftLowerWing.position.set(-0.1, 0.15, 0.1);
+            leftLowerWing.rotation.x = Math.PI / 8;
+            leftLowerWing.rotation.z = Math.PI / 6;
+            group.add(leftLowerWing);
+            
+            // Right lower wing (smaller)
+            const rightLowerWing = new THREE.Mesh(lowerWingGeometry, wingMaterial);
+            rightLowerWing.position.set(-0.1, 0.15, -0.1);
+            rightLowerWing.rotation.x = -Math.PI / 8;
+            rightLowerWing.rotation.z = -Math.PI / 6;
+            group.add(rightLowerWing);
+            
+            return group;
+        }
+        
+        // Simplified Lorenz attractor for chaos movement
+        function lorenzStep(x, y, z, dt = 0.01) {
+            const sigma = 10;
+            const rho = 28;
+            const beta = 8/3;
+            
+            const dx = sigma * (y - x);
+            const dy = x * (rho - z) - y;
+            const dz = x * y - beta * z;
+            
+            return {
+                x: x + dx * dt,
+                y: y + dy * dt,
+                z: z + dz * dt
+            };
+        }
+        
+        function animate() {
+            requestAnimationFrame(animate);
+            
+            time += 0.016;
+            
+            // Update butterfly motion using chaos theory
+            butterflies.forEach((butterflyData, index) => {
+                const config = butterflyData.config;
+                
+                // Use Lorenz attractor for chaotic movement
+                const lorenzPos = lorenzStep(
+                    butterflyData.position.x,
+                    butterflyData.position.y,
+                    butterflyData.position.z,
+                    0.02 * config.sensitivity
+                );
+                
+                // Scale and offset the attractor coordinates
+                const scale = 0.5 * config.sensitivity;
+                const targetX = config.x + lorenzPos.x * scale;
+                const targetY = config.y + (lorenzPos.y - 25) * scale; // Offset Y to center
+                const targetZ = config.z + lorenzPos.z * scale;
+                
+                // Add gentle drift and fluttering
+                const flutter = Math.sin(time * 8 + index) * 0.3;
+                const drift = Math.sin(time * 0.5 + index * 2) * 2;
+                
+                butterflyData.position.x = targetX + flutter;
+                butterflyData.position.y = targetY + Math.sin(time * 3 + index) * 1.5;
+                butterflyData.position.z = targetZ + drift;
+                
+                butterflyData.mesh.position.set(
+                    butterflyData.position.x,
+                    butterflyData.position.y,
+                    butterflyData.position.z
+                );
+                
+                // Update trail
+                butterflyData.trailPoints[butterflyData.trailIndex] = butterflyData.mesh.position.clone();
+                butterflyData.trailIndex = (butterflyData.trailIndex + 1) % butterflyData.trailPoints.length;
+                butterflyData.trail.geometry.setFromPoints(butterflyData.trailPoints);
+                
+                // Wing animation
+                butterflyData.wingPhase += 0.3;
+                const wingBeat = Math.sin(butterflyData.wingPhase) * 0.8;
+                
+                // Animate wings
+                const butterfly = butterflyData.mesh;
+                
+                // Upper wings
+                butterfly.children[2].rotation.z = Math.PI / 4 + wingBeat; // Left upper
+                butterfly.children[3].rotation.z = -Math.PI / 4 - wingBeat; // Right upper
+                
+                // Lower wings (slightly delayed)
+                butterfly.children[4].rotation.z = Math.PI / 6 + wingBeat * 0.7; // Left lower
+                butterfly.children[5].rotation.z = -Math.PI / 6 - wingBeat * 0.7; // Right lower
+                
+                // Body orientation following movement direction
+                const velocity = {
+                    x: butterflyData.position.x - (butterflyData.prevPos?.x || butterflyData.position.x),
+                    y: butterflyData.position.y - (butterflyData.prevPos?.y || butterflyData.position.y),
+                    z: butterflyData.position.z - (butterflyData.prevPos?.z || butterflyData.position.z)
+                };
+                
+                if (Math.abs(velocity.x) > 0.01 || Math.abs(velocity.z) > 0.01) {
+                    butterfly.rotation.y = Math.atan2(velocity.x, velocity.z);
+                }
+                butterfly.rotation.x = velocity.y * 0.5;
+                butterfly.rotation.z = Math.sin(time * 4 + index) * 0.2;
+                
+                // Store previous position
+                butterflyData.prevPos = {
+                    x: butterflyData.position.x,
+                    y: butterflyData.position.y,
+                    z: butterflyData.position.z
+                };
+            });
+            
+            // Camera movement following the chaos
+            camera.position.x = Math.sin(time * 0.1) * 12;
+            camera.position.y = 8 + Math.sin(time * 0.15) * 4;
+            camera.position.z = 20 + Math.cos(time * 0.12) * 8;
+            
+            // Look at the center of butterfly activity
+            const avgX = butterflies.reduce((sum, b) => sum + b.mesh.position.x, 0) / butterflies.length;
+            const avgY = butterflies.reduce((sum, b) => sum + b.mesh.position.y, 0) / butterflies.length;
+            const avgZ = butterflies.reduce((sum, b) => sum + b.mesh.position.z, 0) / butterflies.length;
+            camera.lookAt(avgX, avgY, avgZ);
+            
+            renderer.render(scene, camera);
+        }
+        
+        function onWindowResize() {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        }
+        
+        window.addEventListener('resize', onWindowResize, false);
+        
+        init();
+    </script>
+</body>
+</html>

@@ -1,0 +1,770 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Life Journey - Desert Walker</title>
+    <style>
+        body { 
+            margin: 0; overflow: hidden; 
+            background: radial-gradient(ellipse at center, #ffd700 0%, #daa520 25%, #cd853f 50%, #8b4513 75%, #2f4f4f 100%);
+            animation: desertCycle 25s linear infinite;
+        }
+        canvas { display: block; }
+        .title { 
+            position: absolute; top: 20px; left: 50%; transform: translateX(-50%); 
+            color: #ffd700; font-family: 'Impact', sans-serif; font-size: 38px; 
+            letter-spacing: 4px; text-shadow: 3px 3px 8px rgba(139,69,19,0.8);
+            text-transform: uppercase; font-weight: bold;
+        }
+        .desert-stage {
+            position: absolute; top: 70px; left: 50%; transform: translateX(-50%);
+            color: #fff8dc; font-family: 'Georgia', serif; font-size: 18px; 
+            font-weight: bold; letter-spacing: 2px; text-shadow: 2px 2px 6px rgba(0,0,0,0.9);
+            font-style: italic;
+        }
+        .survival-data {
+            position: absolute; bottom: 30px; left: 30px;
+            color: #f4a460; font-family: 'Courier New', monospace; font-size: 14px;
+            background: rgba(139,69,19,0.8); padding: 12px; border-radius: 8px;
+            border: 2px solid #daa520;
+        }
+        .wisdom-quote {
+            position: absolute; bottom: 40px; right: 30px;
+            color: rgba(255,215,0,0.8); font-family: 'Times New Roman', serif; font-size: 12px;
+            font-style: italic; text-align: right; max-width: 320px; line-height: 1.5;
+        }
+        @keyframes desertCycle {
+            0% { filter: brightness(1.2) hue-rotate(0deg); }
+            25% { filter: brightness(1.5) hue-rotate(15deg); }
+            50% { filter: brightness(0.6) hue-rotate(-20deg); }
+            75% { filter: brightness(0.4) hue-rotate(-30deg); }
+            100% { filter: brightness(1.2) hue-rotate(0deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="title">DESERT WALKER</div>
+    <div class="desert-stage" id="desertStage">DESERT ENTRY</div>
+    <div class="survival-data" id="survivalData">
+        Distance: 0 km<br>
+        Water: 100%<br>
+        Temperature: 25°C<br>
+        State: HOPEFUL
+    </div>
+    <div class="wisdom-quote" id="wisdomQuote">"The desert teaches us that emptiness can be fullness, and silence can be the loudest truth."</div>
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="../particle-being-library.js"></script>
+    <script>
+        let scene, camera, renderer, particleSystem;
+        let time = 0;
+        let currentStage = 0;
+        let stageTimer = 0;
+        let sand = [];
+        let mirages = [];
+        let dust = [];
+        let stars = [];
+        let sun = null;
+        let moon = null;
+        
+        const desertStages = [
+            'DESERT ENTRY', 'SCORCHING SUN', 'MIRAGE OF WATER', 'SANDSTORM SURVIVAL',
+            'NIGHT COLD', 'OASIS DISCOVERY', 'DESERT MASTERY'
+        ];
+
+        const survivalData = [
+            { distance: '0 km', water: '100%', temp: '25°C', state: 'HOPEFUL' },
+            { distance: '8 km', water: '70%', temp: '45°C', state: 'PERSEVERING' },
+            { distance: '15 km', water: '50%', temp: '50°C', state: 'CHASING ILLUSIONS' },
+            { distance: '22 km', water: '30%', temp: '55°C', state: 'SURVIVING CHAOS' },
+            { distance: '28 km', water: '20%', temp: '5°C', state: 'ENDURING COLD' },
+            { distance: '35 km', water: '100%', temp: '28°C', state: 'REJUVENATED' },
+            { distance: '50 km', water: '80%', temp: '22°C', state: 'ENLIGHTENED' }
+        ];
+
+        const wisdomQuotes = [
+            "The desert teaches us that emptiness can be fullness, and silence can be the loudest truth.",
+            "In the scorching heat, we discover the fire within that cannot be extinguished.",
+            "Mirages reveal our deepest longings and teach us to distinguish reality from desire.",
+            "The sandstorm strips away everything unnecessary, leaving only what truly matters.",
+            "In the cold desert night, we find warmth in our inner strength and the guidance of stars.",
+            "The oasis reminds us that relief comes to those who persevere through the barren times.",
+            "Mastery of the desert is mastery of the self - finding abundance in apparent emptiness."
+        ];
+
+        function init() {
+            scene = new THREE.Scene();
+            camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+            camera.position.set(0, 8, 25);
+
+            renderer = new THREE.WebGLRenderer({ antialias: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            document.body.appendChild(renderer.domElement);
+
+            // Create resilient desert walker particle system
+            particleSystem = new ParticleBeingSystem(scene, {
+                particleCount: 220,
+                particleSize: 0.08,
+                speedMultiplier: 1.5,
+                colorRange: { h: 0.08, s: 0.6, lMin: 0.4, lMax: 0.8 }
+            });
+
+            createDesertWalker();
+            createDesertEnvironment();
+            animate();
+        }
+
+        function createDesertWalker() {
+            const walker = particleSystem.convertToParticleBeing(
+                null,
+                { x: -30, y: -1, z: 0 },
+                {
+                    particleCount: 250,
+                    states: ['hopeful', 'enduring', 'surviving', 'transcending'],
+                    stateTimings: { hopeful: 4, enduring: 6, surviving: 5, transcending: 6 },
+                    attractionForces: { hopeful: 0.03, enduring: 0.025, surviving: 0.02, transcending: 0.015 }
+                }
+            );
+
+            // 7 distinct desert stages representing crossing barren periods with mirages
+            const originalUpdate = particleSystem.updateBeing.bind(particleSystem);
+            particleSystem.updateBeing = function(being, deltaTime) {
+                originalUpdate(being, deltaTime);
+                
+                stageTimer += deltaTime;
+                if (stageTimer > 8) {
+                    currentStage = (currentStage + 1) % desertStages.length;
+                    stageTimer = 0;
+                    document.getElementById('desertStage').textContent = desertStages[currentStage];
+                    const data = survivalData[currentStage];
+                    document.getElementById('survivalData').innerHTML = 
+                        `Distance: ${data.distance}<br>Water: ${data.water}<br>Temperature: ${data.temp}<br>State: ${data.state}`;
+                    document.getElementById('wisdomQuote').textContent = wisdomQuotes[currentStage];
+                }
+                
+                switch(currentStage) {
+                    case 0: // DESERT ENTRY - Fresh start, optimistic, carrying supplies
+                        being.particles.forEach((particle, i) => {
+                            particle.scale.setScalar(0.9); // Full strength, carrying supplies
+                            
+                            // Steady, confident walking
+                            const walkCycle = time * 5;
+                            
+                            // Legs with steady stride
+                            if (i > 200) { // Legs
+                                particle.userData.targetPosition.y += Math.abs(Math.sin(walkCycle + i)) * 0.6;
+                                particle.userData.targetPosition.x += Math.sin(walkCycle + i) * 0.4;
+                            }
+                            
+                            // Arms carrying supplies
+                            if (i > 100 && i < 150) { // Arms
+                                particle.userData.targetPosition.x += Math.sin(walkCycle + Math.PI) * 0.3;
+                                particle.userData.targetPosition.y += 0.2; // Carrying packs
+                            }
+                            
+                            // Looking ahead optimistically
+                            if (i < 50) { // Head
+                                particle.userData.targetPosition.x += Math.sin(time * 1) * 0.1;
+                            }
+                            
+                            // Steady forward progress
+                            particle.userData.velocity.x += 0.02;
+                            
+                            // Fresh, hopeful color
+                            particle.material.color.setHSL(0.1, 0.7, 0.8);
+                            particle.material.opacity = 0.9;
+                        });
+                        
+                        being.userData.basePosition.x += 0.1;
+                        
+                        // Optimistic entry camera
+                        camera.position.set(being.userData.basePosition.x - 8, 6, 20);
+                        camera.lookAt(being.userData.basePosition);
+                        
+                        // Fresh footprints
+                        if (Math.random() < 0.08) {
+                            createFootprint(being.userData.basePosition, 'fresh');
+                        }
+                        break;
+                        
+                    case 1: // SCORCHING SUN - Heat effects, dehydration, perseverance
+                        being.particles.forEach((particle, i) => {
+                            particle.scale.setScalar(0.8); // Starting to shrink from heat
+                            
+                            // Heat exhaustion effects
+                            particle.userData.velocity.multiplyScalar(0.7); // Slower in heat
+                            
+                            // Labored walking in heat
+                            const heatWalk = time * 3;
+                            if (i > 200) { // Legs
+                                particle.userData.targetPosition.y += Math.abs(Math.sin(heatWalk)) * 0.4; // Less energy
+                                particle.userData.targetPosition.x += Math.sin(heatWalk) * 0.2;
+                            }
+                            
+                            // Arms hanging lower
+                            if (i > 100 && i < 150) {
+                                particle.userData.targetPosition.y -= 0.2; // Drooping
+                                particle.userData.targetPosition.x += Math.sin(heatWalk) * 0.2;
+                            }
+                            
+                            // Heat shimmer effect
+                            particle.position.y += Math.sin(time * 25 + i) * 0.01;
+                            particle.material.opacity = 0.6 + Math.sin(time * 20 + i) * 0.4;
+                            
+                            // Heat-affected color
+                            particle.material.color.setHSL(0.05, 0.8, 0.6 + Math.sin(time * 10) * 0.2);
+                            
+                            // Sweat particles
+                            if (Math.random() < 0.05) {
+                                createSweatDrop(particle.position);
+                            }
+                        });
+                        
+                        being.userData.basePosition.x += 0.06; // Slower progress
+                        
+                        // Heat shimmer camera
+                        camera.position.set(
+                            being.userData.basePosition.x - 12 + Math.sin(time * 15) * 0.5,
+                            8 + Math.cos(time * 18) * 0.3,
+                            22
+                        );
+                        camera.lookAt(being.userData.basePosition);
+                        
+                        // Heat waves
+                        if (Math.random() < 0.1) {
+                            createHeatWave(being.userData.basePosition);
+                        }
+                        break;
+                        
+                    case 2: // MIRAGE OF WATER - Illusion chasing, false hope
+                        being.particles.forEach((particle, i) => {
+                            particle.scale.setScalar(0.85);
+                            
+                            // Desperate reaching toward mirage
+                            if (i > 120 && i < 160) { // Arms
+                                particle.userData.targetPosition.x += 2 + Math.sin(time * 8) * 0.5;
+                                particle.userData.targetPosition.y += 1 + Math.cos(time * 6) * 0.3;
+                                particle.scale.setScalar(1.2); // Desperate reaching
+                            }
+                            
+                            // Head turned toward mirage
+                            if (i < 50) {
+                                particle.userData.targetPosition.x += 0.5;
+                                particle.userData.targetPosition.y += Math.sin(time * 4) * 0.2;
+                            }
+                            
+                            // Stumbling toward illusion
+                            particle.userData.velocity.x += Math.sin(time * 6) * 0.01;
+                            particle.userData.velocity.z += Math.cos(time * 5) * 0.005;
+                            
+                            // Hope and desperation color
+                            particle.material.color.setHSL(0.55, 0.7, 0.7 + Math.sin(time * 8) * 0.2);
+                            
+                            // Mirage shimmering effect
+                            particle.material.opacity = 0.7 + Math.sin(time * 30 + i) * 0.3;
+                        });
+                        
+                        being.userData.basePosition.x += 0.04; // Distracted, slow progress
+                        being.userData.basePosition.z += Math.sin(time * 3) * 0.5; // Veering off course
+                        
+                        // Mirage chase camera
+                        camera.position.set(being.userData.basePosition.x - 10, 5, being.userData.basePosition.z + 15);
+                        camera.lookAt(being.userData.basePosition);
+                        
+                        // Create mirage effects
+                        if (Math.random() < 0.06) {
+                            createMirage(being.userData.basePosition);
+                        }
+                        break;
+                        
+                    case 3: // SANDSTORM SURVIVAL - Chaos, protection, endurance
+                        being.particles.forEach((particle, i) => {
+                            particle.scale.setScalar(0.7); // Compressed for protection
+                            
+                            // Chaotic sandstorm motion
+                            particle.userData.velocity.x += (Math.random() - 0.5) * 0.08;
+                            particle.userData.velocity.y += (Math.random() - 0.5) * 0.05;
+                            particle.userData.velocity.z += (Math.random() - 0.5) * 0.06;
+                            
+                            // Protective covering motion
+                            if (i > 100 && i < 150) { // Arms
+                                particle.userData.targetPosition.x *= 0.5; // Arms close to body
+                                particle.userData.targetPosition.y += 0.5; // Covering head
+                            }
+                            
+                            // Head down for protection
+                            if (i < 50) {
+                                particle.userData.targetPosition.y -= 0.3;
+                                particle.userData.targetPosition.x *= 0.8;
+                            }
+                            
+                            // Crouched survival posture
+                            particle.userData.targetPosition.y *= 0.7;
+                            
+                            // Sand-blasted color
+                            particle.material.color.setHSL(0.08, 0.4, 0.5 + Math.random() * 0.2);
+                            particle.material.opacity = 0.4 + Math.random() * 0.6;
+                        });
+                        
+                        // Blown off course
+                        being.userData.basePosition.x += (Math.random() - 0.3) * 0.2;
+                        being.userData.basePosition.z += (Math.random() - 0.5) * 0.3;
+                        
+                        // Chaotic sandstorm camera
+                        camera.position.set(
+                            being.userData.basePosition.x + (Math.random() - 0.5) * 8,
+                            5 + (Math.random() - 0.5) * 3,
+                            being.userData.basePosition.z + 18 + (Math.random() - 0.5) * 6
+                        );
+                        camera.lookAt(being.userData.basePosition);
+                        
+                        // Sandstorm particles
+                        if (Math.random() < 0.3) {
+                            createSandParticle(being.userData.basePosition);
+                        }
+                        break;
+                        
+                    case 4: // NIGHT COLD - Opposite extreme, shivering, star navigation
+                        being.particles.forEach((particle, i) => {
+                            particle.scale.setScalar(0.6); // Contracted from cold
+                            
+                            // Shivering motion
+                            particle.position.x += Math.sin(time * 50 + i) * 0.002;
+                            particle.position.y += Math.cos(time * 45 + i) * 0.001;
+                            
+                            // Arms wrapped around body
+                            if (i > 100 && i < 150) {
+                                particle.userData.targetPosition.x *= 0.3; // Tight to body
+                                particle.userData.targetPosition.y += 0.1;
+                            }
+                            
+                            // Hunched over from cold
+                            if (i > 50 && i < 150) { // Torso
+                                particle.userData.targetPosition.y *= 0.8;
+                                particle.userData.targetPosition.z += 0.3; // Hunched forward
+                            }
+                            
+                            // Looking up at stars for navigation
+                            if (i < 50) { // Head
+                                particle.userData.targetPosition.y += Math.sin(time * 2) * 0.3;
+                            }
+                            
+                            // Very slow progress in cold
+                            particle.userData.velocity.multiplyScalar(0.4);
+                            
+                            // Cold blue-purple color
+                            particle.material.color.setHSL(0.75, 0.6, 0.4 + Math.sin(time * 40 + i) * 0.1);
+                        });
+                        
+                        being.userData.basePosition.x += 0.02; // Very slow night progress
+                        
+                        // Cold night camera
+                        camera.position.set(being.userData.basePosition.x - 15, 12, 30);
+                        camera.lookAt(being.userData.basePosition);
+                        
+                        // Create stars for navigation
+                        if (Math.random() < 0.02) {
+                            createStar();
+                        }
+                        break;
+                        
+                    case 5: // OASIS DISCOVERY - Real relief, rejuvenation, gratitude
+                        being.particles.forEach((particle, i) => {
+                            // Gradual rejuvenation
+                            const relief = 1 + Math.min(stageTimer * 0.2, 0.8);
+                            particle.scale.setScalar(0.6 + relief * 0.4);
+                            
+                            // Arms spreading in gratitude
+                            if (i > 100 && i < 150 && stageTimer > 2) {
+                                particle.userData.targetPosition.x += Math.sign(particle.userData.targetPosition.x) * relief;
+                                particle.userData.targetPosition.y += relief * 0.8;
+                            }
+                            
+                            // Kneeling to drink
+                            if (stageTimer < 3) {
+                                particle.userData.targetPosition.y *= 0.5; // Kneeling
+                                if (i < 50) { // Head down to water
+                                    particle.userData.targetPosition.y -= 0.5;
+                                }
+                            }
+                            
+                            // Renewed energy
+                            particle.userData.velocity.multiplyScalar(1.1);
+                            
+                            // Refreshed green-blue color
+                            particle.material.color.setHSL(0.5, 0.7, 0.7 + Math.sin(time * 4) * 0.2);
+                            particle.material.opacity = 0.9;
+                        });
+                        
+                        being.userData.basePosition.x += 0.03; // Slow, savoring movement
+                        being.userData.basePosition.y = -1; // At water level
+                        
+                        // Oasis relief camera
+                        camera.position.set(being.userData.basePosition.x - 6, 4, 12);
+                        camera.lookAt(being.userData.basePosition);
+                        
+                        // Water ripples
+                        if (Math.random() < 0.1) {
+                            createWaterRipple(being.userData.basePosition);
+                        }
+                        break;
+                        
+                    case 6: // DESERT MASTERY - Wisdom gained, harmony with emptiness
+                        being.particles.forEach((particle, i) => {
+                            // Enlightened presence
+                            const mastery = 1 + Math.sin(time * 1.2) * 0.2;
+                            particle.scale.setScalar(0.8 + mastery * 0.3);
+                            
+                            // Flowing, harmonious movement
+                            particle.position.add(
+                                new THREE.Vector3(
+                                    Math.sin(time * 1.5 + i * 0.01) * 0.002,
+                                    Math.cos(time * 1.2 + i * 0.01) * 0.001,
+                                    Math.sin(time * 0.8 + i * 0.01) * 0.001
+                                )
+                            );
+                            
+                            // Arms in harmony with environment
+                            if (i > 100 && i < 150) {
+                                particle.userData.targetPosition.x += Math.sin(time * 1.5) * 0.6;
+                                particle.userData.targetPosition.y += Math.cos(time * 1.2) * 0.4;
+                            }
+                            
+                            // Serene observation
+                            if (i < 50) { // Head
+                                particle.userData.targetPosition.x += Math.sin(time * 0.5) * 0.3;
+                                particle.userData.targetPosition.y += Math.cos(time * 0.3) * 0.2;
+                            }
+                            
+                            // Effortless movement
+                            particle.userData.velocity.multiplyScalar(1.05);
+                            
+                            // Enlightened golden color
+                            particle.material.color.setHSL(
+                                0.12 + Math.sin(time * 1) * 0.05,
+                                0.8,
+                                0.8 + Math.sin(time * 2 + i * 0.01) * 0.2
+                            );
+                            
+                            // Wisdom particles
+                            if (Math.random() < 0.04) {
+                                createWisdomParticle(particle.position);
+                            }
+                        });
+                        
+                        being.userData.basePosition.x += 0.08; // Confident, steady progress
+                        being.userData.basePosition.y = Math.sin(time * 0.8) * 0.2; // Slight floating
+                        
+                        // Mastery panoramic camera
+                        camera.position.set(
+                            being.userData.basePosition.x + Math.sin(time * 0.3) * 20,
+                            15 + Math.sin(time * 0.2) * 5,
+                            being.userData.basePosition.z + 30
+                        );
+                        camera.lookAt(being.userData.basePosition);
+                        break;
+                }
+                
+                updateDesertElements();
+            };
+
+            particleSystem.createAmbientParticles(50);
+        }
+
+        function createDesertEnvironment() {
+            // Create sun
+            sun = new THREE.Mesh(
+                new THREE.SphereGeometry(3, 16, 16),
+                new THREE.MeshBasicMaterial({
+                    color: 0xffd700,
+                    transparent: true,
+                    opacity: 0.6
+                })
+            );
+            sun.position.set(0, 30, -30);
+            scene.add(sun);
+
+            // Create moon
+            moon = new THREE.Mesh(
+                new THREE.SphereGeometry(2, 12, 12),
+                new THREE.MeshBasicMaterial({
+                    color: 0xf5f5dc,
+                    transparent: true,
+                    opacity: 0.3
+                })
+            );
+            moon.position.set(0, 25, -25);
+            scene.add(moon);
+
+            // Create sand dunes
+            for (let i = 0; i < 10; i++) {
+                const dune = new THREE.Mesh(
+                    new THREE.SphereGeometry(5 + Math.random() * 3, 8, 8),
+                    new THREE.MeshBasicMaterial({
+                        color: new THREE.Color().setHSL(0.1, 0.3, 0.6 + Math.random() * 0.2),
+                        transparent: true,
+                        opacity: 0.3
+                    })
+                );
+                dune.position.set(
+                    (Math.random() - 0.5) * 100,
+                    -3,
+                    (Math.random() - 0.5) * 80
+                );
+                dune.scale.y = 0.3;
+                scene.add(dune);
+                sand.push(dune);
+            }
+        }
+
+        function createFootprint(position, type) {
+            const print = new THREE.Mesh(
+                new THREE.RingGeometry(0.15, 0.4, 8),
+                new THREE.MeshBasicMaterial({
+                    color: type === 'fresh' ? 0x8b4513 : 0x654321,
+                    transparent: true,
+                    opacity: type === 'fresh' ? 0.6 : 0.3
+                })
+            );
+            print.position.copy(position);
+            print.position.y = -2.8;
+            print.rotation.x = Math.PI / 2;
+            print.userData = { life: 0 };
+            scene.add(print);
+            sand.push(print);
+        }
+
+        function createSweatDrop(position) {
+            const sweat = new THREE.Mesh(
+                new THREE.SphereGeometry(0.03, 4, 4),
+                new THREE.MeshBasicMaterial({
+                    color: 0x87ceeb,
+                    transparent: true,
+                    opacity: 0.8
+                })
+            );
+            sweat.position.copy(position);
+            sweat.userData = { 
+                life: 0,
+                fall: 0.02
+            };
+            scene.add(sweat);
+            dust.push(sweat);
+        }
+
+        function createHeatWave(position) {
+            const wave = new THREE.Mesh(
+                new THREE.SphereGeometry(0.1, 4, 4),
+                new THREE.MeshBasicMaterial({
+                    color: 0xffffff,
+                    transparent: true,
+                    opacity: 0.2
+                })
+            );
+            wave.position.copy(position);
+            wave.userData = { 
+                life: 0,
+                rise: 0.03,
+                shimmer: 0.02
+            };
+            scene.add(wave);
+            dust.push(wave);
+        }
+
+        function createMirage(position) {
+            const mirage = new THREE.Mesh(
+                new THREE.SphereGeometry(0.3, 8, 8),
+                new THREE.MeshBasicMaterial({
+                    color: 0x87ceeb,
+                    transparent: true,
+                    opacity: 0.4
+                })
+            );
+            mirage.position.copy(position);
+            mirage.position.add(new THREE.Vector3(8, 2, Math.random() * 10 - 5));
+            mirage.userData = { 
+                life: 0,
+                shimmer: 0.05
+            };
+            scene.add(mirage);
+            mirages.push(mirage);
+        }
+
+        function createSandParticle(position) {
+            const particle = new THREE.Mesh(
+                new THREE.SphereGeometry(0.02, 4, 4),
+                new THREE.MeshBasicMaterial({
+                    color: 0xdaa520,
+                    transparent: true,
+                    opacity: 0.6
+                })
+            );
+            particle.position.copy(position);
+            particle.userData = { 
+                life: 0,
+                velocity: new THREE.Vector3(
+                    (Math.random() - 0.5) * 0.2,
+                    Math.random() * 0.1,
+                    (Math.random() - 0.5) * 0.2
+                )
+            };
+            scene.add(particle);
+            dust.push(particle);
+        }
+
+        function createStar() {
+            const star = new THREE.Mesh(
+                new THREE.SphereGeometry(0.05, 4, 4),
+                new THREE.MeshBasicMaterial({
+                    color: 0xffffff,
+                    transparent: true,
+                    opacity: 1
+                })
+            );
+            star.position.set(
+                (Math.random() - 0.5) * 100,
+                30 + Math.random() * 20,
+                (Math.random() - 0.5) * 100
+            );
+            star.userData = { 
+                life: 0,
+                twinkle: 0.02
+            };
+            scene.add(star);
+            stars.push(star);
+        }
+
+        function createWaterRipple(position) {
+            const ripple = new THREE.Mesh(
+                new THREE.RingGeometry(0.1, 1.5, 16),
+                new THREE.MeshBasicMaterial({
+                    color: 0x4682b4,
+                    transparent: true,
+                    opacity: 0.5,
+                    side: THREE.DoubleSide
+                })
+            );
+            ripple.position.copy(position);
+            ripple.rotation.x = Math.PI / 2;
+            ripple.userData = { life: 0, expand: 0.03 };
+            scene.add(ripple);
+            dust.push(ripple);
+        }
+
+        function createWisdomParticle(position) {
+            const wisdom = new THREE.Mesh(
+                new THREE.SphereGeometry(0.05, 4, 4),
+                new THREE.MeshBasicMaterial({
+                    color: 0xffd700,
+                    transparent: true,
+                    opacity: 1
+                })
+            );
+            wisdom.position.copy(position);
+            wisdom.userData = { 
+                life: 0,
+                rise: 0.02,
+                glow: 0.03
+            };
+            scene.add(wisdom);
+            dust.push(wisdom);
+        }
+
+        function updateDesertElements() {
+            // Update dust and effects
+            dust = dust.filter(particle => {
+                particle.userData.life += 0.016;
+                
+                if (particle.userData.velocity) {
+                    particle.position.add(particle.userData.velocity);
+                    particle.userData.velocity.multiplyScalar(0.95);
+                }
+                
+                if (particle.userData.fall) {
+                    particle.position.y -= particle.userData.fall;
+                }
+                
+                if (particle.userData.rise) {
+                    particle.position.y += particle.userData.rise;
+                }
+                
+                if (particle.userData.shimmer) {
+                    particle.scale.setScalar(1 + Math.sin(particle.userData.life * 20) * particle.userData.shimmer);
+                }
+                
+                if (particle.userData.expand) {
+                    particle.scale.setScalar(1 + particle.userData.life * particle.userData.expand);
+                }
+                
+                if (particle.userData.glow) {
+                    particle.scale.setScalar(1 + Math.sin(particle.userData.life * 15) * particle.userData.glow);
+                    particle.position.y += 0.01;
+                }
+                
+                particle.material.opacity = Math.max(0, particle.material.opacity - 0.01);
+                
+                if (particle.material.opacity <= 0) {
+                    scene.remove(particle);
+                    return false;
+                }
+                return true;
+            });
+
+            // Update mirages
+            mirages = mirages.filter(mirage => {
+                mirage.userData.life += 0.016;
+                mirage.scale.setScalar(1 + Math.sin(mirage.userData.life * 10) * mirage.userData.shimmer);
+                mirage.material.opacity = Math.max(0, 0.4 - mirage.userData.life * 0.1);
+                
+                if (mirage.material.opacity <= 0) {
+                    scene.remove(mirage);
+                    return false;
+                }
+                return true;
+            });
+
+            // Update stars
+            stars.forEach(star => {
+                star.userData.life += 0.016;
+                star.scale.setScalar(1 + Math.sin(star.userData.life * 25) * star.userData.twinkle);
+                if (star.userData.life > 20) {
+                    star.material.opacity = Math.max(0, 1 - (star.userData.life - 20) * 0.05);
+                    if (star.material.opacity <= 0) {
+                        scene.remove(star);
+                        stars.splice(stars.indexOf(star), 1);
+                    }
+                }
+            });
+
+            // Update sun and moon visibility
+            if (sun) {
+                sun.material.opacity = Math.max(0, 0.6 - currentStage * 0.1);
+                sun.position.x = Math.sin(time * 0.1) * 20;
+            }
+            
+            if (moon) {
+                moon.material.opacity = currentStage === 4 ? 0.8 : 0.1;
+                moon.position.x = Math.cos(time * 0.1) * 15;
+            }
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+            time += 0.016;
+
+            particleSystem.update(0.016);
+            
+            renderer.render(scene, camera);
+        }
+
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+
+        init();
+    </script>
+</body>
+</html>

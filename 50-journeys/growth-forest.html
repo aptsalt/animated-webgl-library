@@ -1,0 +1,2080 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Growth Forest - Revolutionary Digital Healing</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: radial-gradient(ellipse at center, #1a3d29 0%, #0d1f14 100%);
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            overflow: hidden;
+            color: white;
+            cursor: none;
+        }
+
+        #canvas {
+            display: block;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+        }
+
+        .forest-ui {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 10;
+        }
+
+        .forest-guide {
+            position: absolute;
+            top: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: rgba(255, 255, 255, 0.95);
+            font-size: 18px;
+            font-weight: 300;
+            text-align: center;
+            text-shadow: 0 0 25px rgba(34, 139, 34, 0.8);
+            max-width: 700px;
+            line-height: 1.8;
+            animation: forestBreathe 6s ease-in-out infinite;
+        }
+
+        @keyframes forestBreathe {
+            0%, 100% { text-shadow: 0 0 25px rgba(34, 139, 34, 0.6); }
+            50% { text-shadow: 0 0 40px rgba(34, 139, 34, 1.0), 0 0 60px rgba(50, 205, 50, 0.5); }
+        }
+
+        .growth-panel {
+            position: absolute;
+            left: 20px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: rgba(20, 40, 25, 0.9);
+            backdrop-filter: blur(15px);
+            border-radius: 20px;
+            padding: 25px;
+            min-width: 320px;
+            border: 1px solid rgba(34, 139, 34, 0.4);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+            pointer-events: auto;
+        }
+
+        .growth-title {
+            color: #228b22;
+            font-size: 16px;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .skill-tree {
+            margin: 20px 0;
+        }
+
+        .skill-branch {
+            display: flex;
+            align-items: center;
+            margin: 12px 0;
+            padding: 10px;
+            background: rgba(34, 139, 34, 0.1);
+            border-radius: 10px;
+            border-left: 3px solid rgba(34, 139, 34, 0.5);
+            transition: all 0.3s ease;
+        }
+
+        .skill-branch:hover {
+            background: rgba(34, 139, 34, 0.2);
+            transform: translateX(5px);
+        }
+
+        .skill-icon {
+            font-size: 20px;
+            margin-right: 12px;
+            width: 30px;
+            text-align: center;
+        }
+
+        .skill-info {
+            flex: 1;
+        }
+
+        .skill-name {
+            color: #32cd32;
+            font-size: 14px;
+            font-weight: 500;
+            margin-bottom: 4px;
+        }
+
+        .skill-progress {
+            width: 100%;
+            height: 4px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 2px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #228b22, #32cd32, #90ee90);
+            border-radius: 2px;
+            transition: width 0.8s ease;
+        }
+
+        .skill-level {
+            color: rgba(255, 255, 255, 0.7);
+            font-size: 11px;
+            margin-left: 10px;
+        }
+
+        .season-control {
+            position: absolute;
+            right: 20px;
+            top: 80px;
+            background: rgba(20, 40, 25, 0.85);
+            backdrop-filter: blur(15px);
+            border-radius: 15px;
+            padding: 20px;
+            border: 1px solid rgba(34, 139, 34, 0.4);
+            pointer-events: auto;
+            min-width: 280px;
+        }
+
+        .season-title {
+            color: #32cd32;
+            font-size: 16px;
+            margin-bottom: 15px;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .season-selector {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .season-btn {
+            padding: 12px 16px;
+            border: 1px solid rgba(34, 139, 34, 0.4);
+            background: rgba(34, 139, 34, 0.1);
+            color: white;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 13px;
+            transition: all 0.3s ease;
+            text-align: center;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .season-btn:hover {
+            background: rgba(34, 139, 34, 0.2);
+            transform: scale(1.02);
+        }
+
+        .season-btn.active {
+            background: rgba(50, 205, 50, 0.3);
+            border-color: #32cd32;
+            color: #90ee90;
+            box-shadow: 0 0 15px rgba(50, 205, 50, 0.3);
+        }
+
+        .season-info {
+            font-size: 12px;
+            color: rgba(255, 255, 255, 0.8);
+            line-height: 1.5;
+        }
+
+        .ecosystem-stats {
+            position: absolute;
+            bottom: 140px;
+            right: 30px;
+            background: rgba(20, 40, 25, 0.8);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            padding: 20px;
+            border: 1px solid rgba(34, 139, 34, 0.4);
+            pointer-events: auto;
+            min-width: 260px;
+        }
+
+        .ecosystem-title {
+            color: #228b22;
+            font-size: 14px;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .ecosystem-metric {
+            display: flex;
+            justify-content: space-between;
+            margin: 10px 0;
+            font-size: 12px;
+            align-items: center;
+        }
+
+        .metric-value {
+            color: #32cd32;
+            font-weight: 500;
+        }
+
+        .metric-bar {
+            width: 80px;
+            height: 4px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 2px;
+            overflow: hidden;
+            margin-left: 10px;
+        }
+
+        .metric-bar-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #228b22, #32cd32);
+            border-radius: 2px;
+            transition: width 0.5s ease;
+        }
+
+        .forest-controls {
+            position: absolute;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 15px;
+            pointer-events: auto;
+        }
+
+        .forest-btn {
+            background: rgba(34, 139, 34, 0.15);
+            border: 1px solid rgba(34, 139, 34, 0.5);
+            color: white;
+            padding: 14px 24px;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.4s ease;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        .forest-btn:hover {
+            background: rgba(34, 139, 34, 0.3);
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(34, 139, 34, 0.3);
+        }
+
+        .forest-btn.active {
+            background: rgba(50, 205, 50, 0.3);
+            border-color: #32cd32;
+            color: #90ee90;
+            box-shadow: 0 0 30px rgba(50, 205, 50, 0.4);
+        }
+
+        .wildlife-tracker {
+            position: absolute;
+            top: 100px;
+            left: 30px;
+            background: rgba(20, 40, 25, 0.7);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            padding: 15px;
+            border: 1px solid rgba(34, 139, 34, 0.4);
+            pointer-events: auto;
+            max-width: 200px;
+        }
+
+        .wildlife-title {
+            color: #32cd32;
+            font-size: 13px;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .wildlife-item {
+            display: flex;
+            justify-content: space-between;
+            margin: 8px 0;
+            font-size: 11px;
+            align-items: center;
+        }
+
+        .wildlife-emoji {
+            font-size: 16px;
+            margin-right: 8px;
+        }
+
+        .achievement-notification {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(50, 205, 50, 0.9);
+            backdrop-filter: blur(20px);
+            border-radius: 15px;
+            padding: 20px 30px;
+            color: white;
+            font-size: 16px;
+            font-weight: 500;
+            text-align: center;
+            border: 2px solid #90ee90;
+            box-shadow: 0 10px 30px rgba(50, 205, 50, 0.5);
+            opacity: 0;
+            pointer-events: none;
+            transition: all 0.5s ease;
+            z-index: 100;
+        }
+
+        .achievement-notification.show {
+            opacity: 1;
+            animation: achievementPulse 2s ease-in-out;
+        }
+
+        @keyframes achievementPulse {
+            0%, 100% { transform: translate(-50%, -50%) scale(1); }
+            50% { transform: translate(-50%, -50%) scale(1.05); }
+        }
+
+        .weather-indicator {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: rgba(20, 40, 25, 0.7);
+            backdrop-filter: blur(10px);
+            border-radius: 50%;
+            width: 80px;
+            height: 80px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 1px solid rgba(34, 139, 34, 0.4);
+            pointer-events: auto;
+            font-size: 24px;
+            transition: all 0.3s ease;
+        }
+
+        .weather-indicator:hover {
+            transform: scale(1.1);
+            background: rgba(20, 40, 25, 0.9);
+        }
+
+        .root-network-viz {
+            position: absolute;
+            bottom: 200px;
+            left: 30px;
+            width: 150px;
+            height: 150px;
+            border: 1px solid rgba(34, 139, 34, 0.4);
+            border-radius: 50%;
+            background: rgba(20, 40, 25, 0.6);
+            backdrop-filter: blur(10px);
+            pointer-events: auto;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+        }
+
+        .root-center {
+            width: 20px;
+            height: 20px;
+            background: radial-gradient(circle, #32cd32, #228b22);
+            border-radius: 50%;
+            position: relative;
+            z-index: 2;
+        }
+
+        .root-connection {
+            position: absolute;
+            background: linear-gradient(90deg, transparent, #32cd32, transparent);
+            height: 2px;
+            transform-origin: center left;
+        }
+
+        .loading-forest {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, #1a3d29, #0d1f14);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            transition: opacity 0.8s ease;
+        }
+
+        .forest-loader-content {
+            text-align: center;
+            color: white;
+        }
+
+        .forest-loader-title {
+            font-size: 32px;
+            margin-bottom: 20px;
+            color: #228b22;
+            font-weight: 300;
+        }
+
+        .forest-loader-subtitle {
+            font-size: 16px;
+            opacity: 0.9;
+            margin-bottom: 30px;
+            max-width: 500px;
+            line-height: 1.6;
+        }
+
+        .tree-growth-loader {
+            display: flex;
+            justify-content: center;
+            align-items: flex-end;
+            gap: 4px;
+            height: 60px;
+        }
+
+        .growth-bar {
+            width: 8px;
+            background: linear-gradient(to top, #228b22, #32cd32, #90ee90);
+            border-radius: 4px 4px 0 0;
+            animation: treeGrow 2.5s ease-in-out infinite;
+        }
+
+        .growth-bar:nth-child(2) { animation-delay: 0.2s; }
+        .growth-bar:nth-child(3) { animation-delay: 0.4s; }
+        .growth-bar:nth-child(4) { animation-delay: 0.6s; }
+        .growth-bar:nth-child(5) { animation-delay: 0.8s; }
+        .growth-bar:nth-child(6) { animation-delay: 1.0s; }
+        .growth-bar:nth-child(7) { animation-delay: 1.2s; }
+
+        @keyframes treeGrow {
+            0%, 100% { height: 20%; }
+            50% { height: 100%; }
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        /* Mobile responsiveness */
+        @media (max-width: 768px) {
+            .growth-panel {
+                position: absolute;
+                bottom: 180px;
+                left: 50%;
+                transform: translateX(-50%);
+                top: auto;
+                width: calc(100% - 40px);
+                min-width: auto;
+            }
+
+            .season-control {
+                right: 20px;
+                left: 20px;
+                top: 60px;
+                min-width: auto;
+            }
+
+            .ecosystem-stats {
+                bottom: 100px;
+                right: 20px;
+                left: 20px;
+                min-width: auto;
+            }
+
+            .forest-controls {
+                bottom: 20px;
+                flex-wrap: wrap;
+                justify-content: center;
+            }
+
+            .wildlife-tracker {
+                top: 20px;
+                left: 20px;
+                max-width: 150px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Loading Screen -->
+    <div id="loadingForest" class="loading-forest">
+        <div class="forest-loader-content">
+            <h2 class="forest-loader-title">🌳 Growth Forest</h2>
+            <p class="forest-loader-subtitle">
+                Your personal ecosystem is taking root... Each tree represents a skill, 
+                each season a phase of development, each creature a companion on your journey.
+            </p>
+            <div class="tree-growth-loader">
+                <div class="growth-bar"></div>
+                <div class="growth-bar"></div>
+                <div class="growth-bar"></div>
+                <div class="growth-bar"></div>
+                <div class="growth-bar"></div>
+                <div class="growth-bar"></div>
+                <div class="growth-bar"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Canvas -->
+    <canvas id="canvas"></canvas>
+
+    <!-- Forest UI -->
+    <div class="forest-ui">
+        <!-- Forest Guide -->
+        <div class="forest-guide">
+            Welcome to your Growth Forest, where every skill blooms into wisdom, 
+            every challenge becomes fertile soil, and your progress creates a thriving ecosystem of possibility.
+        </div>
+
+        <!-- Weather Indicator -->
+        <div class="weather-indicator" id="weatherIndicator" title="Current Season">
+            🌸
+        </div>
+
+        <!-- Wildlife Tracker -->
+        <div class="wildlife-tracker">
+            <div class="wildlife-title">🦋 Forest Life</div>
+            <div class="wildlife-item">
+                <span><span class="wildlife-emoji">🦋</span>Butterflies</span>
+                <span id="butterflyCount" class="metric-value">12</span>
+            </div>
+            <div class="wildlife-item">
+                <span><span class="wildlife-emoji">🐦</span>Birds</span>
+                <span id="birdCount" class="metric-value">8</span>
+            </div>
+            <div class="wildlife-item">
+                <span><span class="wildlife-emoji">🐿️</span>Squirrels</span>
+                <span id="squirrelCount" class="metric-value">5</span>
+            </div>
+            <div class="wildlife-item">
+                <span><span class="wildlife-emoji">🦔</span>Hedgehogs</span>
+                <span id="hedgehogCount" class="metric-value">3</span>
+            </div>
+        </div>
+
+        <!-- Growth Panel -->
+        <div class="growth-panel">
+            <div class="growth-title">
+                🌱 Personal Growth Tree
+            </div>
+            <div class="skill-tree">
+                <div class="skill-branch" data-skill="self-awareness">
+                    <div class="skill-icon">🧘</div>
+                    <div class="skill-info">
+                        <div class="skill-name">Self-Awareness</div>
+                        <div class="skill-progress">
+                            <div class="progress-fill" style="width: 78%;"></div>
+                        </div>
+                    </div>
+                    <div class="skill-level">Level 4</div>
+                </div>
+                
+                <div class="skill-branch" data-skill="emotional-regulation">
+                    <div class="skill-icon">❤️</div>
+                    <div class="skill-info">
+                        <div class="skill-name">Emotional Regulation</div>
+                        <div class="skill-progress">
+                            <div class="progress-fill" style="width: 65%;"></div>
+                        </div>
+                    </div>
+                    <div class="skill-level">Level 3</div>
+                </div>
+                
+                <div class="skill-branch" data-skill="resilience">
+                    <div class="skill-icon">💪</div>
+                    <div class="skill-info">
+                        <div class="skill-name">Resilience</div>
+                        <div class="skill-progress">
+                            <div class="progress-fill" style="width: 82%;"></div>
+                        </div>
+                    </div>
+                    <div class="skill-level">Level 5</div>
+                </div>
+                
+                <div class="skill-branch" data-skill="creativity">
+                    <div class="skill-icon">🎨</div>
+                    <div class="skill-info">
+                        <div class="skill-name">Creativity</div>
+                        <div class="skill-progress">
+                            <div class="progress-fill" style="width: 56%;"></div>
+                        </div>
+                    </div>
+                    <div class="skill-level">Level 3</div>
+                </div>
+                
+                <div class="skill-branch" data-skill="connection">
+                    <div class="skill-icon">🤝</div>
+                    <div class="skill-info">
+                        <div class="skill-name">Connection</div>
+                        <div class="skill-progress">
+                            <div class="progress-fill" style="width: 71%;"></div>
+                        </div>
+                    </div>
+                    <div class="skill-level">Level 4</div>
+                </div>
+                
+                <div class="skill-branch" data-skill="purpose">
+                    <div class="skill-icon">⭐</div>
+                    <div class="skill-info">
+                        <div class="skill-name">Life Purpose</div>
+                        <div class="skill-progress">
+                            <div class="progress-fill" style="width: 43%;"></div>
+                        </div>
+                    </div>
+                    <div class="skill-level">Level 2</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Season Control -->
+        <div class="season-control">
+            <div class="season-title">🌍 Seasonal Cycles</div>
+            <div class="season-selector">
+                <button class="season-btn active" id="springBtn" data-season="spring">
+                    🌸 Spring
+                </button>
+                <button class="season-btn" id="summerBtn" data-season="summer">
+                    ☀️ Summer
+                </button>
+                <button class="season-btn" id="autumnBtn" data-season="autumn">
+                    🍂 Autumn
+                </button>
+                <button class="season-btn" id="winterBtn" data-season="winter">
+                    ❄️ Winter
+                </button>
+            </div>
+            <div class="season-info" id="seasonInfo">
+                Spring: A time of new growth, fresh possibilities, and emerging potential. 
+                Your skills are budding with fresh energy and creative possibility.
+            </div>
+        </div>
+
+        <!-- Root Network Visualization -->
+        <div class="root-network-viz" id="rootNetwork">
+            <div class="root-center"></div>
+            <!-- Root connections will be added dynamically -->
+        </div>
+
+        <!-- Ecosystem Stats -->
+        <div class="ecosystem-stats">
+            <div class="ecosystem-title">📊 Ecosystem Health</div>
+            <div class="ecosystem-metric">
+                <span>Biodiversity</span>
+                <div class="metric-bar">
+                    <div class="metric-bar-fill" id="biodiversityBar" style="width: 76%;"></div>
+                </div>
+                <span class="metric-value">76%</span>
+            </div>
+            <div class="ecosystem-metric">
+                <span>Growth Rate</span>
+                <div class="metric-bar">
+                    <div class="metric-bar-fill" id="growthRateBar" style="width: 68%;"></div>
+                </div>
+                <span class="metric-value">68%</span>
+            </div>
+            <div class="ecosystem-metric">
+                <span>Soil Health</span>
+                <div class="metric-bar">
+                    <div class="metric-bar-fill" id="soilHealthBar" style="width: 84%;"></div>
+                </div>
+                <span class="metric-value">84%</span>
+            </div>
+            <div class="ecosystem-metric">
+                <span>Water Flow</span>
+                <div class="metric-bar">
+                    <div class="metric-bar-fill" id="waterFlowBar" style="width: 72%;"></div>
+                </div>
+                <span class="metric-value">72%</span>
+            </div>
+            <div class="ecosystem-metric">
+                <span>Sunlight</span>
+                <div class="metric-bar">
+                    <div class="metric-bar-fill" id="sunlightBar" style="width: 89%;"></div>
+                </div>
+                <span class="metric-value">89%</span>
+            </div>
+        </div>
+
+        <!-- Achievement Notification -->
+        <div class="achievement-notification" id="achievementNotification">
+            🎉 New Growth Milestone Reached!
+        </div>
+
+        <!-- Forest Controls -->
+        <div class="forest-controls">
+            <button class="forest-btn active" id="growBtn">🌱 Grow</button>
+            <button class="forest-btn" id="nurture Btn">💧 Nurture</button>
+            <button class="forest-btn" id="harvestBtn">🍎 Harvest</button>
+            <button class="forest-btn" id="audioBtn">🎵 Nature Sounds</button>
+            <button class="forest-btn" id="timelapseBtn">⏩ Time-lapse</button>
+        </div>
+    </div>
+
+    <!-- Three.js and Libraries -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script type="module">
+        import { TherapeuticShaders } from './lib/shaders.js';
+        import { audioEngine } from './lib/audio-engine.js';
+        import { biometricMonitor } from './lib/biometric.js';
+
+        class GrowthForest {
+            constructor() {
+                this.scene = null;
+                this.camera = null;
+                this.renderer = null;
+                this.canvas = null;
+                
+                // Forest ecosystem
+                this.trees = [];
+                this.wildlife = {
+                    butterflies: [],
+                    birds: [],
+                    squirrels: [],
+                    hedgehogs: []
+                };
+                this.weatherSystem = null;
+                this.rootNetwork = null;
+                
+                // Growth system
+                this.userProgress = {
+                    selfAwareness: 0.78,
+                    emotionalRegulation: 0.65,
+                    resilience: 0.82,
+                    creativity: 0.56,
+                    connection: 0.71,
+                    purpose: 0.43
+                };
+                
+                this.skillTrees = new Map();
+                this.growthMilestones = [];
+                
+                // Seasonal system
+                this.currentSeason = 'spring';
+                this.seasonCycle = 0; // 0-1 through the year
+                this.seasonalColors = {
+                    spring: { primary: 0x90EE90, secondary: 0x98FB98, accent: 0xFFB6C1 },
+                    summer: { primary: 0x228B22, secondary: 0x32CD32, accent: 0xFFD700 },
+                    autumn: { primary: 0xB8860B, secondary: 0xCD853F, accent: 0xFF6347 },
+                    winter: { primary: 0x4682B4, secondary: 0x87CEEB, accent: 0xF0F8FF }
+                };
+                
+                // L-system for procedural tree generation
+                this.lSystemRules = {
+                    axiom: 'F',
+                    rules: {
+                        'F': 'F[+F]F[-F]F', // Basic branching
+                        '+': '+',             // Turn left
+                        '-': '-',             // Turn right
+                        '[': '[',             // Push state
+                        ']': ']'              // Pop state
+                    },
+                    angle: 25.7,              // Golden angle for optimal branching
+                    length: 1.0,
+                    iterations: 4
+                };
+                
+                // Animation state
+                this.time = 0;
+                this.isInitialized = false;
+                this.isAudioEnabled = false;
+                this.currentMode = 'grow';
+                this.timelapseActive = false;
+                
+                // Environmental factors
+                this.environment = {
+                    sunlight: 0.89,
+                    waterFlow: 0.72,
+                    soilHealth: 0.84,
+                    biodiversity: 0.76,
+                    growthRate: 0.68
+                };
+                
+                // Camera controls
+                this.cameraControls = {
+                    theta: 0,
+                    phi: Math.PI / 3,
+                    radius: 25,
+                    target: new THREE.Vector3(0, 0, 0)
+                };
+            }
+
+            async initialize() {
+                this.canvas = document.getElementById('canvas');
+                
+                this.setupRenderer();
+                this.setupScene();
+                this.setupCamera();
+                this.setupLighting();
+                
+                // Generate forest ecosystem
+                await this.generateForest();
+                await this.createSkillTrees();
+                await this.populateWildlife();
+                await this.createWeatherSystem();
+                await this.createRootNetwork();
+                
+                // Setup interactions
+                this.setupControls();
+                this.setupUI();
+                
+                // Initialize audio
+                await audioEngine.initialize();
+                
+                // Setup biometric integration
+                this.setupBiometricIntegration();
+                
+                this.animate();
+                
+                // Hide loading screen
+                document.getElementById('loadingForest').classList.add('hidden');
+                
+                this.isInitialized = true;
+                console.log('🌳 Growth Forest initialized');
+            }
+
+            setupRenderer() {
+                this.renderer = new THREE.WebGLRenderer({
+                    canvas: this.canvas,
+                    antialias: true,
+                    alpha: false,
+                    powerPreference: "high-performance"
+                });
+                
+                this.renderer.setSize(window.innerWidth, window.innerHeight);
+                this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+                this.renderer.setClearColor(0xf8f8f8, 1.0); // Light white
+                
+                // Enable shadows for forest
+                this.renderer.shadowMap.enabled = true;
+                this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+                this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
+                this.renderer.toneMappingExposure = 1.2;
+            }
+
+            setupScene() {
+                this.scene = new THREE.Scene();
+                this.scene.fog = new THREE.Fog(0x87CEEB, 30, 100);
+            }
+
+            setupCamera() {
+                this.camera = new THREE.PerspectiveCamera(
+                    60,
+                    window.innerWidth / window.innerHeight,
+                    0.1,
+                    200
+                );
+                this.updateCameraPosition();
+            }
+
+            setupLighting() {
+                // Sun light (changes with seasons)
+                this.sunLight = new THREE.DirectionalLight(0xFFD700, 1.5);
+                this.sunLight.position.set(20, 30, 20);
+                this.sunLight.castShadow = true;
+                this.sunLight.shadow.mapSize.width = 2048;
+                this.sunLight.shadow.mapSize.height = 2048;
+                this.sunLight.shadow.camera.near = 0.5;
+                this.sunLight.shadow.camera.far = 100;
+                this.sunLight.shadow.camera.left = -50;
+                this.sunLight.shadow.camera.right = 50;
+                this.sunLight.shadow.camera.top = 50;
+                this.sunLight.shadow.camera.bottom = -50;
+                this.scene.add(this.sunLight);
+                
+                // Ambient forest light
+                this.ambientLight = new THREE.AmbientLight(0x404040, 0.4);
+                this.scene.add(this.ambientLight);
+                
+                // Seasonal accent lighting
+                this.accentLights = [];
+                for (let i = 0; i < 5; i++) {
+                    const light = new THREE.PointLight(0x90EE90, 0.5, 15);
+                    light.position.set(
+                        (Math.random() - 0.5) * 40,
+                        5 + Math.random() * 10,
+                        (Math.random() - 0.5) * 40
+                    );
+                    this.accentLights.push(light);
+                    this.scene.add(light);
+                }
+            }
+
+            async generateForest() {
+                // Create forest floor
+                this.createForestFloor();
+                
+                // Generate trees using L-systems
+                const treePositions = this.generateTreePositions();
+                
+                for (let i = 0; i < treePositions.length; i++) {
+                    const position = treePositions[i];
+                    const skillName = Object.keys(this.userProgress)[i % Object.keys(this.userProgress).length];
+                    const progress = this.userProgress[skillName];
+                    
+                    const tree = await this.generateLSystemTree(position, progress, skillName);
+                    tree.userData.skill = skillName;
+                    tree.userData.progress = progress;
+                    
+                    this.trees.push(tree);
+                    this.scene.add(tree);
+                }
+                
+                // Add undergrowth
+                await this.createUndergrowth();
+                
+                console.log(`Generated forest with ${this.trees.length} skill trees`);
+            }
+
+            createForestFloor() {
+                const floorGeometry = new THREE.PlaneGeometry(100, 100, 50, 50);
+                
+                // Add terrain variation
+                const vertices = floorGeometry.attributes.position.array;
+                for (let i = 0; i < vertices.length; i += 3) {
+                    const x = vertices[i];
+                    const z = vertices[i + 2];
+                    vertices[i + 1] = Math.sin(x * 0.1) * Math.cos(z * 0.1) * 2; // Gentle hills
+                }
+                
+                floorGeometry.computeVertexNormals();
+                
+                const floorMaterial = new THREE.MeshLambertMaterial({
+                    color: 0x8FBC8F,
+                    transparent: true,
+                    opacity: 0.9
+                });
+                
+                const floor = new THREE.Mesh(floorGeometry, floorMaterial);
+                floor.rotation.x = -Math.PI / 2;
+                floor.receiveShadow = true;
+                this.scene.add(floor);
+            }
+
+            generateTreePositions() {
+                const positions = [];
+                const gridSize = 8;
+                const spacing = 6;
+                
+                for (let x = -gridSize/2; x < gridSize/2; x++) {
+                    for (let z = -gridSize/2; z < gridSize/2; z++) {
+                        if (Math.random() > 0.3) { // Not every grid position has a tree
+                            positions.push(new THREE.Vector3(
+                                x * spacing + (Math.random() - 0.5) * 2,
+                                0,
+                                z * spacing + (Math.random() - 0.5) * 2
+                            ));
+                        }
+                    }
+                }
+                
+                return positions;
+            }
+
+            async generateLSystemTree(position, progress, skillName) {
+                // Generate L-system string
+                let current = this.lSystemRules.axiom;
+                
+                for (let i = 0; i < this.lSystemRules.iterations; i++) {
+                    let next = '';
+                    for (const char of current) {
+                        next += this.lSystemRules.rules[char] || char;
+                    }
+                    current = next;
+                }
+                
+                // Interpret L-system string to create 3D tree
+                const treeGroup = new THREE.Group();
+                const stack = [];
+                let position3d = new THREE.Vector3(0, 0, 0);
+                let direction = new THREE.Vector3(0, 1, 0);
+                let length = this.lSystemRules.length;
+                
+                const branchGeometry = new THREE.CylinderGeometry(0.1, 0.15, length, 6);
+                const seasonColor = this.seasonalColors[this.currentSeason];
+                
+                // Skill-based tree characteristics
+                const skillCharacteristics = this.getSkillCharacteristics(skillName, progress);
+                
+                const trunkMaterial = new THREE.MeshLambertMaterial({
+                    color: skillCharacteristics.trunkColor
+                });
+                
+                const leafMaterial = new THREE.MeshLambertMaterial({
+                    color: skillCharacteristics.leafColor,
+                    transparent: true,
+                    opacity: 0.8
+                });
+                
+                for (const char of current) {
+                    switch (char) {
+                        case 'F':
+                            // Draw branch
+                            const branch = new THREE.Mesh(branchGeometry, trunkMaterial);
+                            branch.position.copy(position3d);
+                            branch.lookAt(position3d.clone().add(direction));
+                            branch.castShadow = true;
+                            treeGroup.add(branch);
+                            
+                            // Move forward
+                            position3d.add(direction.clone().multiplyScalar(length));
+                            
+                            // Add leaves at branch ends (with seasonal variation)
+                            if (Math.random() > 0.7 && this.currentSeason !== 'winter') {
+                                const leafCount = 3 + Math.floor(Math.random() * 5);
+                                for (let i = 0; i < leafCount; i++) {
+                                    const leaf = new THREE.Mesh(
+                                        new THREE.SphereGeometry(0.2 + Math.random() * 0.1, 6, 6),
+                                        leafMaterial
+                                    );
+                                    leaf.position.copy(position3d);
+                                    leaf.position.add(new THREE.Vector3(
+                                        (Math.random() - 0.5) * 0.5,
+                                        Math.random() * 0.3,
+                                        (Math.random() - 0.5) * 0.5
+                                    ));
+                                    treeGroup.add(leaf);
+                                }
+                            }
+                            break;
+                            
+                        case '+':
+                            // Turn left
+                            direction.applyAxisAngle(new THREE.Vector3(0, 0, 1), 
+                                this.lSystemRules.angle * Math.PI / 180);
+                            break;
+                            
+                        case '-':
+                            // Turn right
+                            direction.applyAxisAngle(new THREE.Vector3(0, 0, 1), 
+                                -this.lSystemRules.angle * Math.PI / 180);
+                            break;
+                            
+                        case '[':
+                            // Push state
+                            stack.push({
+                                position: position3d.clone(),
+                                direction: direction.clone(),
+                                length: length
+                            });
+                            length *= 0.8; // Branches get smaller
+                            break;
+                            
+                        case ']':
+                            // Pop state
+                            if (stack.length > 0) {
+                                const state = stack.pop();
+                                position3d = state.position;
+                                direction = state.direction;
+                                length = state.length;
+                            }
+                            break;
+                    }
+                }
+                
+                // Scale tree based on skill progress
+                const scale = 0.3 + progress * 0.7;
+                treeGroup.scale.setScalar(scale);
+                treeGroup.position.copy(position);
+                
+                return treeGroup;
+            }
+
+            getSkillCharacteristics(skillName, progress) {
+                const characteristics = {
+                    'self-awareness': {
+                        trunkColor: 0x8B4513,
+                        leafColor: 0x9370DB,
+                        shape: 'meditative'
+                    },
+                    'emotional-regulation': {
+                        trunkColor: 0xA0522D,
+                        leafColor: 0xFF69B4,
+                        shape: 'flowing'
+                    },
+                    'resilience': {
+                        trunkColor: 0x654321,
+                        leafColor: 0x228B22,
+                        shape: 'strong'
+                    },
+                    'creativity': {
+                        trunkColor: 0x8B4513,
+                        leafColor: 0xFF6347,
+                        shape: 'artistic'
+                    },
+                    'connection': {
+                        trunkColor: 0xA0522D,
+                        leafColor: 0x32CD32,
+                        shape: 'reaching'
+                    },
+                    'purpose': {
+                        trunkColor: 0x654321,
+                        leafColor: 0xFFD700,
+                        shape: 'towering'
+                    }
+                };
+                
+                return characteristics[skillName] || characteristics['self-awareness'];
+            }
+
+            async createSkillTrees() {
+                // Create visual representations of skill progression
+                for (const [skillName, progress] of Object.entries(this.userProgress)) {
+                    const skillTree = {
+                        name: skillName,
+                        progress: progress,
+                        level: Math.floor(progress * 5) + 1,
+                        branches: this.generateSkillBranches(skillName, progress)
+                    };
+                    
+                    this.skillTrees.set(skillName, skillTree);
+                }
+            }
+
+            generateSkillBranches(skillName, progress) {
+                // Each skill has sub-skills (branches) that develop
+                const branches = {
+                    'self-awareness': ['mindfulness', 'introspection', 'body awareness', 'emotional awareness'],
+                    'emotional-regulation': ['emotional intelligence', 'stress management', 'impulse control', 'mood stability'],
+                    'resilience': ['adaptability', 'perseverance', 'optimism', 'recovery'],
+                    'creativity': ['imagination', 'innovation', 'artistic expression', 'problem-solving'],
+                    'connection': ['empathy', 'communication', 'relationships', 'community'],
+                    'purpose': ['meaning-making', 'goal-setting', 'values alignment', 'service']
+                };
+                
+                return branches[skillName] || ['foundation', 'development', 'mastery', 'integration'];
+            }
+
+            async populateWildlife() {
+                // Butterflies - represent transformation
+                for (let i = 0; i < 15; i++) {
+                    const butterfly = await this.createButterfly();
+                    this.wildlife.butterflies.push(butterfly);
+                    this.scene.add(butterfly);
+                }
+                
+                // Birds - represent freedom and perspective
+                for (let i = 0; i < 8; i++) {
+                    const bird = await this.createBird();
+                    this.wildlife.birds.push(bird);
+                    this.scene.add(bird);
+                }
+                
+                // Ground creatures for ecosystem balance
+                for (let i = 0; i < 5; i++) {
+                    const squirrel = await this.createSquirrel();
+                    this.wildlife.squirrels.push(squirrel);
+                    this.scene.add(squirrel);
+                }
+                
+                for (let i = 0; i < 3; i++) {
+                    const hedgehog = await this.createHedgehog();
+                    this.wildlife.hedgehogs.push(hedgehog);
+                    this.scene.add(hedgehog);
+                }
+                
+                console.log('Populated forest with wildlife');
+            }
+
+            async createButterfly() {
+                const butterflyGroup = new THREE.Group();
+                
+                // Simple butterfly geometry
+                const wingGeometry = new THREE.PlaneGeometry(0.5, 0.3);
+                const wingMaterial = new THREE.MeshLambertMaterial({
+                    color: 0xFF69B4,
+                    transparent: true,
+                    opacity: 0.8,
+                    side: THREE.DoubleSide
+                });
+                
+                const leftWing = new THREE.Mesh(wingGeometry, wingMaterial);
+                const rightWing = new THREE.Mesh(wingGeometry, wingMaterial);
+                
+                leftWing.position.set(-0.3, 0, 0);
+                rightWing.position.set(0.3, 0, 0);
+                
+                butterflyGroup.add(leftWing, rightWing);
+                
+                // Random position and flight pattern
+                butterflyGroup.position.set(
+                    (Math.random() - 0.5) * 40,
+                    2 + Math.random() * 8,
+                    (Math.random() - 0.5) * 40
+                );
+                
+                butterflyGroup.userData = {
+                    type: 'butterfly',
+                    flightPattern: Math.random() * Math.PI * 2,
+                    speed: 0.5 + Math.random() * 0.5
+                };
+                
+                return butterflyGroup;
+            }
+
+            async createBird() {
+                const birdGroup = new THREE.Group();
+                
+                // Simple bird geometry
+                const bodyGeometry = new THREE.SphereGeometry(0.2, 6, 6);
+                const bodyMaterial = new THREE.MeshLambertMaterial({ color: 0x8B4513 });
+                const body = new THREE.Mesh(bodyGeometry, bodyMaterial);
+                
+                const wingGeometry = new THREE.PlaneGeometry(0.4, 0.2);
+                const wingMaterial = new THREE.MeshLambertMaterial({
+                    color: 0x654321,
+                    side: THREE.DoubleSide
+                });
+                
+                const leftWing = new THREE.Mesh(wingGeometry, wingMaterial);
+                const rightWing = new THREE.Mesh(wingGeometry, wingMaterial);
+                
+                leftWing.position.set(-0.3, 0, 0);
+                rightWing.position.set(0.3, 0, 0);
+                
+                birdGroup.add(body, leftWing, rightWing);
+                
+                birdGroup.position.set(
+                    (Math.random() - 0.5) * 50,
+                    8 + Math.random() * 12,
+                    (Math.random() - 0.5) * 50
+                );
+                
+                birdGroup.userData = {
+                    type: 'bird',
+                    flightRadius: 15 + Math.random() * 10,
+                    flightSpeed: 0.3 + Math.random() * 0.4
+                };
+                
+                return birdGroup;
+            }
+
+            async createSquirrel() {
+                const squirrelGroup = new THREE.Group();
+                
+                const bodyGeometry = new THREE.SphereGeometry(0.3, 8, 8);
+                const bodyMaterial = new THREE.MeshLambertMaterial({ color: 0xA0522D });
+                const body = new THREE.Mesh(bodyGeometry, bodyMaterial);
+                
+                const tailGeometry = new THREE.SphereGeometry(0.2, 6, 6);
+                const tail = new THREE.Mesh(tailGeometry, bodyMaterial);
+                tail.position.set(0, 0, -0.4);
+                
+                squirrelGroup.add(body, tail);
+                
+                // Position near trees
+                const nearTree = this.trees[Math.floor(Math.random() * this.trees.length)];
+                if (nearTree) {
+                    squirrelGroup.position.copy(nearTree.position);
+                    squirrelGroup.position.y = 0.3;
+                    squirrelGroup.position.x += (Math.random() - 0.5) * 2;
+                    squirrelGroup.position.z += (Math.random() - 0.5) * 2;
+                }
+                
+                squirrelGroup.userData = {
+                    type: 'squirrel',
+                    homeTree: nearTree,
+                    activity: 'foraging'
+                };
+                
+                return squirrelGroup;
+            }
+
+            async createHedgehog() {
+                const hedgehogGroup = new THREE.Group();
+                
+                const bodyGeometry = new THREE.SphereGeometry(0.25, 8, 6);
+                const bodyMaterial = new THREE.MeshLambertMaterial({ color: 0x8B7355 });
+                const body = new THREE.Mesh(bodyGeometry, bodyMaterial);
+                
+                hedgehogGroup.add(body);
+                
+                hedgehogGroup.position.set(
+                    (Math.random() - 0.5) * 30,
+                    0.25,
+                    (Math.random() - 0.5) * 30
+                );
+                
+                hedgehogGroup.userData = {
+                    type: 'hedgehog',
+                    moveRadius: 5,
+                    speed: 0.1
+                };
+                
+                return hedgehogGroup;
+            }
+
+            async createUndergrowth() {
+                // Add ferns, mushrooms, and small plants
+                for (let i = 0; i < 50; i++) {
+                    const plantType = Math.random();
+                    let plant;
+                    
+                    if (plantType < 0.4) {
+                        plant = this.createFern();
+                    } else if (plantType < 0.7) {
+                        plant = this.createMushroom();
+                    } else {
+                        plant = this.createWildflower();
+                    }
+                    
+                    plant.position.set(
+                        (Math.random() - 0.5) * 80,
+                        0,
+                        (Math.random() - 0.5) * 80
+                    );
+                    
+                    this.scene.add(plant);
+                }
+            }
+
+            createFern() {
+                const fernGroup = new THREE.Group();
+                
+                for (let i = 0; i < 5; i++) {
+                    const frondGeometry = new THREE.PlaneGeometry(0.5, 1.5);
+                    const frondMaterial = new THREE.MeshLambertMaterial({
+                        color: 0x228B22,
+                        transparent: true,
+                        opacity: 0.8,
+                        side: THREE.DoubleSide
+                    });
+                    
+                    const frond = new THREE.Mesh(frondGeometry, frondMaterial);
+                    frond.rotation.y = (i / 5) * Math.PI * 2;
+                    frond.rotation.x = Math.PI / 6;
+                    
+                    fernGroup.add(frond);
+                }
+                
+                return fernGroup;
+            }
+
+            createMushroom() {
+                const mushroomGroup = new THREE.Group();
+                
+                const stemGeometry = new THREE.CylinderGeometry(0.05, 0.08, 0.4, 6);
+                const stemMaterial = new THREE.MeshLambertMaterial({ color: 0xF5F5DC });
+                const stem = new THREE.Mesh(stemGeometry, stemMaterial);
+                
+                const capGeometry = new THREE.SphereGeometry(0.2, 8, 6);
+                const capMaterial = new THREE.MeshLambertMaterial({ color: 0xB22222 });
+                const cap = new THREE.Mesh(capGeometry, capMaterial);
+                cap.position.y = 0.3;
+                
+                mushroomGroup.add(stem, cap);
+                return mushroomGroup;
+            }
+
+            createWildflower() {
+                const flowerGroup = new THREE.Group();
+                
+                const stemGeometry = new THREE.CylinderGeometry(0.02, 0.02, 0.8, 4);
+                const stemMaterial = new THREE.MeshLambertMaterial({ color: 0x228B22 });
+                const stem = new THREE.Mesh(stemGeometry, stemMaterial);
+                
+                const flowerGeometry = new THREE.SphereGeometry(0.1, 6, 6);
+                const flowerColors = [0xFF69B4, 0xFFD700, 0xFF6347, 0x9370DB, 0x32CD32];
+                const flowerMaterial = new THREE.MeshLambertMaterial({ 
+                    color: flowerColors[Math.floor(Math.random() * flowerColors.length)]
+                });
+                const flower = new THREE.Mesh(flowerGeometry, flowerMaterial);
+                flower.position.y = 0.5;
+                
+                flowerGroup.add(stem, flower);
+                return flowerGroup;
+            }
+
+            async createWeatherSystem() {
+                // Create particle system for weather effects
+                this.weatherSystem = {
+                    currentWeather: this.getSeasonalWeather(),
+                    particles: null,
+                    intensity: 0.5
+                };
+                
+                // Weather will be updated in animation loop
+                this.updateWeatherDisplay();
+            }
+
+            getSeasonalWeather() {
+                const weatherTypes = {
+                    spring: ['gentle rain', 'misty', 'light breeze', 'sunny'],
+                    summer: ['sunny', 'warm breeze', 'light clouds', 'golden light'],
+                    autumn: ['crisp air', 'falling leaves', 'cool breeze', 'soft light'],
+                    winter: ['snow', 'frost', 'cold breeze', 'pale light']
+                };
+                
+                const options = weatherTypes[this.currentSeason];
+                return options[Math.floor(Math.random() * options.length)];
+            }
+
+            async createRootNetwork() {
+                // Visualization of interconnected growth
+                this.rootNetwork = new THREE.Group();
+                
+                const connectionCount = 20;
+                for (let i = 0; i < connectionCount; i++) {
+                    const start = new THREE.Vector3(
+                        (Math.random() - 0.5) * 40,
+                        -1,
+                        (Math.random() - 0.5) * 40
+                    );
+                    
+                    const end = new THREE.Vector3(
+                        (Math.random() - 0.5) * 40,
+                        -1,
+                        (Math.random() - 0.5) * 40
+                    );
+                    
+                    const points = [start, end];
+                    const curve = new THREE.CatmullRomCurve3(points);
+                    const geometry = new THREE.TubeGeometry(curve, 10, 0.02, 4, false);
+                    
+                    const material = new THREE.MeshBasicMaterial({
+                        color: 0x8B4513,
+                        transparent: true,
+                        opacity: 0.3
+                    });
+                    
+                    const root = new THREE.Mesh(geometry, material);
+                    this.rootNetwork.add(root);
+                }
+                
+                this.scene.add(this.rootNetwork);
+                this.updateRootNetworkUI();
+            }
+
+            setupControls() {
+                // Mouse controls for camera
+                let isMouseDown = false;
+                let mouseX = 0, mouseY = 0;
+                
+                this.canvas.addEventListener('mousedown', (event) => {
+                    isMouseDown = true;
+                    mouseX = event.clientX;
+                    mouseY = event.clientY;
+                });
+                
+                this.canvas.addEventListener('mousemove', (event) => {
+                    if (isMouseDown) {
+                        const deltaX = event.clientX - mouseX;
+                        const deltaY = event.clientY - mouseY;
+                        
+                        this.cameraControls.theta -= deltaX * 0.01;
+                        this.cameraControls.phi = Math.max(0.1, Math.min(Math.PI - 0.1, 
+                            this.cameraControls.phi + deltaY * 0.01));
+                        
+                        this.updateCameraPosition();
+                    }
+                    
+                    mouseX = event.clientX;
+                    mouseY = event.clientY;
+                });
+                
+                this.canvas.addEventListener('mouseup', () => {
+                    isMouseDown = false;
+                });
+                
+                // Wheel zoom
+                this.canvas.addEventListener('wheel', (event) => {
+                    event.preventDefault();
+                    this.cameraControls.radius = Math.max(10, Math.min(60, 
+                        this.cameraControls.radius + event.deltaY * 0.1));
+                    this.updateCameraPosition();
+                });
+                
+                // Touch controls for mobile
+                this.setupTouchControls();
+                
+                // Window resize
+                window.addEventListener('resize', () => {
+                    this.camera.aspect = window.innerWidth / window.innerHeight;
+                    this.camera.updateProjectionMatrix();
+                    this.renderer.setSize(window.innerWidth, window.innerHeight);
+                });
+            }
+
+            setupTouchControls() {
+                let lastTouchDistance = 0;
+                let touchStartX = 0, touchStartY = 0;
+                
+                this.canvas.addEventListener('touchstart', (event) => {
+                    event.preventDefault();
+                    
+                    if (event.touches.length === 1) {
+                        touchStartX = event.touches[0].clientX;
+                        touchStartY = event.touches[0].clientY;
+                    } else if (event.touches.length === 2) {
+                        const dx = event.touches[0].clientX - event.touches[1].clientX;
+                        const dy = event.touches[0].clientY - event.touches[1].clientY;
+                        lastTouchDistance = Math.sqrt(dx * dx + dy * dy);
+                    }
+                });
+                
+                this.canvas.addEventListener('touchmove', (event) => {
+                    event.preventDefault();
+                    
+                    if (event.touches.length === 1) {
+                        const deltaX = event.touches[0].clientX - touchStartX;
+                        const deltaY = event.touches[0].clientY - touchStartY;
+                        
+                        this.cameraControls.theta -= deltaX * 0.02;
+                        this.cameraControls.phi = Math.max(0.1, Math.min(Math.PI - 0.1, 
+                            this.cameraControls.phi + deltaY * 0.02));
+                        
+                        this.updateCameraPosition();
+                        
+                        touchStartX = event.touches[0].clientX;
+                        touchStartY = event.touches[0].clientY;
+                    } else if (event.touches.length === 2) {
+                        const dx = event.touches[0].clientX - event.touches[1].clientX;
+                        const dy = event.touches[0].clientY - event.touches[1].clientY;
+                        const distance = Math.sqrt(dx * dx + dy * dy);
+                        
+                        if (lastTouchDistance > 0) {
+                            const scale = distance / lastTouchDistance;
+                            this.cameraControls.radius = Math.max(10, Math.min(60, 
+                                this.cameraControls.radius / scale));
+                            this.updateCameraPosition();
+                        }
+                        
+                        lastTouchDistance = distance;
+                    }
+                });
+            }
+
+            setupUI() {
+                // Season control buttons
+                document.querySelectorAll('.season-btn').forEach(btn => {
+                    btn.addEventListener('click', () => {
+                        const season = btn.dataset.season;
+                        this.changeSeason(season);
+                    });
+                });
+                
+                // Forest control buttons
+                document.getElementById('growBtn').addEventListener('click', () => {
+                    this.setMode('grow');
+                });
+                
+                document.getElementById('nurtureBtn').addEventListener('click', () => {
+                    this.setMode('nurture');
+                });
+                
+                document.getElementById('harvestBtn').addEventListener('click', () => {
+                    this.harvestGrowth();
+                });
+                
+                document.getElementById('audioBtn').addEventListener('click', () => {
+                    this.toggleAudio();
+                });
+                
+                document.getElementById('timelapseBtn').addEventListener('click', () => {
+                    this.toggleTimelapse();
+                });
+                
+                // Skill branch interactions
+                document.querySelectorAll('.skill-branch').forEach(branch => {
+                    branch.addEventListener('click', () => {
+                        const skill = branch.dataset.skill;
+                        this.focusOnSkill(skill);
+                    });
+                });
+            }
+
+            setupBiometricIntegration() {
+                // Initialize with simulated data
+                biometricMonitor.initialize().catch(() => {
+                    console.log('Using simulated biometric data for growth forest');
+                });
+                
+                // Growth responds to positive emotional states
+                biometricMonitor.onEmotionUpdate((emotion) => {
+                    this.adaptToEmotion(emotion);
+                });
+                
+                // Stress affects forest health
+                biometricMonitor.onStressUpdate((stress) => {
+                    this.adaptToStress(stress);
+                });
+            }
+
+            updateCameraPosition() {
+                const x = this.cameraControls.radius * Math.sin(this.cameraControls.phi) * Math.cos(this.cameraControls.theta);
+                const y = this.cameraControls.radius * Math.cos(this.cameraControls.phi);
+                const z = this.cameraControls.radius * Math.sin(this.cameraControls.phi) * Math.sin(this.cameraControls.theta);
+                
+                this.camera.position.set(x, y, z);
+                this.camera.lookAt(this.cameraControls.target);
+            }
+
+            changeSeason(newSeason) {
+                this.currentSeason = newSeason;
+                
+                // Update button states
+                document.querySelectorAll('.season-btn').forEach(btn => btn.classList.remove('active'));
+                document.getElementById(`${newSeason}Btn`).classList.add('active');
+                
+                // Update season info
+                const seasonInfo = {
+                    spring: 'Spring: A time of new growth, fresh possibilities, and emerging potential. Your skills are budding with fresh energy and creative possibility.',
+                    summer: 'Summer: Peak growth season with abundant energy and vitality. Your skills are flourishing under optimal conditions.',
+                    autumn: 'Autumn: Harvest time for wisdom and reflection. Your skills are maturing and bearing fruit.',
+                    winter: 'Winter: A period of rest, integration, and inner development. Your skills are consolidating and preparing for new growth.'
+                };
+                
+                document.getElementById('seasonInfo').textContent = seasonInfo[newSeason];
+                
+                // Update weather indicator
+                const weatherEmojis = {
+                    spring: '🌸',
+                    summer: '☀️',
+                    autumn: '🍂',
+                    winter: '❄️'
+                };
+                
+                document.getElementById('weatherIndicator').textContent = weatherEmojis[newSeason];
+                
+                // Apply seasonal changes to forest
+                this.applySeasonalChanges();
+                
+                console.log(`Changed to ${newSeason} season`);
+            }
+
+            applySeasonalChanges() {
+                const seasonColor = this.seasonalColors[this.currentSeason];
+                
+                // Update lighting
+                this.sunLight.color.setHex(seasonColor.primary);
+                this.sunLight.intensity = this.currentSeason === 'winter' ? 0.8 : 1.5;
+                
+                // Update accent lights
+                this.accentLights.forEach(light => {
+                    light.color.setHex(seasonColor.accent);
+                    light.intensity = this.currentSeason === 'summer' ? 0.8 : 0.5;
+                });
+                
+                // Update tree appearances
+                this.trees.forEach(tree => {
+                    tree.children.forEach(branch => {
+                        if (branch.material && branch.material.color) {
+                            // Trees look different in each season
+                            if (this.currentSeason === 'autumn') {
+                                branch.material.color.setHex(0xB8860B);
+                            } else if (this.currentSeason === 'winter') {
+                                branch.material.color.setHex(0x4682B4);
+                            } else if (this.currentSeason === 'spring') {
+                                branch.material.color.setHex(0x90EE90);
+                            } else {
+                                branch.material.color.setHex(0x228B22);
+                            }
+                        }
+                    });
+                });
+                
+                // Update background color
+                const bgColors = {
+                    spring: 0x87CEEB,
+                    summer: 0x87CEEB,
+                    autumn: 0xDDA0DD,
+                    winter: 0xB0C4DE
+                };
+                
+                this.renderer.setClearColor(bgColors[this.currentSeason]);
+            }
+
+            setMode(mode) {
+                this.currentMode = mode;
+                
+                // Update button states
+                document.querySelectorAll('.forest-btn').forEach(btn => btn.classList.remove('active'));
+                document.getElementById(`${mode}Btn`).classList.add('active');
+                
+                switch (mode) {
+                    case 'grow':
+                        this.activateGrowthMode();
+                        break;
+                    case 'nurture':
+                        this.activateNurtureMode();
+                        break;
+                }
+            }
+
+            activateGrowthMode() {
+                // Enhance growth-related visuals
+                this.trees.forEach(tree => {
+                    if (tree.userData.skill) {
+                        // Add growth particles
+                        this.addGrowthParticles(tree);
+                    }
+                });
+            }
+
+            activateNurtureMode() {
+                // Show nurturing effects
+                this.environment.waterFlow = Math.min(1.0, this.environment.waterFlow + 0.1);
+                this.environment.soilHealth = Math.min(1.0, this.environment.soilHealth + 0.05);
+                
+                this.updateEcosystemStats();
+            }
+
+            addGrowthParticles(tree) {
+                // Add sparkly growth effects around trees
+                const particleCount = 20;
+                const geometry = new THREE.BufferGeometry();
+                const positions = new Float32Array(particleCount * 3);
+                const colors = new Float32Array(particleCount * 3);
+                
+                for (let i = 0; i < particleCount; i++) {
+                    positions[i * 3] = tree.position.x + (Math.random() - 0.5) * 4;
+                    positions[i * 3 + 1] = tree.position.y + Math.random() * 6;
+                    positions[i * 3 + 2] = tree.position.z + (Math.random() - 0.5) * 4;
+                    
+                    colors[i * 3] = 0.5 + Math.random() * 0.5;
+                    colors[i * 3 + 1] = 0.8 + Math.random() * 0.2;
+                    colors[i * 3 + 2] = 0.3 + Math.random() * 0.3;
+                }
+                
+                geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+                geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+                
+                const material = new THREE.PointsMaterial({
+                    size: 0.1,
+                    vertexColors: true,
+                    transparent: true,
+                    opacity: 0.8,
+                    blending: THREE.AdditiveBlending
+                });
+                
+                const particles = new THREE.Points(geometry, material);
+                particles.userData.temporary = true;
+                tree.add(particles);
+                
+                // Remove particles after a while
+                setTimeout(() => {
+                    tree.remove(particles);
+                }, 5000);
+            }
+
+            harvestGrowth() {
+                // Collect growth achievements
+                const achievements = [];
+                
+                Object.entries(this.userProgress).forEach(([skill, progress]) => {
+                    if (progress > 0.8) {
+                        achievements.push(`Mastery in ${skill.replace('-', ' ')}`);
+                    }
+                });
+                
+                if (achievements.length > 0) {
+                    this.showAchievement(`Harvested: ${achievements.join(', ')}`);
+                    
+                    // Increase overall ecosystem health
+                    Object.keys(this.environment).forEach(key => {
+                        this.environment[key] = Math.min(1.0, this.environment[key] + 0.05);
+                    });
+                    
+                    this.updateEcosystemStats();
+                }
+            }
+
+            async toggleAudio() {
+                const btn = document.getElementById('audioBtn');
+                
+                if (!this.isAudioEnabled) {
+                    // Start forest ambient sounds
+                    audioEngine.generateNatureSounds('forest', { x: 0, y: 0, z: 0 }, 0.4);
+                    audioEngine.generateNatureSounds('birds', { x: 10, y: 5, z: 5 }, 0.3);
+                    
+                    // Add growth-enhancing frequencies
+                    audioEngine.generateBinauralBeats(528, 10, 600000); // 528 Hz "love frequency" with 10 Hz alpha
+                    
+                    btn.classList.add('active');
+                    this.isAudioEnabled = true;
+                } else {
+                    audioEngine.stopAllAudio();
+                    btn.classList.remove('active');
+                    this.isAudioEnabled = false;
+                }
+            }
+
+            toggleTimelapse() {
+                this.timelapseActive = !this.timelapseActive;
+                const btn = document.getElementById('timelapseBtn');
+                
+                if (this.timelapseActive) {
+                    btn.classList.add('active');
+                } else {
+                    btn.classList.remove('active');
+                }
+            }
+
+            focusOnSkill(skillName) {
+                // Find and focus camera on the corresponding tree
+                const skillTree = this.trees.find(tree => tree.userData.skill === skillName);
+                
+                if (skillTree) {
+                    // Animate camera to focus on this tree
+                    this.cameraControls.target.copy(skillTree.position);
+                    this.cameraControls.radius = 8;
+                    this.updateCameraPosition();
+                    
+                    // Show skill-specific information
+                    this.showSkillInsights(skillName);
+                }
+            }
+
+            showSkillInsights(skillName) {
+                const insights = {
+                    'self-awareness': 'The foundation of all growth. Through mindful observation, you develop the ability to see yourself clearly.',
+                    'emotional-regulation': 'The art of riding the waves of emotion with grace. Your emotional intelligence is growing stronger.',
+                    'resilience': 'Like a mighty oak, you bend but do not break. Your capacity to recover and adapt continues to strengthen.',
+                    'creativity': 'Your unique creative expression flows like a river, finding new channels and possibilities.',
+                    'connection': 'The web of relationships grows stronger, creating a supportive ecosystem around you.',
+                    'purpose': 'Your sense of meaning and direction becomes clearer, like a lighthouse guiding your journey.'
+                };
+                
+                this.showAchievement(insights[skillName] || 'Your growth continues to flourish.');
+            }
+
+            showAchievement(message) {
+                const notification = document.getElementById('achievementNotification');
+                notification.textContent = message;
+                notification.classList.add('show');
+                
+                setTimeout(() => {
+                    notification.classList.remove('show');
+                }, 3000);
+            }
+
+            updateEcosystemStats() {
+                // Update the ecosystem health bars
+                Object.entries(this.environment).forEach(([key, value]) => {
+                    const bar = document.getElementById(`${key.toLowerCase()}Bar`);
+                    if (bar) {
+                        bar.style.width = `${value * 100}%`;
+                    }
+                });
+            }
+
+            updateRootNetworkUI() {
+                const rootNetworkElement = document.getElementById('rootNetwork');
+                const rootCenter = rootNetworkElement.querySelector('.root-center');
+                
+                // Clear existing connections
+                rootNetworkElement.querySelectorAll('.root-connection').forEach(conn => conn.remove());
+                
+                // Add connections representing skill relationships
+                const skills = Object.keys(this.userProgress);
+                skills.forEach((skill, index) => {
+                    const angle = (index / skills.length) * 360;
+                    const length = 30 + this.userProgress[skill] * 30;
+                    
+                    const connection = document.createElement('div');
+                    connection.className = 'root-connection';
+                    connection.style.width = `${length}px`;
+                    connection.style.transform = `rotate(${angle}deg)`;
+                    connection.style.transformOrigin = 'left center';
+                    
+                    rootNetworkElement.appendChild(connection);
+                });
+            }
+
+            updateWeatherDisplay() {
+                this.weatherSystem.currentWeather = this.getSeasonalWeather();
+                // Weather effects would be implemented here
+            }
+
+            adaptToEmotion(emotion) {
+                // Positive emotions accelerate growth
+                if (emotion.valence > 0.6) {
+                    this.environment.growthRate = Math.min(1.0, this.environment.growthRate + 0.02);
+                    
+                    // More wildlife activity
+                    this.wildlife.butterflies.forEach(butterfly => {
+                        butterfly.userData.speed *= 1.1;
+                    });
+                }
+                
+                // Update forest atmosphere based on emotion
+                const emotionColors = {
+                    'joyful': 0xFFD700,
+                    'peaceful': 0x90EE90,
+                    'hopeful': 0x32CD32,
+                    'grateful': 0x228B22
+                };
+                
+                if (emotionColors[emotion.primary]) {
+                    this.accentLights.forEach(light => {
+                        light.color.setHex(emotionColors[emotion.primary]);
+                    });
+                }
+            }
+
+            adaptToStress(stress) {
+                // High stress affects ecosystem health
+                if (stress.level > 0.7) {
+                    this.environment.growthRate *= 0.95;
+                    this.environment.biodiversity *= 0.98;
+                } else if (stress.level < 0.3) {
+                    // Low stress promotes growth
+                    this.environment.growthRate = Math.min(1.0, this.environment.growthRate * 1.02);
+                    this.environment.biodiversity = Math.min(1.0, this.environment.biodiversity * 1.01);
+                }
+                
+                this.updateEcosystemStats();
+            }
+
+            animate() {
+                if (!this.isInitialized) return;
+                
+                requestAnimationFrame(() => this.animate());
+                
+                const timeMultiplier = this.timelapseActive ? 10 : 1;
+                this.time += 0.016 * timeMultiplier;
+                
+                this.updateWildlife();
+                this.updateGrowth();
+                this.updateEnvironmentalEffects();
+                
+                this.renderer.render(this.scene, this.camera);
+            }
+
+            updateWildlife() {
+                // Animate butterflies
+                this.wildlife.butterflies.forEach((butterfly, index) => {
+                    const userData = butterfly.userData;
+                    const t = this.time * userData.speed + userData.flightPattern;
+                    
+                    butterfly.position.x += Math.sin(t) * 0.1;
+                    butterfly.position.z += Math.cos(t * 1.3) * 0.1;
+                    butterfly.position.y += Math.sin(t * 2) * 0.05;
+                    
+                    // Wing flapping
+                    butterfly.children.forEach(wing => {
+                        wing.rotation.z = Math.sin(t * 8) * 0.3;
+                    });
+                });
+                
+                // Animate birds
+                this.wildlife.birds.forEach(bird => {
+                    const userData = bird.userData;
+                    const t = this.time * userData.flightSpeed;
+                    
+                    bird.position.x = Math.cos(t) * userData.flightRadius;
+                    bird.position.z = Math.sin(t) * userData.flightRadius;
+                    bird.position.y += Math.sin(t * 3) * 0.2;
+                    
+                    // Wing flapping
+                    bird.children.slice(1).forEach(wing => {
+                        wing.rotation.z = Math.sin(t * 10) * 0.5;
+                    });
+                });
+                
+                // Update wildlife counts
+                document.getElementById('butterflyCount').textContent = this.wildlife.butterflies.length;
+                document.getElementById('birdCount').textContent = this.wildlife.birds.length;
+                document.getElementById('squirrelCount').textContent = this.wildlife.squirrels.length;
+                document.getElementById('hedgehogCount').textContent = this.wildlife.hedgehogs.length;
+            }
+
+            updateGrowth() {
+                // Gradually increase skill progress based on environmental factors
+                const growthFactor = this.environment.growthRate * 0.0001;
+                
+                Object.keys(this.userProgress).forEach(skill => {
+                    if (this.userProgress[skill] < 1.0) {
+                        this.userProgress[skill] = Math.min(1.0, 
+                            this.userProgress[skill] + growthFactor * Math.random());
+                    }
+                });
+                
+                // Update skill tree visualizations
+                this.trees.forEach(tree => {
+                    if (tree.userData.skill && tree.userData.progress < this.userProgress[tree.userData.skill]) {
+                        tree.userData.progress = this.userProgress[tree.userData.skill];
+                        
+                        // Scale tree based on new progress
+                        const scale = 0.3 + tree.userData.progress * 0.7;
+                        tree.scale.setScalar(scale);
+                    }
+                });
+                
+                // Update UI progress bars
+                Object.entries(this.userProgress).forEach(([skill, progress]) => {
+                    const skillBranch = document.querySelector(`[data-skill="${skill}"]`);
+                    if (skillBranch) {
+                        const progressBar = skillBranch.querySelector('.progress-fill');
+                        const level = skillBranch.querySelector('.skill-level');
+                        
+                        if (progressBar) {
+                            progressBar.style.width = `${progress * 100}%`;
+                        }
+                        
+                        if (level) {
+                            level.textContent = `Level ${Math.floor(progress * 5) + 1}`;
+                        }
+                    }
+                });
+            }
+
+            updateEnvironmentalEffects() {
+                // Seasonal progression
+                if (this.timelapseActive) {
+                    this.seasonCycle += 0.001;
+                    if (this.seasonCycle >= 1.0) {
+                        this.seasonCycle = 0;
+                        // Auto-cycle through seasons in timelapse
+                        const seasons = ['spring', 'summer', 'autumn', 'winter'];
+                        const currentIndex = seasons.indexOf(this.currentSeason);
+                        const nextSeason = seasons[(currentIndex + 1) % seasons.length];
+                        this.changeSeason(nextSeason);
+                    }
+                }
+                
+                // Update lighting based on time of day simulation
+                const dayProgress = (this.time * 0.1) % 1;
+                const sunHeight = Math.sin(dayProgress * Math.PI);
+                this.sunLight.position.y = 20 + sunHeight * 20;
+                this.sunLight.intensity = 0.8 + sunHeight * 0.7;
+                
+                // Update weather effects
+                if (Math.random() < 0.001) { // Occasionally change weather
+                    this.updateWeatherDisplay();
+                }
+            }
+        }
+
+        // Initialize Growth Forest
+        window.addEventListener('load', async () => {
+            const forest = new GrowthForest();
+            await forest.initialize();
+        });
+    </script>
+</body>
+</html>

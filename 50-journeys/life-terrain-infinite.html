@@ -1,0 +1,1693 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Infinite Life Journey - The Human Terrain</title>
+    <style>
+        body { 
+            margin: 0; 
+            overflow: hidden; 
+            background: linear-gradient(to bottom, #f5f5f5, #e8e8e8);
+            font-family: 'Inter', system-ui, sans-serif;
+        }
+        canvas { display: block; }
+        
+        .back-btn {
+            position: absolute;
+            top: 40px;
+            left: 40px;
+            padding: 10px 20px;
+            background: rgba(255, 255, 255, 0.9);
+            border: 1px solid rgba(26, 26, 26, 0.2);
+            color: #1a1a1a;
+            text-decoration: none;
+            font-size: 14px;
+            letter-spacing: 1px;
+            border-radius: 20px;
+            transition: all 0.3s ease;
+            z-index: 10;
+        }
+        
+        .back-btn:hover {
+            background: rgba(255, 255, 255, 1);
+            border-color: rgba(26, 26, 26, 0.4);
+        }
+        
+        .journey-counter {
+            position: absolute;
+            bottom: 40px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: rgba(26, 26, 26, 0.3);
+            font-size: 11px;
+            letter-spacing: 3px;
+            text-transform: uppercase;
+            pointer-events: none;
+        }
+        
+        .controls-overlay {
+            position: absolute;
+            top: 100px;
+            right: 40px;
+            background: rgba(255, 255, 255, 0.9);
+            border: 1px solid rgba(26, 26, 26, 0.2);
+            border-radius: 12px;
+            padding: 15px;
+            font-size: 11px;
+            color: rgba(26, 26, 26, 0.6);
+            max-width: 200px;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            pointer-events: none;
+        }
+        
+        .controls-overlay.visible {
+            opacity: 1;
+        }
+        
+        .controls-overlay h4 {
+            margin: 0 0 8px 0;
+            color: rgba(26, 26, 26, 0.8);
+            font-size: 12px;
+            font-weight: 600;
+        }
+        
+        .controls-overlay ul {
+            margin: 0;
+            padding: 0;
+            list-style: none;
+            line-height: 1.6;
+        }
+        
+        .controls-overlay li {
+            margin-bottom: 4px;
+        }
+        
+        .quality-indicator {
+            position: absolute;
+            bottom: 40px;
+            right: 40px;
+            color: rgba(26, 26, 26, 0.3);
+            font-size: 10px;
+            pointer-events: none;
+        }
+    </style>
+</head>
+<body>
+    <a href="index.html" class="back-btn">← Back</a>
+    <div class="journey-counter">∞ SOULS WALKING</div>
+    
+    <div class="controls-overlay" id="controlsOverlay">
+        <h4>Interactive Controls</h4>
+        <ul>
+            <li><strong>Mouse:</strong> Drag to rotate view</li>
+            <li><strong>Scroll:</strong> Zoom in/out</li>
+            <li><strong>Space:</strong> Toggle auto-rotation</li>
+            <li><strong>+/-:</strong> Speed up/slow down</li>
+            <li><strong>F:</strong> Focus on traveler</li>
+            <li><strong>R:</strong> Reset camera</li>
+            <li><strong>Click:</strong> Select traveler</li>
+        </ul>
+    </div>
+    
+    <div class="quality-indicator" id="qualityIndicator">
+        Adaptive Quality: High
+    </div>
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script>
+        let scene, camera, renderer;
+        let terrainLines = [];
+        let pathLines = [];
+        let travelers = [];
+        let glowingParticles = [];
+        let dustParticles = [];
+        let lightOrbs = [];
+        let energyFlows = [];
+        let particlePool = { dust: [], light: [], energy: [] };
+        let time = 0;
+        let cameraTarget = new THREE.Vector3(0, 0, 0);
+        let windDirection = new THREE.Vector3(1, 0, 0.5).normalize();
+        
+        // Performance optimization variables
+        let frustumCullingEnabled = true;
+        let lodDistance = { near: 50, mid: 150, far: 300 };
+        let terrainChunks = [];
+        let frameCount = 0;
+        let lastFrameTime = 0;
+        
+        // Interactive control variables
+        let mouseX = 0, mouseY = 0;
+        let isMouseDown = false;
+        let cameraRadius = 150;
+        let cameraHeight = 80;
+        let cameraAngle = 0;
+        let targetCameraRadius = 150;
+        let targetCameraHeight = 80;
+        let animationSpeed = 1.0;
+        let autoRotate = true;
+        let focusedTraveler = null;
+
+        function init() {
+            scene = new THREE.Scene();
+            scene.fog = new THREE.Fog(0xf0f0f0, 200, 800);
+
+            camera = new THREE.PerspectiveCamera(
+                60, window.innerWidth / window.innerHeight, 0.1, 2000
+            );
+            camera.position.set(100, 80, 100);
+            camera.lookAt(0, 0, 0);
+
+            renderer = new THREE.WebGLRenderer({ 
+                antialias: true,
+                alpha: true 
+            });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.shadowMap.enabled = true;
+            renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+            document.body.appendChild(renderer.domElement);
+
+            createLighting();
+            initializeParticleSystem();
+            createFlowingTerrain();
+            createIlluminatedPaths();
+            createTravelers(305); // Increase to 305 visible figures
+            createAmbientParticles();
+            createEnvironmentalDetails();
+            setupInteractiveControls();
+            setupUIControls();
+            animate();
+        }
+
+        let mainDirectionalLight;
+        let pathLights = [];
+        let timeOfDay = 0; // 0 = dawn, 0.5 = noon, 1 = dusk
+        
+        function createLighting() {
+            // Dynamic ambient light that changes with time of day
+            const ambientLight = new THREE.AmbientLight(0xffffff, 0.4);
+            scene.add(ambientLight);
+
+            // Main directional light (sun)
+            mainDirectionalLight = new THREE.DirectionalLight(0xffffff, 0.6);
+            mainDirectionalLight.position.set(100, 120, 80);
+            mainDirectionalLight.castShadow = true;
+            mainDirectionalLight.shadow.camera.near = 0.1;
+            mainDirectionalLight.shadow.camera.far = 800;
+            mainDirectionalLight.shadow.camera.left = -400;
+            mainDirectionalLight.shadow.camera.right = 400;
+            mainDirectionalLight.shadow.camera.top = 400;
+            mainDirectionalLight.shadow.camera.bottom = -400;
+            mainDirectionalLight.shadow.mapSize.width = 2048;
+            mainDirectionalLight.shadow.mapSize.height = 2048;
+            scene.add(mainDirectionalLight);
+            
+            // Secondary warm light for depth
+            const secondaryLight = new THREE.DirectionalLight(0xffeeaa, 0.2);
+            secondaryLight.position.set(-50, 80, -100);
+            scene.add(secondaryLight);
+            
+            // Create point lights along paths for illumination
+            createPathLights();
+            
+            // Enhanced fog for atmosphere
+            scene.fog = new THREE.FogExp2(0xf0f0f0, 0.0008);
+        }
+        
+        function createPathLights() {
+            // Add subtle point lights along major paths
+            for (let i = 0; i < 20; i++) {
+                const angle = (i / 20) * Math.PI * 2;
+                const radius = 80 + Math.random() * 150;
+                const x = Math.cos(angle) * radius;
+                const z = Math.sin(angle) * radius;
+                const y = getTerrainHeight(x, z) + 8 + Math.random() * 12;
+                
+                const pointLight = new THREE.PointLight(0xffffee, 0.3, 50);
+                pointLight.position.set(x, y, z);
+                
+                // Create light orb visualization
+                const lightGeometry = new THREE.SphereGeometry(0.8, 8, 8);
+                const lightMaterial = new THREE.MeshBasicMaterial({
+                    color: 0xffffaa,
+                    transparent: true,
+                    opacity: 0.4
+                });
+                const lightOrb = new THREE.Mesh(lightGeometry, lightMaterial);
+                lightOrb.position.copy(pointLight.position);
+                
+                scene.add(pointLight);
+                scene.add(lightOrb);
+                
+                pathLights.push({
+                    light: pointLight,
+                    orb: lightOrb,
+                    baseIntensity: 0.3,
+                    phase: Math.random() * Math.PI * 2,
+                    flickerSpeed: 0.5 + Math.random() * 1.0
+                });
+            }
+        }
+        
+        function updateLighting(time) {
+            // Dynamic time of day progression
+            timeOfDay = (Math.sin(time * 0.01) + 1) * 0.5;
+            
+            // Update main directional light
+            const sunAngle = timeOfDay * Math.PI;
+            const sunHeight = Math.sin(sunAngle) * 100 + 20;
+            const sunIntensity = Math.max(0.2, Math.sin(sunAngle) * 0.8);
+            
+            mainDirectionalLight.position.set(
+                Math.cos(time * 0.005) * 100,
+                sunHeight,
+                Math.sin(time * 0.005) * 100
+            );
+            mainDirectionalLight.intensity = sunIntensity;
+            
+            // Update light color based on time of day
+            if (timeOfDay < 0.3) {
+                // Dawn - warm orange
+                mainDirectionalLight.color.setHSL(0.08, 0.8, 0.9);
+                scene.fog.color.setHSL(0.08, 0.2, 0.95);
+            } else if (timeOfDay < 0.7) {
+                // Day - cool white
+                mainDirectionalLight.color.setHSL(0.17, 0.1, 1.0);
+                scene.fog.color.setHSL(0.17, 0.05, 0.96);
+            } else {
+                // Dusk - warm pink/orange
+                mainDirectionalLight.color.setHSL(0.05, 0.6, 0.8);
+                scene.fog.color.setHSL(0.05, 0.3, 0.93);
+            }
+            
+            // Update path lights with flickering
+            pathLights.forEach((pathLight, index) => {
+                const flicker = Math.sin(time * pathLight.flickerSpeed + pathLight.phase) * 0.3 + 0.7;
+                pathLight.light.intensity = pathLight.baseIntensity * flicker * (1 - timeOfDay * 0.5);
+                pathLight.orb.material.opacity = 0.3 * flicker * (1 - timeOfDay * 0.3);
+                
+                // Subtle floating animation
+                pathLight.orb.position.y += Math.sin(time * 0.5 + index) * 0.02;
+            });
+            
+            // Dynamic fog density
+            scene.fog.density = 0.0005 + Math.sin(time * 0.02) * 0.0003;
+        }
+
+        // Performance optimization functions
+        function updateLevelOfDetail() {
+            const cameraPosition = camera.position;
+            
+            // Update terrain LOD
+            terrainLines.forEach(line => {
+                const distance = line.position.distanceTo(cameraPosition);
+                if (distance > lodDistance.far) {
+                    line.visible = false;
+                } else if (distance > lodDistance.mid) {
+                    line.material.opacity *= 0.5; // Reduce opacity for far objects
+                    line.visible = true;
+                } else {
+                    line.visible = true;
+                    // Full opacity for near objects handled in original logic
+                }
+            });
+            
+            // Update traveler LOD
+            travelers.forEach(traveler => {
+                const distance = traveler.position.distanceTo(cameraPosition);
+                if (distance > lodDistance.far) {
+                    traveler.visible = false;
+                } else if (distance > lodDistance.near) {
+                    // Reduce detail for distant travelers
+                    traveler.children.forEach((child, index) => {
+                        if (index > 2) child.visible = false; // Hide arms and legs
+                    });
+                    traveler.visible = true;
+                } else {
+                    traveler.visible = true;
+                    traveler.children.forEach(child => child.visible = true);
+                }
+            });
+            
+            // Update particle LOD
+            const particleArrays = [dustParticles, lightOrbs, energyFlows];
+            particleArrays.forEach(particles => {
+                particles.forEach(particle => {
+                    if (particle.userData.active) {
+                        const distance = particle.position.distanceTo(cameraPosition);
+                        particle.visible = distance < lodDistance.mid;
+                    }
+                });
+            });
+        }
+
+        function performFrustumCulling() {
+            if (!frustumCullingEnabled) return;
+            
+            const frustum = new THREE.Frustum();
+            const matrix = new THREE.Matrix4().multiplyMatrices(camera.projectionMatrix, camera.matrixWorldInverse);
+            frustum.setFromProjectionMatrix(matrix);
+            
+            // Cull terrain lines
+            terrainLines.forEach(line => {
+                if (line.visible) {
+                    line.visible = frustum.intersectsObject(line);
+                }
+            });
+            
+            // Cull travelers
+            travelers.forEach(traveler => {
+                if (traveler.visible) {
+                    traveler.visible = frustum.intersectsObject(traveler);
+                }
+            });
+        }
+
+        function optimizeParticlePool() {
+            // Clean up inactive particles every 60 frames
+            if (frameCount % 60 === 0) {
+                [dustParticles, lightOrbs, energyFlows].forEach(particles => {
+                    for (let i = particles.length - 1; i >= 0; i--) {
+                        const particle = particles[i];
+                        if (!particle.userData.active) {
+                            scene.remove(particle);
+                            particles.splice(i, 1);
+                        }
+                    }
+                });
+            }
+        }
+
+        function updatePerformanceMetrics() {
+            frameCount++;
+            const currentTime = performance.now();
+            
+            if (currentTime - lastFrameTime > 1000) { // Update every second
+                const fps = frameCount;
+                frameCount = 0;
+                lastFrameTime = currentTime;
+                
+                // Adaptive quality based on performance
+                if (fps < 30) {
+                    // Reduce quality
+                    lodDistance.far = Math.max(150, lodDistance.far - 20);
+                    lodDistance.mid = Math.max(100, lodDistance.mid - 10);
+                } else if (fps > 50) {
+                    // Increase quality
+                    lodDistance.far = Math.min(400, lodDistance.far + 10);
+                    lodDistance.mid = Math.min(200, lodDistance.mid + 5);
+                }
+            }
+        }
+
+        // Interactive control functions
+        function setupInteractiveControls() {
+            // Mouse controls
+            renderer.domElement.addEventListener('mousedown', onMouseDown);
+            renderer.domElement.addEventListener('mousemove', onMouseMove);
+            renderer.domElement.addEventListener('mouseup', onMouseUp);
+            renderer.domElement.addEventListener('wheel', onMouseWheel);
+            
+            // Touch controls for mobile
+            renderer.domElement.addEventListener('touchstart', onTouchStart);
+            renderer.domElement.addEventListener('touchmove', onTouchMove);
+            renderer.domElement.addEventListener('touchend', onTouchEnd);
+            
+            // Keyboard controls
+            document.addEventListener('keydown', onKeyDown);
+            
+            // Click to focus on travelers
+            renderer.domElement.addEventListener('click', onCanvasClick);
+        }
+
+        function onMouseDown(event) {
+            isMouseDown = true;
+            autoRotate = false;
+            mouseX = event.clientX;
+            mouseY = event.clientY;
+        }
+
+        function onMouseMove(event) {
+            if (!isMouseDown) return;
+            
+            const deltaX = event.clientX - mouseX;
+            const deltaY = event.clientY - mouseY;
+            
+            cameraAngle += deltaX * 0.01;
+            targetCameraHeight += deltaY * 0.5;
+            targetCameraHeight = Math.max(20, Math.min(200, targetCameraHeight));
+            
+            mouseX = event.clientX;
+            mouseY = event.clientY;
+        }
+
+        function onMouseUp(event) {
+            isMouseDown = false;
+            // Resume auto-rotation after a delay
+            setTimeout(() => {
+                if (!isMouseDown) autoRotate = true;
+            }, 3000);
+        }
+
+        function onMouseWheel(event) {
+            event.preventDefault();
+            targetCameraRadius += event.deltaY * 0.1;
+            targetCameraRadius = Math.max(50, Math.min(400, targetCameraRadius));
+        }
+
+        function onTouchStart(event) {
+            event.preventDefault();
+            if (event.touches.length === 1) {
+                onMouseDown({
+                    clientX: event.touches[0].clientX,
+                    clientY: event.touches[0].clientY
+                });
+            }
+        }
+
+        function onTouchMove(event) {
+            event.preventDefault();
+            if (event.touches.length === 1) {
+                onMouseMove({
+                    clientX: event.touches[0].clientX,
+                    clientY: event.touches[0].clientY
+                });
+            } else if (event.touches.length === 2) {
+                // Pinch to zoom
+                const touch1 = event.touches[0];
+                const touch2 = event.touches[1];
+                const distance = Math.sqrt(
+                    Math.pow(touch2.clientX - touch1.clientX, 2) +
+                    Math.pow(touch2.clientY - touch1.clientY, 2)
+                );
+                
+                if (this.lastTouchDistance) {
+                    const delta = distance - this.lastTouchDistance;
+                    targetCameraRadius -= delta * 0.5;
+                    targetCameraRadius = Math.max(50, Math.min(400, targetCameraRadius));
+                }
+                this.lastTouchDistance = distance;
+            }
+        }
+
+        function onTouchEnd(event) {
+            event.preventDefault();
+            onMouseUp(event);
+            this.lastTouchDistance = null;
+        }
+
+        function onKeyDown(event) {
+            switch(event.key) {
+                case ' ': // Spacebar - toggle auto rotation
+                    autoRotate = !autoRotate;
+                    break;
+                case '=':
+                case '+': // Speed up
+                    animationSpeed = Math.min(3.0, animationSpeed + 0.2);
+                    break;
+                case '-': // Slow down
+                    animationSpeed = Math.max(0.2, animationSpeed - 0.2);
+                    break;
+                case 'f':
+                case 'F': // Focus on random traveler
+                    focusOnRandomTraveler();
+                    break;
+                case 'r':
+                case 'R': // Reset camera
+                    resetCamera();
+                    break;
+            }
+        }
+
+        function onCanvasClick(event) {
+            const mouse = new THREE.Vector2();
+            mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+            mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+            
+            const raycaster = new THREE.Raycaster();
+            raycaster.setFromCamera(mouse, camera);
+            
+            const intersects = raycaster.intersectObjects(travelers);
+            if (intersects.length > 0) {
+                focusedTraveler = intersects[0].object;
+                autoRotate = false;
+            }
+        }
+
+        function focusOnRandomTraveler() {
+            if (travelers.length > 0) {
+                focusedTraveler = travelers[Math.floor(Math.random() * travelers.length)];
+                autoRotate = false;
+            }
+        }
+
+        function resetCamera() {
+            targetCameraRadius = 150;
+            targetCameraHeight = 80;
+            cameraAngle = 0;
+            focusedTraveler = null;
+            autoRotate = true;
+            animationSpeed = 1.0;
+        }
+
+        function updateCamera() {
+            // Smooth camera transitions
+            cameraRadius += (targetCameraRadius - cameraRadius) * 0.05;
+            cameraHeight += (targetCameraHeight - cameraHeight) * 0.05;
+            
+            if (focusedTraveler && focusedTraveler.visible) {
+                // Follow focused traveler
+                cameraTarget.copy(focusedTraveler.position);
+                cameraTarget.y += 5;
+            } else {
+                // Default camera target
+                cameraTarget.set(0, 0, 0);
+                focusedTraveler = null;
+            }
+            
+            // Auto-rotation when enabled
+            if (autoRotate) {
+                cameraAngle += 0.005 * animationSpeed;
+            }
+            
+            // Update camera position
+            camera.position.x = Math.cos(cameraAngle) * cameraRadius + cameraTarget.x;
+            camera.position.z = Math.sin(cameraAngle) * cameraRadius + cameraTarget.z;
+            camera.position.y = cameraHeight + cameraTarget.y;
+            
+            camera.lookAt(cameraTarget);
+        }
+
+        // Final UI polish - Iteration 10
+        function setupUIControls() {
+            const controlsOverlay = document.getElementById('controlsOverlay');
+            const qualityIndicator = document.getElementById('qualityIndicator');
+            
+            // Show controls briefly on load
+            setTimeout(() => {
+                controlsOverlay.classList.add('visible');
+                setTimeout(() => {
+                    controlsOverlay.classList.remove('visible');
+                }, 4000);
+            }, 1000);
+            
+            // Show controls on hover over the back button area
+            const backBtn = document.querySelector('.back-btn');
+            backBtn.addEventListener('mouseenter', () => {
+                controlsOverlay.classList.add('visible');
+            });
+            
+            backBtn.addEventListener('mouseleave', () => {
+                setTimeout(() => {
+                    controlsOverlay.classList.remove('visible');
+                }, 2000);
+            });
+            
+            // Update quality indicator
+            setInterval(updateQualityIndicator, 2000);
+        }
+
+        function updateQualityIndicator() {
+            const qualityIndicator = document.getElementById('qualityIndicator');
+            const avgDistance = (lodDistance.near + lodDistance.mid + lodDistance.far) / 3;
+            
+            let qualityLevel = 'High';
+            if (avgDistance < 150) qualityLevel = 'Low';
+            else if (avgDistance < 200) qualityLevel = 'Medium';
+            
+            qualityIndicator.textContent = `Adaptive Quality: ${qualityLevel}`;
+        }
+
+        // Enhanced particle system with multiple types and pooling
+        function initializeParticleSystem() {
+            // Initialize particle pools for performance
+            for (let i = 0; i < 100; i++) {
+                particlePool.dust.push(createDustParticle());
+                particlePool.light.push(createLightOrbParticle());
+                particlePool.energy.push(createEnergyFlowParticle());
+            }
+        }
+
+        function createDustParticle() {
+            const geometry = new THREE.SphereGeometry(0.2, 4, 4);
+            const material = new THREE.MeshBasicMaterial({
+                color: 0x8a8a8a,
+                transparent: true,
+                opacity: 0.3
+            });
+            const particle = new THREE.Mesh(geometry, material);
+            particle.userData = {
+                velocity: new THREE.Vector3(),
+                life: 0,
+                maxLife: 300 + Math.random() * 200,
+                active: false,
+                type: 'dust'
+            };
+            return particle;
+        }
+
+        function createLightOrbParticle() {
+            const geometry = new THREE.SphereGeometry(0.8, 6, 6);
+            const material = new THREE.MeshBasicMaterial({
+                color: 0xffffff,
+                transparent: true,
+                opacity: 0.7
+            });
+            const particle = new THREE.Mesh(geometry, material);
+            particle.userData = {
+                velocity: new THREE.Vector3(),
+                life: 0,
+                maxLife: 500 + Math.random() * 300,
+                active: false,
+                type: 'light',
+                trail: []
+            };
+            return particle;
+        }
+
+        function createEnergyFlowParticle() {
+            const geometry = new THREE.CylinderGeometry(0.1, 0.1, 2, 4);
+            const material = new THREE.MeshBasicMaterial({
+                color: 0x88aaff,
+                transparent: true,
+                opacity: 0.6
+            });
+            const particle = new THREE.Mesh(geometry, material);
+            particle.userData = {
+                velocity: new THREE.Vector3(),
+                life: 0,
+                maxLife: 400 + Math.random() * 200,
+                active: false,
+                type: 'energy',
+                connectionTarget: null
+            };
+            return particle;
+        }
+
+        function spawnParticle(type, position, velocity = null) {
+            const pool = particlePool[type];
+            let particle = pool.find(p => !p.userData.active);
+            
+            if (!particle) {
+                // Create new particle if pool is empty
+                switch(type) {
+                    case 'dust': particle = createDustParticle(); break;
+                    case 'light': particle = createLightOrbParticle(); break;
+                    case 'energy': particle = createEnergyFlowParticle(); break;
+                }
+                pool.push(particle);
+            }
+            
+            particle.position.copy(position);
+            particle.userData.life = 0;
+            particle.userData.active = true;
+            
+            if (velocity) {
+                particle.userData.velocity.copy(velocity);
+            } else {
+                // Random velocity with wind influence
+                particle.userData.velocity.set(
+                    (Math.random() - 0.5) * 0.2 + windDirection.x * 0.1,
+                    Math.random() * 0.1,
+                    (Math.random() - 0.5) * 0.2 + windDirection.z * 0.1
+                );
+            }
+            
+            scene.add(particle);
+            
+            switch(type) {
+                case 'dust': dustParticles.push(particle); break;
+                case 'light': lightOrbs.push(particle); break;
+                case 'energy': energyFlows.push(particle); break;
+            }
+        }
+
+        function createAmbientParticles() {
+            // Spawn initial ambient particles across the landscape
+            for (let i = 0; i < 50; i++) {
+                const x = (Math.random() - 0.5) * 800;
+                const z = (Math.random() - 0.5) * 600;
+                const y = getTerrainHeight(x, z) + Math.random() * 30;
+                
+                spawnParticle('dust', new THREE.Vector3(x, y, z));
+                
+                if (Math.random() < 0.3) {
+                    spawnParticle('light', new THREE.Vector3(x, y + 5, z));
+                }
+                
+                if (Math.random() < 0.2) {
+                    spawnParticle('energy', new THREE.Vector3(x, y + 10, z));
+                }
+            }
+        }
+
+        // Enhanced terrain generation with Perlin noise approximation
+        function perlinNoise(x, y, z, scale = 0.01) {
+            // Simple Perlin-like noise function using sin/cos
+            const X = Math.floor(x * scale) / scale;
+            const Y = Math.floor(y * scale) / scale;
+            const Z = Math.floor(z * scale) / scale;
+            
+            const n1 = Math.sin(X * 12.9898 + Y * 78.233 + Z * 37.719) * 43758.5453;
+            const n2 = Math.sin(X * 93.989 + Y * 17.212 + Z * 67.299) * 28712.3859;
+            const n3 = Math.sin(X * 47.331 + Y * 29.899 + Z * 81.947) * 39482.7432;
+            
+            return ((n1 % 1) + (n2 % 1) + (n3 % 1)) / 3 - 0.5;
+        }
+
+        function createFlowingTerrain() {
+            // Enhanced terrain with multiple noise layers
+            const lineCount = 80;
+            const terrainWidth = 1200;
+            const terrainDepth = 800;
+            
+            // Create contour lines at different elevations with improved natural terrain
+            for (let layer = 0; layer < lineCount; layer++) {
+                const baseElevation = (layer - lineCount/2) * 4;
+                const opacity = 0.08 + (layer / lineCount) * 0.1; // Lines more blurred/subtle
+                
+                // More terrain strips for better coverage
+                for (let strip = 0; strip < 8; strip++) {
+                    const points = [];
+                    const zOffset = (strip - 3.5) * 180;
+                    
+                    for (let i = 0; i <= 400; i++) {
+                        const t = i / 400;
+                        const x = (t - 0.5) * terrainWidth;
+                        const z = zOffset + Math.sin(t * Math.PI * 6 + strip) * 25;
+                        
+                        // Multi-layer Perlin noise for natural terrain
+                        let y = baseElevation;
+                        
+                        // Large scale continental features
+                        y += perlinNoise(x, 0, z, 0.001) * 80;
+                        
+                        // Mountain ranges and valleys
+                        y += perlinNoise(x, 0, z, 0.003) * 60;
+                        
+                        // Hills and ridges
+                        y += perlinNoise(x, 0, z, 0.008) * 35;
+                        
+                        // Medium terrain features
+                        y += perlinNoise(x, 0, z, 0.015) * 20;
+                        
+                        // Fine details
+                        y += perlinNoise(x, 0, z, 0.03) * 8;
+                        y += perlinNoise(x, 0, z, 0.06) * 4;
+                        
+                        // Enhanced valley formation
+                        const valleyNoise = perlinNoise(x, 0, z, 0.002);
+                        if (valleyNoise < -0.2) {
+                            y -= Math.abs(valleyNoise) * 45;
+                        }
+                        
+                        // Plateau formation
+                        const plateauNoise = perlinNoise(x, 100, z, 0.0025);
+                        if (plateauNoise > 0.15) {
+                            y += plateauNoise * 30;
+                            y += Math.sin(plateauNoise * 10) * 5; // Plateau edge roughness
+                        }
+                        
+                        // Ridge lines
+                        const ridgeNoise = Math.abs(perlinNoise(x, 200, z, 0.004));
+                        if (ridgeNoise > 0.3) {
+                            y += ridgeNoise * 25;
+                        }
+                        
+                        points.push(new THREE.Vector3(x, y, z));
+                    }
+                    
+                    // Enhanced curve smoothing
+                    if (points.length > 2) {
+                        const curve = new THREE.CatmullRomCurve3(points);
+                        curve.tension = 0.3; // Smoother curves
+                        const smoothPoints = curve.getPoints(500);
+                        const geometry = new THREE.BufferGeometry().setFromPoints(smoothPoints);
+                        
+                        // Varied line colors based on elevation
+                        const elevationColor = new THREE.Color();
+                        const normalizedElevation = (baseElevation + 100) / 200;
+                        elevationColor.setHSL(0.6 - normalizedElevation * 0.1, 0.1, 0.1 + normalizedElevation * 0.1);
+                        
+                        const material = new THREE.LineBasicMaterial({
+                            color: elevationColor,
+                            transparent: true,
+                            opacity: opacity,
+                            linewidth: 1
+                        });
+                        
+                        const line = new THREE.Line(geometry, material);
+                        scene.add(line);
+                        terrainLines.push(line);
+                    }
+                }
+            }
+            
+            // Enhanced ground plane with gradient
+            const planeGeometry = new THREE.PlaneGeometry(1200, 1000);
+            const planeMaterial = new THREE.MeshBasicMaterial({
+                color: 0xf5f5f5,
+                transparent: true,
+                opacity: 0.3,
+                side: THREE.DoubleSide
+            });
+            const plane = new THREE.Mesh(planeGeometry, planeMaterial);
+            plane.rotation.x = -Math.PI / 2;
+            plane.position.y = -80;
+            scene.add(plane);
+        }
+
+        let pathNetwork = [];
+        let pathIntersections = [];
+        let vegetationMarkers = [];
+        let waterFeatures = [];
+        let weatherParticles = [];
+        
+        function createIlluminatedPaths() {
+            // Enhanced path system with branching networks
+            createMainPathNetwork();
+            createBranchingPaths();
+            createDesirePaths();
+            createIntersections();
+        }
+        
+        function createMainPathNetwork() {
+            // Create major arterial paths
+            const mainPaths = 8;
+            
+            for (let i = 0; i < mainPaths; i++) {
+                const pathPoints = [];
+                const segments = 120;
+                
+                // Starting position for main paths
+                const startAngle = (i / mainPaths) * Math.PI * 2;
+                const startRadius = 30 + Math.random() * 50;
+                let x = Math.cos(startAngle) * startRadius;
+                let z = Math.sin(startAngle) * startRadius;
+                let y = getTerrainHeight(x, z);
+                
+                // Main paths are straighter and wider
+                let direction = startAngle + Math.PI + (Math.random() - 0.5) * 0.5;
+                
+                for (let j = 0; j <= segments; j++) {
+                    const t = j / segments;
+                    
+                    // Smoother curves for main paths
+                    direction += (Math.random() - 0.5) * 0.1;
+                    const stepSize = 4;
+                    
+                    x += Math.cos(direction) * stepSize;
+                    z += Math.sin(direction) * stepSize;
+                    y = getTerrainHeight(x, z) + 3; // Elevated main paths
+                    
+                    pathPoints.push(new THREE.Vector3(x, y, z));
+                    
+                    // More particles on main paths
+                    if (j % 4 === 0) {
+                        createGlowingParticle(x, y, z);
+                    }
+                }
+                
+                // Enhanced main path visualization
+                const pathGeometry = new THREE.BufferGeometry().setFromPoints(pathPoints);
+                const pathMaterial = new THREE.LineBasicMaterial({
+                    color: 0x505050,
+                    transparent: true,
+                    opacity: 0.9,
+                    linewidth: 3
+                });
+                
+                const pathLine = new THREE.Line(pathGeometry, pathMaterial);
+                pathLine.userData = {
+                    points: pathPoints,
+                    pulsePhase: Math.random() * Math.PI * 2,
+                    type: 'main',
+                    width: 3,
+                    priority: 1
+                };
+                
+                scene.add(pathLine);
+                pathLines.push(pathLine);
+                pathNetwork.push(pathLine);
+                
+                // Create flowing lights for main paths
+                for (let k = 0; k < 15; k++) {
+                    const particle = createFlowingLight(pathPoints);
+                    glowingParticles.push(particle);
+                }
+            }
+        }
+        
+        function createBranchingPaths() {
+            // Create secondary paths that branch from main paths
+            pathNetwork.forEach(mainPath => {
+                const branchCount = 2 + Math.floor(Math.random() * 3);
+                
+                for (let b = 0; b < branchCount; b++) {
+                    const branchPoints = [];
+                    const segments = 60;
+                    
+                    // Pick random point along main path to branch from
+                    const branchStart = Math.floor(Math.random() * mainPath.userData.points.length * 0.8);
+                    const startPoint = mainPath.userData.points[branchStart];
+                    
+                    if (!startPoint) continue;
+                    
+                    let x = startPoint.x;
+                    let z = startPoint.z;
+                    let y = startPoint.y;
+                    
+                    // Branch direction perpendicular to main path
+                    let direction = Math.random() * Math.PI * 2;
+                    
+                    for (let j = 0; j <= segments; j++) {
+                        const t = j / segments;
+                        
+                        // More wandering for branch paths
+                        direction += (Math.random() - 0.5) * 0.3;
+                        const stepSize = 2.5;
+                        
+                        x += Math.cos(direction) * stepSize;
+                        z += Math.sin(direction) * stepSize;
+                        y = getTerrainHeight(x, z) + 1.5;
+                        
+                        branchPoints.push(new THREE.Vector3(x, y, z));
+                        
+                        // Fewer particles on branch paths
+                        if (j % 8 === 0) {
+                            createGlowingParticle(x, y, z);
+                        }
+                    }
+                    
+                    // Branch path visualization
+                    if (branchPoints.length > 2) {
+                        const pathGeometry = new THREE.BufferGeometry().setFromPoints(branchPoints);
+                        const pathMaterial = new THREE.LineBasicMaterial({
+                            color: 0x383838,
+                            transparent: true,
+                            opacity: 0.7,
+                            linewidth: 2
+                        });
+                        
+                        const pathLine = new THREE.Line(pathGeometry, pathMaterial);
+                        pathLine.userData = {
+                            points: branchPoints,
+                            pulsePhase: Math.random() * Math.PI * 2,
+                            type: 'branch',
+                            width: 2,
+                            priority: 2
+                        };
+                        
+                        scene.add(pathLine);
+                        pathLines.push(pathLine);
+                        
+                        // Flowing lights for branch paths
+                        for (let k = 0; k < 8; k++) {
+                            const particle = createFlowingLight(branchPoints);
+                            glowingParticles.push(particle);
+                        }
+                    }
+                }
+            });
+        }
+        
+        function createDesirePaths() {
+            // Create desire paths - informal paths that form over time
+            for (let i = 0; i < 20; i++) {
+                const pathPoints = [];
+                const segments = 40;
+                
+                // Random starting position
+                const x_start = (Math.random() - 0.5) * 400;
+                const z_start = (Math.random() - 0.5) * 300;
+                let x = x_start;
+                let z = z_start;
+                let y = getTerrainHeight(x, z);
+                
+                // Desire paths follow terrain more closely
+                let direction = Math.random() * Math.PI * 2;
+                
+                for (let j = 0; j <= segments; j++) {
+                    // Desire paths adapt to terrain slope
+                    const terrainGradient = getTerrainGradient(x, z);
+                    direction += terrainGradient * 0.1 + (Math.random() - 0.5) * 0.4;
+                    
+                    const stepSize = 2;
+                    x += Math.cos(direction) * stepSize;
+                    z += Math.sin(direction) * stepSize;
+                    y = getTerrainHeight(x, z) + 0.5; // Close to ground
+                    
+                    pathPoints.push(new THREE.Vector3(x, y, z));
+                }
+                
+                // Subtle desire path visualization
+                if (pathPoints.length > 2) {
+                    const pathGeometry = new THREE.BufferGeometry().setFromPoints(pathPoints);
+                    const pathMaterial = new THREE.LineBasicMaterial({
+                        color: 0x2a2a2a,
+                        transparent: true,
+                        opacity: 0.4,
+                        linewidth: 1
+                    });
+                    
+                    const pathLine = new THREE.Line(pathGeometry, pathMaterial);
+                    pathLine.userData = {
+                        points: pathPoints,
+                        pulsePhase: Math.random() * Math.PI * 2,
+                        type: 'desire',
+                        width: 1,
+                        priority: 3
+                    };
+                    
+                    scene.add(pathLine);
+                    pathLines.push(pathLine);
+                }
+            }
+        }
+        
+        function createIntersections() {
+            // Find path intersections and mark them
+            for (let i = 0; i < pathLines.length; i++) {
+                for (let j = i + 1; j < pathLines.length; j++) {
+                    const intersections = findPathIntersections(pathLines[i], pathLines[j]);
+                    intersections.forEach(point => {
+                        createIntersectionMarker(point);
+                        pathIntersections.push(point);
+                    });
+                }
+            }
+        }
+        
+        function findPathIntersections(path1, path2) {
+            const intersections = [];
+            const threshold = 5; // Distance threshold for intersection
+            
+            path1.userData.points.forEach(point1 => {
+                path2.userData.points.forEach(point2 => {
+                    if (point1.distanceTo(point2) < threshold) {
+                        const midPoint = point1.clone().add(point2).multiplyScalar(0.5);
+                        intersections.push(midPoint);
+                    }
+                });
+            });
+            
+            return intersections;
+        }
+        
+        function createIntersectionMarker(position) {
+            const geometry = new THREE.SphereGeometry(1.5, 8, 8);
+            const material = new THREE.MeshBasicMaterial({
+                color: 0x666666,
+                transparent: true,
+                opacity: 0.6
+            });
+            
+            const marker = new THREE.Mesh(geometry, material);
+            marker.position.copy(position);
+            marker.userData = {
+                type: 'intersection',
+                pulsePhase: Math.random() * Math.PI * 2
+            };
+            
+            scene.add(marker);
+            pathIntersections.push(marker);
+        }
+        
+        function getTerrainGradient(x, z) {
+            // Simple terrain gradient calculation for desire path formation
+            const step = 2;
+            const h1 = getTerrainHeight(x + step, z);
+            const h2 = getTerrainHeight(x - step, z);
+            const h3 = getTerrainHeight(x, z + step);
+            const h4 = getTerrainHeight(x, z - step);
+            
+            const gradientX = (h1 - h2) / (2 * step);
+            const gradientZ = (h3 - h4) / (2 * step);
+            
+            return Math.atan2(gradientZ, gradientX);
+        }
+
+        // Environmental details - Iteration 8
+        function createEnvironmentalDetails() {
+            createVegetationMarkers();
+            createWaterFeatures();
+            createWeatherEffects();
+        }
+
+        function createVegetationMarkers() {
+            // Add subtle vegetation markers across the landscape
+            for (let i = 0; i < 80; i++) {
+                const x = (Math.random() - 0.5) * 600;
+                const z = (Math.random() - 0.5) * 400;
+                const height = getTerrainHeight(x, z);
+                
+                // Vegetation grows better in valleys and on gentle slopes
+                const slope = Math.abs(getTerrainGradient(x, z));
+                if (slope < 0.3 && Math.random() < 0.7) {
+                    // Tree-like vegetation
+                    const treeHeight = 2 + Math.random() * 4;
+                    const geometry = new THREE.CylinderGeometry(0.1, 0.2, treeHeight, 6);
+                    const material = new THREE.MeshBasicMaterial({
+                        color: 0x2d4a2d,
+                        transparent: true,
+                        opacity: 0.3
+                    });
+                    
+                    const tree = new THREE.Mesh(geometry, material);
+                    tree.position.set(x, height + treeHeight/2, z);
+                    tree.userData = {
+                        type: 'vegetation',
+                        swayPhase: Math.random() * Math.PI * 2,
+                        swayAmount: 0.1 + Math.random() * 0.1
+                    };
+                    
+                    scene.add(tree);
+                    vegetationMarkers.push(tree);
+                }
+            }
+        }
+
+        function createWaterFeatures() {
+            // Create flowing water features in valleys
+            for (let i = 0; i < 3; i++) {
+                const riverPoints = [];
+                const segments = 100;
+                
+                // Start in a high area, flow to lower areas
+                let x = (Math.random() - 0.5) * 400;
+                let z = (Math.random() - 0.5) * 300;
+                let y = getTerrainHeight(x, z);
+                
+                for (let j = 0; j < segments; j++) {
+                    // Water flows downhill
+                    const gradient = getTerrainGradient(x, z);
+                    const flowDirection = gradient + (Math.random() - 0.5) * 0.3;
+                    
+                    x += Math.cos(flowDirection) * 3;
+                    z += Math.sin(flowDirection) * 3;
+                    y = getTerrainHeight(x, z) - 1; // Below terrain level
+                    
+                    riverPoints.push(new THREE.Vector3(x, y, z));
+                }
+                
+                // Create water geometry
+                if (riverPoints.length > 2) {
+                    const waterGeometry = new THREE.BufferGeometry().setFromPoints(riverPoints);
+                    const waterMaterial = new THREE.LineBasicMaterial({
+                        color: 0x4a6fa5,
+                        transparent: true,
+                        opacity: 0.6,
+                        linewidth: 2
+                    });
+                    
+                    const waterLine = new THREE.Line(waterGeometry, waterMaterial);
+                    waterLine.userData = {
+                        type: 'water',
+                        flowPhase: Math.random() * Math.PI * 2,
+                        points: riverPoints
+                    };
+                    
+                    scene.add(waterLine);
+                    waterFeatures.push(waterLine);
+                    
+                    // Add water particles
+                    for (let k = 0; k < riverPoints.length; k += 10) {
+                        if (Math.random() < 0.3) {
+                            spawnParticle('light', riverPoints[k].clone());
+                        }
+                    }
+                }
+            }
+        }
+
+        function createWeatherEffects() {
+            // Create atmospheric weather particles
+            for (let i = 0; i < 30; i++) {
+                const x = (Math.random() - 0.5) * 800;
+                const z = (Math.random() - 0.5) * 600;
+                const y = 20 + Math.random() * 40;
+                
+                const geometry = new THREE.SphereGeometry(0.3, 4, 4);
+                const material = new THREE.MeshBasicMaterial({
+                    color: 0xf0f0f0,
+                    transparent: true,
+                    opacity: 0.2
+                });
+                
+                const particle = new THREE.Mesh(geometry, material);
+                particle.position.set(x, y, z);
+                particle.userData = {
+                    type: 'weather',
+                    velocity: new THREE.Vector3(
+                        windDirection.x * 0.05,
+                        -0.01,
+                        windDirection.z * 0.05
+                    ),
+                    life: Math.random() * 500
+                };
+                
+                scene.add(particle);
+                weatherParticles.push(particle);
+            }
+        }
+
+        function createGlowingParticle(x, y, z) {
+            const geometry = new THREE.SphereGeometry(0.5, 6, 6);
+            const material = new THREE.MeshBasicMaterial({
+                color: 0xffffff,
+                transparent: true,
+                opacity: 0.8
+            });
+            
+            const particle = new THREE.Mesh(geometry, material);
+            particle.position.set(x, y, z);
+            particle.userData = {
+                baseY: y,
+                phase: Math.random() * Math.PI * 2
+            };
+            
+            scene.add(particle);
+            glowingParticles.push(particle);
+        }
+
+        function createFlowingLight(pathPoints) {
+            const geometry = new THREE.SphereGeometry(1, 4, 4);
+            const material = new THREE.MeshBasicMaterial({
+                color: 0xffffff,
+                transparent: true,
+                opacity: 0.6
+            });
+            
+            const light = new THREE.Mesh(geometry, material);
+            light.userData = {
+                pathPoints: pathPoints,
+                progress: Math.random(),
+                speed: 0.002 + Math.random() * 0.003
+            };
+            
+            scene.add(light);
+            return light;
+        }
+
+        function createTravelers(count) {
+            for (let i = 0; i < count; i++) {
+                const group = new THREE.Group();
+                
+                // Enhanced human figure with variety
+                const figureScale = 0.8 + Math.random() * 0.4; // Size variation
+                const opacity = 0.6 + Math.random() * 0.3; // Much more visible
+                
+                // Body parts with different materials for variety
+                const bodyColor = new THREE.Color().setHSL(0, 0, 0.05 + Math.random() * 0.15); // Darker, more contrast
+                const material = new THREE.MeshBasicMaterial({
+                    color: bodyColor,
+                    transparent: true,
+                    opacity: opacity
+                });
+                
+                // More detailed torso
+                const torsoGeometry = new THREE.CylinderGeometry(0.12, 0.18, 1.2, 6);
+                const torso = new THREE.Mesh(torsoGeometry, material);
+                torso.position.y = 0.6;
+                
+                // Head with slight variation
+                const headSize = 0.12 + Math.random() * 0.06;
+                const headGeometry = new THREE.SphereGeometry(headSize, 6, 6);
+                const head = new THREE.Mesh(headGeometry, material);
+                head.position.y = 1.4;
+                
+                // Arms (simple cylinders)
+                const armGeometry = new THREE.CylinderGeometry(0.05, 0.05, 0.8, 4);
+                const leftArm = new THREE.Mesh(armGeometry, material);
+                leftArm.position.set(-0.25, 0.8, 0);
+                leftArm.rotation.z = Math.PI / 6;
+                
+                const rightArm = new THREE.Mesh(armGeometry, material);
+                rightArm.position.set(0.25, 0.8, 0);
+                rightArm.rotation.z = -Math.PI / 6;
+                
+                // Legs
+                const legGeometry = new THREE.CylinderGeometry(0.06, 0.08, 0.9, 4);
+                const leftLeg = new THREE.Mesh(legGeometry, material);
+                leftLeg.position.set(-0.1, -0.2, 0);
+                
+                const rightLeg = new THREE.Mesh(legGeometry, material);
+                rightLeg.position.set(0.1, -0.2, 0);
+                
+                group.add(torso);
+                group.add(head);
+                group.add(leftArm);
+                group.add(rightArm);
+                group.add(leftLeg);
+                group.add(rightLeg);
+                
+                // Position on terrain
+                const angle = Math.random() * Math.PI * 2;
+                const radius = 50 + Math.random() * 300;
+                const x = Math.cos(angle) * radius;
+                const z = Math.sin(angle) * radius;
+                const y = getTerrainHeight(x, z);
+                
+                group.position.set(x, y + 0.8, z);
+                group.scale.set(figureScale, figureScale, figureScale);
+                
+                // Enhanced behavior system
+                const personality = Math.random();
+                group.userData = {
+                    speed: 0.1 + Math.random() * 0.4,
+                    direction: Math.random() * Math.PI * 2,
+                    pathIndex: Math.floor(Math.random() * Math.max(1, pathLines.length)),
+                    pathProgress: Math.random(),
+                    lifetime: 0,
+                    personality: personality, // 0 = follower, 1 = leader
+                    groupId: Math.floor(Math.random() * 20), // For crowd dynamics
+                    restTime: 0,
+                    maxRestTime: 100 + Math.random() * 200,
+                    walkCycle: Math.random() * Math.PI * 2,
+                    armSwing: Math.random() * 0.5 + 0.5,
+                    legStride: Math.random() * 0.3 + 0.7,
+                    baseY: y + 0.8,
+                    targetPosition: new THREE.Vector3(x, y + 0.8, z),
+                    isResting: false
+                };
+                
+                scene.add(group);
+                travelers.push(group);
+                
+                // Occasionally spawn particles around travelers
+                if (Math.random() < 0.1) {
+                    spawnParticle('dust', new THREE.Vector3(x, y + 1, z));
+                }
+            }
+        }
+
+        function getTerrainHeight(x, z) {
+            // Sample terrain height matching the enhanced terrain generation
+            let height = 0;
+            
+            // Multi-layer Perlin noise for natural terrain
+            height += perlinNoise(x, 0, z, 0.001) * 80;    // Large scale continental features
+            height += perlinNoise(x, 0, z, 0.003) * 60;    // Mountain ranges and valleys
+            height += perlinNoise(x, 0, z, 0.008) * 35;    // Hills and ridges
+            height += perlinNoise(x, 0, z, 0.015) * 20;    // Medium terrain features
+            height += perlinNoise(x, 0, z, 0.03) * 8;      // Fine details
+            height += perlinNoise(x, 0, z, 0.06) * 4;      // Very fine details
+            
+            // Enhanced valley formation
+            const valleyNoise = perlinNoise(x, 0, z, 0.002);
+            if (valleyNoise < -0.2) {
+                height -= Math.abs(valleyNoise) * 45;
+            }
+            
+            // Plateau formation
+            const plateauNoise = perlinNoise(x, 100, z, 0.0025);
+            if (plateauNoise > 0.15) {
+                height += plateauNoise * 30;
+                height += Math.sin(plateauNoise * 10) * 5;
+            }
+            
+            // Ridge lines
+            const ridgeNoise = Math.abs(perlinNoise(x, 200, z, 0.004));
+            if (ridgeNoise > 0.3) {
+                height += ridgeNoise * 25;
+            }
+            
+            return height;
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+            time += 0.008 * animationSpeed; // Iteration 9: Animation speed control
+
+            // Update performance metrics and optimization
+            updatePerformanceMetrics();
+            if (frameCount % 30 === 0) { // Update every 30 frames for performance
+                updateLevelOfDetail();
+                performFrustumCulling();
+                optimizeParticlePool();
+            }
+
+            // Update lighting system - Iteration 4
+            updateLighting(time);
+
+            // Update camera with new interactive controls - Iteration 6
+            updateCamera();
+
+            // Enhanced traveler animation with detailed movements - Iteration 9
+            travelers.forEach((traveler, index) => {
+                // Enhanced crowd dynamics
+                if (pathLines[traveler.userData.pathIndex]) {
+                    const path = pathLines[traveler.userData.pathIndex];
+                    if (path.userData.points) {
+                        // Smooth path following
+                        const speedMultiplier = animationSpeed * traveler.userData.speed;
+                        traveler.userData.pathProgress += speedMultiplier * 0.001;
+                        
+                        if (traveler.userData.pathProgress >= 1) {
+                            traveler.userData.pathProgress = 0;
+                            // Choose next path based on personality and proximity
+                            const nearbyPaths = findNearbyPaths(traveler.position);
+                            if (nearbyPaths.length > 0 && Math.random() > traveler.userData.personality) {
+                                traveler.userData.pathIndex = nearbyPaths[0];
+                            } else {
+                                traveler.userData.pathIndex = Math.floor(Math.random() * pathLines.length);
+                            }
+                        }
+                        
+                        const pointIndex = Math.floor(traveler.userData.pathProgress * path.userData.points.length);
+                        const point = path.userData.points[Math.min(pointIndex, path.userData.points.length - 1)];
+                        
+                        if (point) {
+                            // Smooth movement with easing
+                            const easing = 0.08;
+                            traveler.position.x += (point.x - traveler.position.x) * easing;
+                            traveler.position.z += (point.z - traveler.position.z) * easing;
+                            traveler.position.y = point.y + 0.8;
+                            
+                            // Enhanced walking cycle with natural movement
+                            traveler.userData.walkCycle += speedMultiplier * 0.1;
+                            const walkBob = Math.sin(traveler.userData.walkCycle) * 0.15;
+                            traveler.position.y += Math.abs(walkBob) * traveler.userData.legStride;
+                            
+                            // Animate body parts for walking
+                            if (traveler.children.length >= 6) {
+                                // Arms swing
+                                const armSwing = Math.sin(traveler.userData.walkCycle) * traveler.userData.armSwing;
+                                traveler.children[2].rotation.z = Math.PI / 6 + armSwing * 0.3; // Left arm
+                                traveler.children[3].rotation.z = -Math.PI / 6 - armSwing * 0.3; // Right arm
+                                
+                                // Legs alternate
+                                const legSwing = Math.sin(traveler.userData.walkCycle + Math.PI);
+                                traveler.children[4].rotation.x = legSwing * 0.2; // Left leg
+                                traveler.children[5].rotation.x = -legSwing * 0.2; // Right leg
+                            }
+                            
+                            // Spawn dust particles while walking
+                            if (Math.random() < 0.01) {
+                                spawnParticle('dust', traveler.position.clone());
+                            }
+                        }
+                    }
+                }
+                
+                // Enhanced lifetime management
+                traveler.userData.lifetime++;
+                
+                // Rest behavior
+                if (traveler.userData.restTime > 0) {
+                    traveler.userData.restTime--;
+                    traveler.userData.isResting = true;
+                } else if (traveler.userData.lifetime % traveler.userData.maxRestTime === 0) {
+                    traveler.userData.restTime = 50 + Math.random() * 100;
+                    traveler.userData.isResting = false;
+                }
+                
+                // Enhanced fade system
+                traveler.children.forEach(child => {
+                    if (traveler.userData.lifetime < 50) {
+                        child.material.opacity = (traveler.userData.lifetime / 50) * 0.3;
+                    } else if (traveler.userData.lifetime > 1500) {
+                        child.material.opacity *= 0.995;
+                        if (child.material.opacity < 0.01) {
+                            traveler.userData.lifetime = 0;
+                            traveler.userData.pathProgress = Math.random();
+                        }
+                    }
+                });
+            });
+
+            // Enhanced particle system animations - Iteration 2
+            updateParticleSystem();
+
+            // Environmental animations - Iteration 8
+            updateEnvironmentalElements();
+
+            // Enhanced path animations - Iteration 7
+            updatePathSystem();
+
+            // Update intersection markers
+            pathIntersections.forEach(intersection => {
+                if (intersection.userData && intersection.userData.type === 'intersection') {
+                    const pulse = Math.sin(time * 2 + intersection.userData.pulsePhase) * 0.3 + 0.7;
+                    intersection.material.opacity = pulse * 0.6;
+                    intersection.scale.setScalar(pulse);
+                }
+            });
+
+            renderer.render(scene, camera);
+        }
+
+        // Helper functions for enhanced animation
+        function findNearbyPaths(position) {
+            const nearby = [];
+            const maxDistance = 30;
+            
+            pathLines.forEach((path, index) => {
+                if (path.userData.points) {
+                    const minDistance = Math.min(...path.userData.points.map(point => 
+                        position.distanceTo(point)
+                    ));
+                    if (minDistance < maxDistance) {
+                        nearby.push(index);
+                    }
+                }
+            });
+            
+            return nearby.sort(() => Math.random() - 0.5);
+        }
+
+        function updateParticleSystem() {
+            // Update dust particles
+            dustParticles.forEach((particle, i) => {
+                if (particle.userData.active) {
+                    particle.userData.life++;
+                    particle.position.add(particle.userData.velocity);
+                    particle.userData.velocity.add(windDirection.clone().multiplyScalar(0.001));
+                    particle.userData.velocity.y -= 0.001; // Gravity
+                    
+                    const lifeRatio = particle.userData.life / particle.userData.maxLife;
+                    particle.material.opacity = 0.3 * (1 - lifeRatio);
+                    
+                    if (particle.userData.life > particle.userData.maxLife) {
+                        particle.userData.active = false;
+                        scene.remove(particle);
+                    }
+                }
+            });
+
+            // Update light orbs with trails
+            lightOrbs.forEach((particle, i) => {
+                if (particle.userData.active) {
+                    particle.userData.life++;
+                    particle.position.add(particle.userData.velocity);
+                    
+                    // Floating motion
+                    particle.position.y += Math.sin(time * 2 + i) * 0.02;
+                    
+                    // Pulsing light
+                    const pulse = Math.sin(time * 3 + i) * 0.3 + 0.7;
+                    particle.scale.setScalar(pulse);
+                    particle.material.opacity = pulse * 0.7;
+                    
+                    if (particle.userData.life > particle.userData.maxLife) {
+                        particle.userData.active = false;
+                        scene.remove(particle);
+                    }
+                }
+            });
+
+            // Update energy flows
+            energyFlows.forEach((particle, i) => {
+                if (particle.userData.active) {
+                    particle.userData.life++;
+                    particle.position.add(particle.userData.velocity);
+                    particle.rotation.y += 0.05;
+                    
+                    const lifeRatio = particle.userData.life / particle.userData.maxLife;
+                    particle.material.opacity = 0.6 * Math.sin(lifeRatio * Math.PI);
+                    
+                    if (particle.userData.life > particle.userData.maxLife) {
+                        particle.userData.active = false;
+                        scene.remove(particle);
+                    }
+                }
+            });
+
+            // Update path flowing particles
+            glowingParticles.forEach((particle, i) => {
+                if (particle.userData.pathPoints) {
+                    particle.userData.progress += particle.userData.speed * animationSpeed;
+                    if (particle.userData.progress >= 1) particle.userData.progress = 0;
+                    
+                    const index = Math.floor(particle.userData.progress * particle.userData.pathPoints.length);
+                    const point = particle.userData.pathPoints[index];
+                    
+                    if (point) {
+                        particle.position.copy(point);
+                        particle.position.y += Math.sin(time * 2 + particle.userData.progress * Math.PI * 2) * 1.5;
+                        
+                        const scale = 1 + Math.sin(time * 3 + particle.userData.progress * Math.PI) * 0.4;
+                        particle.scale.set(scale, scale, scale);
+                        particle.material.opacity = 0.5 + Math.sin(time * 2) * 0.3;
+                    }
+                }
+            });
+        }
+
+        function updateEnvironmentalElements() {
+            // Animate vegetation swaying
+            vegetationMarkers.forEach(tree => {
+                const sway = Math.sin(time * 0.5 + tree.userData.swayPhase) * tree.userData.swayAmount;
+                tree.rotation.z = sway;
+                tree.rotation.x = sway * 0.5;
+            });
+
+            // Animate water flow
+            waterFeatures.forEach(water => {
+                water.material.opacity = 0.6 + Math.sin(time * 2 + water.userData.flowPhase) * 0.2;
+            });
+
+            // Update weather particles
+            weatherParticles.forEach((particle, i) => {
+                particle.position.add(particle.userData.velocity);
+                particle.userData.life--;
+                
+                if (particle.userData.life <= 0 || particle.position.y < -10) {
+                    // Reset particle to top
+                    particle.position.y = 60;
+                    particle.position.x = (Math.random() - 0.5) * 800;
+                    particle.position.z = (Math.random() - 0.5) * 600;
+                    particle.userData.life = 500;
+                }
+                
+                particle.material.opacity = 0.1 + Math.sin(time + i) * 0.1;
+            });
+        }
+
+        function updatePathSystem() {
+            // Enhanced path pulsing based on activity
+            pathLines.forEach((path, index) => {
+                const baseOpacity = path.userData.type === 'main' ? 0.9 : 
+                                  path.userData.type === 'branch' ? 0.7 : 0.4;
+                const pulse = Math.sin(time * 0.5 + path.userData.pulsePhase) * 0.2;
+                path.material.opacity = baseOpacity + pulse;
+                
+                // Subtle width variation for main paths
+                if (path.userData.type === 'main') {
+                    const widthPulse = Math.sin(time * 0.3 + index) * 0.1 + 1;
+                    // Note: LineBasicMaterial doesn't support dynamic width, but we simulate with opacity
+                }
+            });
+        }
+
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+
+        init();
+    </script>
+</body>
+</html>
