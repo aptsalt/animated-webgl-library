@@ -6,6 +6,42 @@
 
 ---
 
+## Examples
+
+Every animation runs in a single HTML file. These are static captures — the real thing moves.
+
+### Butterfly Effect
+*Small changes, infinite consequences*
+
+[![Butterfly Effect](previews/butterfly-effect.png)](https://aptsalt.github.io/animated-webgl-library/50-journeys/butterfly-effect.html)
+
+Butterfly-like shapes drift across the canvas with subtle trail effects. Each wing beat influences nearby particles. Use as a background for creative tools, portfolio sites, or anywhere you want quiet organic motion.
+
+### Pendulum Souls
+*Life swinging through time's rhythm*
+
+[![Pendulum Souls](previews/pendulum-souls.png)](https://aptsalt.github.io/animated-webgl-library/50-journeys/pendulum-souls.html)
+
+Stick figures suspended on swinging pendulum lines — each figure moves at a slightly different phase, creating a hypnotic wave of human motion. Works well as a sidebar or header accent animation for productivity apps or music interfaces.
+
+### Sand People
+*Beings of endless reformation*
+
+[![Sand People](previews/sand-people.png)](https://aptsalt.github.io/animated-webgl-library/50-journeys/sand-people.html)
+
+A human figure composed entirely of sand particles — constantly dispersing and reforming. The figure never fully dissolves and never fully solidifies. This is the "conscience stripped to basic" idea at its most literal: a person as a cloud of matter that holds shape through will alone. Strong as a video filler or behind a text-heavy page.
+
+### Hive Mind
+*Interconnected streams of consciousness*
+
+[![Hive Mind](previews/hive-mind.png)](https://aptsalt.github.io/animated-webgl-library/50-journeys/hive-mind.html)
+
+Multiple stick figures connected by a living network of lines — nodes pulse, connections strengthen and fade as figures move through space. Represents collective thought. Use behind collaboration tools, team dashboards, or any interface where "connected people" is the core metaphor.
+
+> **Click any image above to see the live demo.** All 50+ visualizations are browsable at [aptsalt.github.io/animated-webgl-library/50-journeys/](https://aptsalt.github.io/animated-webgl-library/50-journeys/)
+
+---
+
 ## Philosophy
 
 Plain interfaces are dead interfaces. A chat window with a white background and blinking cursor feels like talking to a vending machine. A dashboard with nothing but data grids feels like staring at a spreadsheet. These are functional — but they are not *human*.
